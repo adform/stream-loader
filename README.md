@@ -1,4 +1,4 @@
-# Stream Loader
+# Stream Loader ![](https://github.com/adform/stream-loader/workflows/CI/badge.svg)
 
 Stream loader is a collection of libraries providing means to load data from [Kafka](https://kafka.apache.org/) into arbitrary storages such as [HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html), [S3](https://aws.amazon.com/s3/), [ClickHouse](https://clickhouse.tech/) or [Vertica](https://www.vertica.com/) using exactly-once semantics. Users can easily implement various highly customized loaders by combining out of the box components for record formatting and encoding, data storage, stream grouping and so on, implementing their own or extending the existing ones, if needed.
 
@@ -66,7 +66,7 @@ Reading this from top to bottom we see that this loader will interpret the bytes
 
 Every part of this sink definition can be customized, e.g. your Kafka messages might contain JSON which you might want to encode to Avro and write to parquet files. You can decide to use a different storage and switch to e.g. HDFS and so on.
 
-For further complete examples you can explore the [loaders](../../tree/master/stream-loader-tests/src/main/scala/com/adform/streamloader/loaders) used for integration testing, a reference loader for every supported storage is available. For more details about implementing custom loaders refer to the [API reference](https://gitz.adform.com/pages/s-valatka/stream-loader/com/adform/streamloader/index.html).
+For further complete examples you can explore the [loaders](../../tree/master/stream-loader-tests/src/main/scala/com/adform/streamloader/loaders) used for integration testing, a reference loader for every supported storage is available. For more details about implementing custom loaders refer to the [API reference](https://adform.github.io/stream-loader/com/adform/streamloader/index.html).
 
 ## Delivery Guarantees
 
