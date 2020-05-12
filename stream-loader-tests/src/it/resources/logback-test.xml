@@ -1,0 +1,22 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%d] %-5level %msg \(%c\)%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache" level="ERROR" />
+    <logger name="com.spotify.docker" level="ERROR" />
+    <logger name="com.zaxxer.hikari" level="ERROR" />
+
+    <logger name="com.adform.streamloader.clickhouse" level="WARN" />
+    <logger name="com.adform.streamloader.hadoop" level="WARN" />
+    <logger name="com.adform.streamloader.s3" level="WARN" />
+    <logger name="com.adform.streamloader.vertica" level="WARN" />
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>

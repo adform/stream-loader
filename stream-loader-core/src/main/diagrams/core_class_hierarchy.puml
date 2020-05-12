@@ -1,0 +1,68 @@
+@startuml
+skinparam backgroundColor transparent
+
+hide empty members
+
+class StreamLoader [[../com/adform/streamloader/StreamLoader.html{StreamLoader}]] {
+ start()
+ stop()
+}
+
+class KafkaSource [[../com/adform/streamloader/KafkaSource.html{KafkaSource}]] {
+  poll(): Kafka records
+}
+
+StreamLoader *-- KafkaSource
+StreamLoader *-- Sink
+
+interface Sink [[../com/adform/streamloader/Sink.html{Sink}]] {
+  initialize(kafkaContext)
+  assignPartitions(partitions): committed stream positions
+  revokePartitions(partitions): committed stream positions
+  write(record)
+  heartbeat()
+  close()
+}
+
+Sink <|-- FileSink
+
+class FileSink [[../com/adform/streamloader/file/FileSink.html{FileSink}]] {
+  partitionGrouping: TopicPartition => String
+}
+
+interface FileStorage [[../com/adform/streamloader/file/storage/FileStorage.html{FileStorage}]] {
+  initialize(kafkaContext)
+  recover()
+  commitFile(file, offsets)
+  committedPositions(partitions): stream positions
+}
+
+FileSink *-- FileStorage
+
+FileStorage <|-- InDataOffsetFileStorage
+FileStorage <|-- TwoPhaseCommitFileStorage
+
+abstract class InDataOffsetFileStorage [[../com/adform/streamloader/file/storage/InDataOffsetFileStorage.html{InDataOffsetFileStorage}]] {
+  storeFile(file)
+}
+
+abstract class TwoPhaseCommitFileStorage [[../com/adform/streamloader/file/storage/TwoPhaseCommitFileStorage.html{TwoPhaseCommitFileStorage}]] {
+  stageFile(file): staging
+  storeFile(staging)
+}
+
+class LocalFileStorage [[../com/adform/streamloader/file/storage/LocalFileStorage.html{LocalFileStorage}]]
+
+TwoPhaseCommitFileStorage <|-- LocalFileStorage
+
+interface FileBuilderFactory [[../com/adform/streamloader/file/FileBuilderFactory.html{FileBuilderFactory}]] {
+  newFileBuilder()
+}
+
+class CsvFileBuilderFactory [[../com/adform/streamloader/encoding/csv/CsvFileBuilderFactory.html{CsvFileBuilderFactory}]]
+
+FileBuilderFactory <|-- CsvFileBuilderFactory
+
+FileSink *-- FileBuilderFactory
+
+@enduml

@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Cache SBT
+      uses: actions/cache@v1
+      with:
+        path: ~/.sbt
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.sbt') }}
+
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+
+    - name: Run unit and integration tests
+      run: sbt -Dsbt.color=always -Dsbt.supershell=false headerCheckAll test it:test

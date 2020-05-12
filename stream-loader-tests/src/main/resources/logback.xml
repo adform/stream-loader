@@ -1,0 +1,16 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%d] %-5level %msg \(%c\) \(%t\)%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.adform.streamloader" level="${LOG_STREAMLOADER_LEVEL:-DEBUG}" />
+    <logger name="org.apache.kafka" level="INFO" />
+
+    <root level="${LOG_ROOT_LEVEL:-INFO}">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>
