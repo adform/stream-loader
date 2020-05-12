@@ -8,8 +8,15 @@ ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-enc
 ThisBuild / startYear := Some(2020)
 ThisBuild / licenses += ("MPL-2.0", new URL("http://mozilla.org/MPL/2.0/"))
 
+ThisBuild / developers := List(
+  Developer("sauliusvl", "Saulius Valatka", "saulius.vl@gmail.com", url("https://github.com/sauliusvl"))
+)
+
 enablePlugins(GitVersioning)
 ThisBuild / git.useGitDescribe := true
+
+val gitRepo = "git@github.com:adform/stream-loader.git"
+val gitRepoUrl = "https://github.com/adform/stream-loader"
 
 val scalaTestVersion = "3.1.2"
 val scalaCheckVersion = "1.14.3"
@@ -135,6 +142,7 @@ lazy val `stream-loader-tests` = project
     test := {}, // only integration tests present
     publish := {},
     publishLocal := {},
+    skip in publish := true,
     buildInfoPackage := s"${organization.value}.streamloader",
     buildInfoKeys := Seq[BuildInfoKey](
       name,
@@ -231,7 +239,14 @@ lazy val commonSettings = Seq(
         IO.write(outFile, os.toByteArray)
         outFile
       })
-  }
+  },
+
+  publishMavenStyle := true,
+  publishArtifact in Test := false,
+  publishTo := sonatypePublishToBundle.value,
+
+  homepage := Some(url(gitRepoUrl)),
+  scmInfo := Some(ScmInfo(url(gitRepoUrl), s"scm:git:$gitRepo"))
 )
 
 lazy val copyDocAssets = taskKey[File]("Copy unidoc resources")
@@ -245,6 +260,7 @@ lazy val `stream-loader` = project
   .settings(
     publish := {},
     publishLocal := {},
+    skip in publish := true,
     scalacOptions in (Compile, doc) ++= Seq("-doc-title", name.value),
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(`stream-loader-tests`),
     copyDocAssets := Def.taskDyn {
@@ -270,7 +286,8 @@ lazy val `stream-loader` = project
         .toSeq
         .map(diagram => diagram -> ("diagrams/" + diagramDir.toURI.relativize(diagram.toURI).getPath))
     },
-    gitRemoteRepo := "git@github.com:adform/stream-loader.git"
+    gitRemoteRepo := s"$gitRepoUrl.git",
+    ghpagesRepository := file(s"/tmp/ghpages/${organization.value}/${name.value}/${version.value}")
   )
   .aggregate(
     `stream-loader-core`,

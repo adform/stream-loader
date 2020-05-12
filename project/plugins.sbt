@@ -17,3 +17,7 @@ addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.0")
 libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2020.9"
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
+
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
+
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.2")
