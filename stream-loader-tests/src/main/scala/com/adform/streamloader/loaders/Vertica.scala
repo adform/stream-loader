@@ -64,7 +64,7 @@ CREATE SEQUENCE file_id_sequence;
 
 CREATE TABLE file_offsets (
   _file_id INT NOT NULL,
-  _table VARCHAR(128) NOT NULL,
+  _consumer_group VARCHAR(1024) NOT NULL,
   _topic VARCHAR(128) NOT NULL,
   _partition INT NOT NULL,
   _start_offset INT NOT NULL,

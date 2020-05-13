@@ -13,7 +13,7 @@ import java.util.Properties
 import java.util.concurrent.locks.ReentrantLock
 
 import com.adform.streamloader.model.StreamPosition
-import org.apache.kafka.clients.consumer.{ConsumerRebalanceListener, ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRebalanceListener, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.TopicPartition
 
 import scala.jdk.CollectionConverters._
@@ -56,7 +56,8 @@ class KafkaSource(consumerProperties: Properties, topics: Seq[String], pollTimeo
   def initialize(): KafkaContext = {
     consumerLock = new ReentrantLock()
     consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
-    new LockingKafkaContext(consumer, consumerLock)
+    val consumerGroup = props.get(ConsumerConfig.GROUP_ID_CONFIG).toString
+    new LockingKafkaContext(consumer, consumerGroup, consumerLock)
   }
 
   /**

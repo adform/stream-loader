@@ -47,7 +47,7 @@ abstract class VerticaStorageBackend[F](
   val FILE_ID_SEQUENCE = "file_ids"
 
   val FILE_ID_COLUMN = "_file_id"
-  val TABLE_COLUMN = "_table"
+  val CONSUMER_GROUP_COLUMN = "_consumer_group"
   val TOPIC_COLUMN = "_topic"
   val PARTITION_COLUMN = "_partition"
   val START_OFFSET_COLUMN = "_start_offset"
@@ -71,13 +71,7 @@ abstract class VerticaStorageBackend[F](
        |  money_spent DECIMAL(${ExampleMessage.SCALE_PRECISION.precision}, ${ExampleMessage.SCALE_PRECISION.scale}) NOT NULL
        |""".stripMargin
 
-  val kafkaContext: KafkaContext = getKafkaContext(kafkaContainer, "test")
-
-  override def initialize(): Unit = {
-    fileStorage.initialize(kafkaContext)
-  }
-
-  def fileStorage: FileStorage[F]
+  def getFileStorage: FileStorage[F]
 
   def createLoaderContainer(loader: Loader, loaderKafkaConfig: LoaderKafkaConfig, batchSize: Long): Container = {
     val consumerGroup = loaderKafkaConfig.consumerGroup
@@ -117,8 +111,12 @@ abstract class VerticaStorageBackend[F](
 
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] =
+      partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = {
+    val fileStorage = getFileStorage
+    val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)
+    fileStorage.initialize(kafkaContext)
     fileStorage.committedPositions(partitions)
+  }
 
   def contentSqlQuery: String
 
@@ -179,30 +177,30 @@ case class ExternalOffsetVerticaStorageBackend(
       dataSource,
       table) {
 
-  override val fileStorage: ExternalOffsetVerticaFileStorage = ExternalOffsetVerticaFileStorage
-    .builder()
-    .dbDataSource(dataSource)
-    .table(table)
-    .copyStatementProvider((table: String, file: File) => "not used")
-    .offsetTable(OFFSET_TABLE)
-    .fileIdSequence(FILE_ID_SEQUENCE)
-    .offsetTableColumnNames(
-      FILE_ID_COLUMN,
-      TABLE_COLUMN,
-      TOPIC_COLUMN,
-      PARTITION_COLUMN,
-      START_OFFSET_COLUMN,
-      START_WATERMARK_COLUMN,
-      END_OFFSET_COLUMN,
-      END_WATERMARK_COLUMN)
-    .build()
+  override def getFileStorage: ExternalOffsetVerticaFileStorage =
+    ExternalOffsetVerticaFileStorage
+      .builder()
+      .dbDataSource(dataSource)
+      .table(table)
+      .copyStatementProvider((table: String, file: File) => "not used")
+      .offsetTable(OFFSET_TABLE)
+      .fileIdSequence(FILE_ID_SEQUENCE)
+      .offsetTableColumnNames(
+        FILE_ID_COLUMN,
+        CONSUMER_GROUP_COLUMN,
+        TOPIC_COLUMN,
+        PARTITION_COLUMN,
+        START_OFFSET_COLUMN,
+        START_WATERMARK_COLUMN,
+        END_OFFSET_COLUMN,
+        END_WATERMARK_COLUMN)
+      .build()
 
   override def initialize(): Unit = {
-    super.initialize()
     executeStatement(s"CREATE SEQUENCE IF NOT EXISTS $FILE_ID_SEQUENCE")
     executeStatement(s"""CREATE TABLE IF NOT EXISTS $OFFSET_TABLE(
                         |  $FILE_ID_COLUMN INT NOT NULL,
-                        |  $TABLE_COLUMN VARCHAR(128) NOT NULL,
+                        |  $CONSUMER_GROUP_COLUMN VARCHAR(1024) NOT NULL,
                         |  $TOPIC_COLUMN VARCHAR(128) NOT NULL,
                         |  $PARTITION_COLUMN INT NOT NULL,
                         |  $START_OFFSET_COLUMN INT NOT NULL,
@@ -252,16 +250,16 @@ case class InRowOffsetVerticaStorageBackend(
       dataSource,
       table) {
 
-  override val fileStorage: InRowOffsetVerticaFileStorage = InRowOffsetVerticaFileStorage
-    .builder()
-    .dbDataSource(dataSource)
-    .table(table)
-    .copyStatementProvider((table: String, file: File) => "not used")
-    .rowOffsetColumnNames(TOPIC_COLUMN, PARTITION_COLUMN, OFFSET_COLUMN, WATERMARK_COLUMN)
-    .build()
+  override def getFileStorage: InRowOffsetVerticaFileStorage =
+    InRowOffsetVerticaFileStorage
+      .builder()
+      .dbDataSource(dataSource)
+      .table(table)
+      .copyStatementProvider((table: String, file: File) => "not used")
+      .rowOffsetColumnNames(TOPIC_COLUMN, PARTITION_COLUMN, OFFSET_COLUMN, WATERMARK_COLUMN)
+      .build()
 
   override def initialize(): Unit = {
-    super.initialize()
     executeStatement(
       s"""CREATE TABLE IF NOT EXISTS $table (
          |  $TOPIC_COLUMN VARCHAR(500) NOT NULL,
