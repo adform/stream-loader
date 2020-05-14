@@ -21,6 +21,11 @@ import scala.jdk.CollectionConverters._
 trait KafkaContext {
 
   /**
+    * The consumer group ID.
+    */
+  val consumerGroup: String
+
+  /**
     * Retrieves the committed offsets for the given topic partitions from Kafka.
     */
   def committed(topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[OffsetAndMetadata]]
@@ -39,7 +44,12 @@ trait KafkaContext {
   * @param consumer Kafka consumer to use.
   * @param lock Lock to synchronize on.
   */
-class LockingKafkaContext(consumer: KafkaConsumer[Array[Byte], Array[Byte]], lock: ReentrantLock) extends KafkaContext {
+class LockingKafkaContext(
+    consumer: KafkaConsumer[Array[Byte], Array[Byte]],
+    val consumerGroup: String,
+    lock: ReentrantLock
+) extends KafkaContext {
+
   def committed(topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[OffsetAndMetadata]] = withLock {
     consumer.committed(topicPartitions.asJava).asScala.map(kv => (kv._1, Option(kv._2))).toMap
   }

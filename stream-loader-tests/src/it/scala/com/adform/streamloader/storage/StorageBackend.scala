@@ -53,10 +53,10 @@ trait StorageBackend[M <: StorageMessage] {
 
   def getContent: StorageContent[M]
 
-  protected def getKafkaContext(kafka: ContainerWithEndpoint, consumerGroup: String): KafkaContext = {
+  protected def getKafkaContext(kafka: ContainerWithEndpoint, consumerGroupId: String): KafkaContext = {
     val props = new Properties() {
       put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.endpoint)
-      put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup)
+      put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId)
       put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       put(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
@@ -67,6 +67,7 @@ trait StorageBackend[M <: StorageMessage] {
     }
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     new KafkaContext {
+      override val consumerGroup: String = consumerGroupId
       override def commitSync(offsets: Map[TopicPartition, OffsetAndMetadata]): Unit = {}
       override def committed(tps: Set[TopicPartition]): Map[TopicPartition, Option[OffsetAndMetadata]] = {
         consumer.committed(tps.asJava).asScala.map(kv => (kv._1, Option(kv._2))).toMap

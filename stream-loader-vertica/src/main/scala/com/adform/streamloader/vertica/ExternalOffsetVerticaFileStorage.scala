@@ -29,7 +29,7 @@ import scala.util.Using
   * {{{
   *   CREATE TABLE file_offsets (
   *   _file_id INT NOT NULL,
-  *   _table VARCHAR(128) NOT NULL,
+  *   _consumer_group VARCHAR(128) NOT NULL,
   *   _topic VARCHAR(128) NOT NULL,
   *   _partition INT NOT NULL,
   *   _start_offset INT NOT NULL,
@@ -58,7 +58,7 @@ class ExternalOffsetVerticaFileStorage private (
     fileIdSequence: String,
     copyStatementProvider: VerticaCopyStatementProvider,
     fileIdColumnName: String,
-    tableColumnName: String,
+    consumerGroupColumnName: String,
     topicColumnName: String,
     partitionColumnName: String,
     startOffsetColumnName: String,
@@ -85,11 +85,11 @@ class ExternalOffsetVerticaFileStorage private (
     val query =
       s"SELECT $topicColumnName, $partitionColumnName, MAX($endOffsetColumnName) + 1, MAX($endWatermarkColumnName) " +
         s"FROM $offsetTable " +
-        s"WHERE $tableColumnName = ? " +
+        s"WHERE $consumerGroupColumnName = ? " +
         s"GROUP BY $topicColumnName, $partitionColumnName"
     log.info(s"Running stream position query: $query")
     Using.resource(connection.prepareStatement(query)) { statement =>
-      statement.setString(1, table)
+      statement.setString(1, kafkaContext.consumerGroup)
       Using.resource(statement.executeQuery()) { result =>
         val positions: TrieMap[TopicPartition, StreamPosition] = TrieMap.empty
         while (result.next()) {
@@ -119,12 +119,12 @@ class ExternalOffsetVerticaFileStorage private (
         val inserts = file.recordRanges.map { batch =>
           val batchInsertQuery =
             s"INSERT INTO $offsetTable " +
-              s"($fileIdColumnName, $tableColumnName, $topicColumnName, $partitionColumnName, $startOffsetColumnName, $startWatermarkColumnName, $endOffsetColumnName, $endWatermarkColumnName) " +
+              s"($fileIdColumnName, $consumerGroupColumnName, $topicColumnName, $partitionColumnName, $startOffsetColumnName, $startWatermarkColumnName, $endOffsetColumnName, $endWatermarkColumnName) " +
               s"VALUES " +
               s"(?, ?, ?, ?, ?, ?, ?, ?)"
           val batchInsertStatement = connection.prepareStatement(batchInsertQuery)
           batchInsertStatement.setLong(1, file.fileId)
-          batchInsertStatement.setString(2, table)
+          batchInsertStatement.setString(2, kafkaContext.consumerGroup)
           batchInsertStatement.setString(3, batch.topic)
           batchInsertStatement.setInt(4, batch.partition)
           batchInsertStatement.setLong(5, batch.start.offset)
@@ -166,7 +166,7 @@ object ExternalOffsetVerticaFileStorage {
       private val _fileIdSequence: String,
       private val _copyStatementProvider: VerticaCopyStatementProvider,
       private val _fileIdColumnName: String = "_file_id",
-      private val _tableColumnName: String = "_table",
+      private val _consumerGroupColumnName: String = "_consumer_group",
       private val _topicColumnName: String = "_topic",
       private val _partitionColumnName: String = "_partition",
       private val _startOffsetColumnName: String = "_start_offset",
@@ -206,7 +206,7 @@ object ExternalOffsetVerticaFileStorage {
       */
     def offsetTableColumnNames(
         fileId: String = "_file_id",
-        table: String = "_table",
+        consumerGroup: String = "_consumer_group",
         topic: String = "_topic",
         partition: String = "_partition",
         startOffset: String = "_start_offset",
@@ -216,7 +216,7 @@ object ExternalOffsetVerticaFileStorage {
     ): Builder =
       copy(
         _fileIdColumnName = fileId,
-        _tableColumnName = table,
+        _consumerGroupColumnName = consumerGroup,
         _topicColumnName = topic,
         _partitionColumnName = partition,
         _startOffsetColumnName = startOffset,
@@ -239,7 +239,7 @@ object ExternalOffsetVerticaFileStorage {
         _fileIdSequence,
         _copyStatementProvider,
         _fileIdColumnName,
-        _tableColumnName,
+        _consumerGroupColumnName,
         _topicColumnName,
         _partitionColumnName,
         _startOffsetColumnName,

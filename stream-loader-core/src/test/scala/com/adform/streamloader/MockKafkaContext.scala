@@ -24,6 +24,8 @@ class MockKafkaContext extends KafkaContext {
     failOnCommit = seqNo
   }
 
+  override val consumerGroup: String = "mock-consumer-group"
+
   override def commitSync(offsets: Map[TopicPartition, OffsetAndMetadata]): Unit = {
     commitsInvoked += 1
     if (failOnCommit == commitsInvoked) {
