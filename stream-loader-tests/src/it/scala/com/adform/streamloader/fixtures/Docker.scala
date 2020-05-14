@@ -60,12 +60,6 @@ trait Docker {
 
   def dockerInit(): Unit = {
     network = createNetwork()
-
-    // Check if it's a drone build - if so, join the build env to the same network
-    for {
-      _ <- sys.env.get("DRONE")
-      hostname <- sys.env.get("HOSTNAME")
-    } yield docker.connectToNetwork(hostname, dockerNetwork.id)
   }
 
   def dockerCleanup(): Unit =
