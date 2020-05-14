@@ -13,7 +13,7 @@ The commit happens in a single transaction, offsets and data can be joined using
 starting new files and is stored in both the data table and the offset table. The offset table contains only ranges of offsets
 from each topic partition contained in the file. Its structure should look as follows (all names can be customized):</p><pre>  CREATE TABLE file_offsets (
   _file_id INT NOT NULL,
-  _table VARCHAR(<span class="num">128</span>) NOT NULL,
+  _consumer_group VARCHAR(<span class="num">128</span>) NOT NULL,
   _topic VARCHAR(<span class="num">128</span>) NOT NULL,
   _partition INT NOT NULL,
   _start_offset INT NOT NULL,
