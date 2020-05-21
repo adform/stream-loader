@@ -11,8 +11,12 @@ package com.adform.streamloader.file
 import java.time.Duration
 
 import com.adform.streamloader.file.storage.FileStorage
+import com.adform.streamloader.util.Retry
 import com.adform.streamloader.{KafkaContext, PartitionGroupSinker, PartitionGroupingSink, Sink}
 import org.apache.kafka.common.TopicPartition
+
+import scala.concurrent.duration._
+import scala.jdk.DurationConverters._
 
 /**
   * A [[Sink]] that writes records to files and stores them to some underlying storage.
@@ -30,7 +34,8 @@ class FileSink[-R, F] private (
     partitionGrouping: TopicPartition => String,
     fileCommitStrategy: FileCommitStrategy,
     fileCommitQueueSize: Int,
-    validWatermarkDiffMillis: Long
+    validWatermarkDiffMillis: Long,
+    retryPolicy: Retry.Policy
 ) extends PartitionGroupingSink {
 
   override def initialize(context: KafkaContext): Unit = {
@@ -52,7 +57,8 @@ class FileSink[-R, F] private (
       fileStorage,
       fileCommitStrategy,
       fileCommitQueueSize,
-      validWatermarkDiffMillis
+      validWatermarkDiffMillis,
+      retryPolicy
     )
 }
 
@@ -65,7 +71,8 @@ object FileSink {
       private val _partitionGrouping: TopicPartition => String,
       private val _fileCommitStrategy: FileCommitStrategy,
       private val _fileCommitQueueSize: Int,
-      private val _validWatermarkDiffMillis: Long
+      private val _validWatermarkDiffMillis: Long,
+      private val _retryPolicy: Retry.Policy
   ) extends Sink.Builder {
 
     /**
@@ -113,6 +120,12 @@ object FileSink {
     def validWatermarkDiff(duration: Duration): Builder[R, F] = copy(_validWatermarkDiffMillis = duration.toMillis)
 
     /**
+      * Sets the retry policy for all retriable operations, i.e. recovery, file commit and new file creation.
+      */
+    def retryPolicy(retries: Int, initialDelay: Duration, backoffFactor: Int): Builder[R, F] =
+      copy(_retryPolicy = Retry.Policy(retries, initialDelay.toScala, backoffFactor))
+
+    /**
       * Sets the partition grouping, can be used to route records to different files.
       */
     def partitionGrouping(grouping: TopicPartition => String): Builder[R, F] = copy(_partitionGrouping = grouping)
@@ -129,7 +142,8 @@ object FileSink {
         _partitionGrouping,
         _fileCommitStrategy,
         _fileCommitQueueSize,
-        _validWatermarkDiffMillis
+        _validWatermarkDiffMillis,
+        _retryPolicy
       )
     }
   }
@@ -141,6 +155,7 @@ object FileSink {
     _partitionGrouping = _ => "root",
     _fileCommitStrategy = FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(1000)),
     _fileCommitQueueSize = 1,
-    _validWatermarkDiffMillis = 3600000
+    _validWatermarkDiffMillis = 3600000,
+    _retryPolicy = Retry.Policy(retriesLeft = 5, initialDelay = 1.seconds, backoffFactor = 3)
   )
 }

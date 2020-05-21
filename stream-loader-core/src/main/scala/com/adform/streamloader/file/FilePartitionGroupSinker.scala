@@ -32,6 +32,7 @@ import scala.collection.concurrent.TrieMap
   * @param fileBuilderFactory File builder for the record type `R`.
   * @param fileStorage The file storage to use.
   * @param validWatermarkDiffMillis Upper limit for setting watermarks greater than currentTimeMillis.
+  * @param retryPolicy The retry policy to use for all retriable operations.
   *
   * @tparam R Type of records persisted to files.
   * @tparam F Type of the file IDs stored.
@@ -44,7 +45,8 @@ class FilePartitionGroupSinker[R, F](
     fileStorage: FileStorage[F],
     fileCommitStrategy: FileCommitStrategy,
     fileCommitQueueSize: Int,
-    validWatermarkDiffMillis: Long
+    validWatermarkDiffMillis: Long,
+    retryPolicy: Retry.Policy
 )(implicit currentTimeMills: () => Long = () => System.currentTimeMillis())
     extends PartitionGroupSinker
     with Logging
@@ -65,7 +67,7 @@ class FilePartitionGroupSinker[R, F](
     () => {
       while (isRunning.get()) try {
 
-        def fileCommittedAfterFailure(rrf: RecordRangeFile[F]): Boolean = retryOnFailure() {
+        def fileCommittedAfterFailure(rrf: RecordRangeFile[F]): Boolean = retryOnFailure(retryPolicy) {
           fileStorage.recover(groupPartitions)
           fileStorage.isFileCommitted(rrf)
         }
@@ -74,7 +76,7 @@ class FilePartitionGroupSinker[R, F](
 
         log.info(s"Committing file ${rrf.file.getAbsolutePath} to storage")
         Metrics.commitDuration.recordCallable(() =>
-          retryOnFailureIf()(!fileCommittedAfterFailure(rrf)) {
+          retryOnFailureIf(retryPolicy)(!fileCommittedAfterFailure(rrf)) {
             fileStorage.commitFile(rrf)
         })
         if (rrf.file.exists() && !rrf.file.delete()) {
@@ -96,7 +98,7 @@ class FilePartitionGroupSinker[R, F](
 
     log.info(s"Recovering storage for partitions ${groupPartitions.mkString(", ")}")
 
-    retryOnFailure() {
+    retryOnFailure(retryPolicy) {
       fileStorage.recover(groupPartitions)
     }
 
@@ -183,7 +185,7 @@ class FilePartitionGroupSinker[R, F](
     }
   }
 
-  private def startNewFile(): Unit = {
+  private def startNewFile(): Unit = retryOnFailure(retryPolicy) {
     builder = new RecordRangeFileBuilder[R, F](
       fileBuilderFactory.newFileBuilder(s"$groupName-"),
       fileStorage.startNewFile()
