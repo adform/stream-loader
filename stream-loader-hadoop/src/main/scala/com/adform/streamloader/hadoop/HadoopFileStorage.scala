@@ -47,6 +47,7 @@ class HadoopFileStorage private (
 
     FileStaging(stagingFilePath.toUri.toString, targetFilePath.toUri.toString)
   }
+
   override protected def storeFile(fileStaging: FileStaging): Unit = {
     val stagingFilePath = new Path(fileStaging.stagingPath)
     val targetFilePath = new Path(fileStaging.destinationPath)
