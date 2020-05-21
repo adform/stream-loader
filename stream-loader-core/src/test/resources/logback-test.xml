@@ -6,6 +6,8 @@
         </encoder>
     </appender>
 
+    <logger name="com.adform.streamloader.util" level="OFF" />
+
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
     </root>

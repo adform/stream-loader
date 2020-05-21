@@ -12,6 +12,7 @@ import com.adform.streamloader.MockKafkaContext
 import com.adform.streamloader.encoding.csv.CsvFileBuilderFactory
 import com.adform.streamloader.file.storage.FileStorage
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
+import com.adform.streamloader.util.Retry
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.record.TimestampType
@@ -19,6 +20,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.annotation.tailrec
+import scala.concurrent.duration._
 
 class FilePartitionGroupSinkerTest extends AnyFunSpec with Matchers {
 
@@ -102,7 +104,8 @@ class FilePartitionGroupSinkerTest extends AnyFunSpec with Matchers {
         },
         commitStrategy,
         fileCommitQueueSize = 1,
-        validWatermarkDiffMillis = validWatermarkDiffMillis
+        validWatermarkDiffMillis = validWatermarkDiffMillis,
+        retryPolicy = Retry.Policy(0, 0.seconds, 0)
       )
 
     loader.initialize(new MockKafkaContext)

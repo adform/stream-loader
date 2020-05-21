@@ -121,7 +121,7 @@ abstract class VerticaStorageBackend[F](
   def contentSqlQuery: String
 
   override def getContent: StorageContent[ExampleMessage] =
-    Retry.retryOnFailure(delay = 1.seconds, backoffFactor = 1, retries = 3) {
+    Retry.retryOnFailure(Retry.Policy(retriesLeft = 3, initialDelay = 1.seconds, backoffFactor = 1)) {
       Using.resource(dataSource.getConnection()) { connection =>
         val content = Using.resource(connection.prepareStatement(contentSqlQuery)) { ps =>
           ps.setQueryTimeout(5)

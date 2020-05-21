@@ -167,6 +167,7 @@ trait Kafka { this: Docker =>
   private def createKafkaAdminClient(): AdminClient = {
     val props: Properties = new Properties()
     props.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.endpoint)
+    props.setProperty(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "600000")
     AdminClient.create(props)
   }
 
