@@ -31,9 +31,12 @@ case class ExampleMessage(
     moneySpent: BigDecimal
 ) extends StorageMessage {
 
+  private implicit val ROUNDING_MODE: RoundingMode.RoundingMode = ExampleMessage.ROUNDING_MODE
+  private implicit val SCALE_PRECISION: ScalePrecision = ExampleMessage.SCALE_PRECISION
+
   def getBytes: Array[Byte] = {
     val output = new ByteArrayOutputStream()
-    Using.resource(AvroOutputStream.binary[ExampleMessage].to(output).build(ExampleMessage.schema)) { stream =>
+    Using.resource(AvroOutputStream.binary[ExampleMessage].to(output).build()) { stream =>
       {
         stream.write(this)
         stream.flush()
