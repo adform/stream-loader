@@ -20,7 +20,7 @@ val gitRepoUrl = "https://github.com/adform/stream-loader"
 
 val scalaTestVersion = "3.1.2"
 val scalaCheckVersion = "1.14.3"
-val scalaCheckTestVersion = "3.1.1.1"
+val scalaCheckTestVersion = "3.1.2.0"
 
 lazy val `stream-loader-core` = project
   .in(file("stream-loader-core"))
@@ -36,7 +36,7 @@ lazy val `stream-loader-core` = project
       "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
       "org.xerial.snappy" % "snappy-java"       % "1.1.7.5",
       "org.lz4"           % "lz4-java"          % "1.7.1",
-      "com.github.luben"  % "zstd-jni"          % "1.4.4-11" classifier "linux_amd64",
+      "com.github.luben"  % "zstd-jni"          % "1.4.5-2" classifier "linux_amd64",
       "com.univocity"     % "univocity-parsers" % "2.8.4",
       "org.json4s"        %% "json4s-native"    % "3.6.8",
       "io.micrometer"     % "micrometer-core"   % "1.5.1",
@@ -74,7 +74,7 @@ lazy val `stream-loader-hadoop` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.sksamuel.avro4s" %% "avro4s-core"     % "3.1.0",
+      "com.sksamuel.avro4s" %% "avro4s-core"     % "3.1.1",
       "org.apache.parquet"  % "parquet-avro"     % parquetVersion,
       "org.apache.parquet"  % "parquet-protobuf" % parquetVersion,
       "org.apache.hadoop"   % "hadoop-client"    % "3.2.1" exclude ("log4j", "log4j"),
@@ -88,10 +88,10 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.13.14",
+      "software.amazon.awssdk" % "s3"              % "2.13.26",
       "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.780" % "test",
-      "org.gaul"               % "s3proxy"         % "1.6.1" % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.792" % "test",
+      "org.gaul"               % "s3proxy"         % "1.7.1" % "test",
     )
   )
 
