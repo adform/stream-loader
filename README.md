@@ -7,7 +7,7 @@ Stream loader is a collection of libraries providing means to load data from [Ka
 Stream loader is currently available for Scala 2.13 only, to get started add the following to your `build.sbt`:
 
 ```scala
-libraryDependencies += "com.adform" %% "stream-loader-core" % "0.1.4"
+libraryDependencies += "com.adform" %% "stream-loader-core" % "0.1.5"
 ```
 
 Various storage specific parts are split into separate artifacts to reduce dependencies and coupling, currently the following artifacts are available:
