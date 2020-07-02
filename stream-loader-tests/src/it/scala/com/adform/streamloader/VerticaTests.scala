@@ -58,7 +58,7 @@ class VerticaTests
     dataSource = new HikariDataSource(hikariConf)
   }
 
-  override def afterAll: Unit = {
+  override def afterAll(): Unit = {
     super.afterAll()
     dataSource.close()
   }
