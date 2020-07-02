@@ -17,8 +17,8 @@ import org.log4s._
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
 case class HdfsConfig(
-    namenodeImage: String = "bde2020/hadoop-namenode:2.0.0-hadoop3.1.2-java8",
-    datanodeImage: String = "bde2020/hadoop-datanode:2.0.0-hadoop3.1.2-java8"
+    namenodeImage: String = "bde2020/hadoop-namenode:2.0.0-hadoop3.1.3-java8",
+    datanodeImage: String = "bde2020/hadoop-datanode:2.0.0-hadoop3.1.3-java8"
 )
 
 trait HdfsTestFixture extends Hdfs with BeforeAndAfterAll { this: Suite with DockerTestFixture =>

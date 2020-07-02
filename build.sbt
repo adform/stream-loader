@@ -2,7 +2,7 @@ name := "stream-loader"
 
 ThisBuild / organization := "com.adform"
 ThisBuild / organizationName := "Adform"
-ThisBuild / scalaVersion := "2.13.2"
+ThisBuild / scalaVersion := "2.13.3"
 ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.8")
 
 ThisBuild / startYear := Some(2020)
@@ -34,12 +34,12 @@ lazy val `stream-loader-core` = project
       "org.apache.kafka"  % "kafka-clients"     % "2.5.0",
       "org.log4s"         %% "log4s"            % "1.8.2",
       "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
-      "org.xerial.snappy" % "snappy-java"       % "1.1.7.5",
+      "org.xerial.snappy" % "snappy-java"       % "1.1.7.6",
       "org.lz4"           % "lz4-java"          % "1.7.1",
       "com.github.luben"  % "zstd-jni"          % "1.4.5-4" classifier "linux_amd64",
       "com.univocity"     % "univocity-parsers" % "2.8.4",
       "org.json4s"        %% "json4s-native"    % "3.6.9",
-      "io.micrometer"     % "micrometer-core"   % "1.5.1",
+      "io.micrometer"     % "micrometer-core"   % "1.5.2",
       "org.scalatest"     %% "scalatest"        % scalaTestVersion % "test",
       "org.scalatestplus" %% "scalacheck-1-14"  % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion % "test",
@@ -88,9 +88,9 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.13.41",
+      "software.amazon.awssdk" % "s3"              % "2.13.42",
       "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.807" % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.808" % "test",
       "org.gaul"               % "s3proxy"         % "1.7.1" % "test",
     )
   )

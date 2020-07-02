@@ -43,7 +43,7 @@ class S3FileStorage private (
     val objects = List.newBuilder[S3Object]
     iterable.stream.forEach(p => objects ++= p.contents.asScala)
 
-    objects.result
+    objects.result()
   }
 
   override protected def stageFile(file: RecordRangeFile[Unit]): FileStaging = {
