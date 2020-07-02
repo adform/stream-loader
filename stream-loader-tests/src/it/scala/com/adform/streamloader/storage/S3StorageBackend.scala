@@ -137,7 +137,7 @@ case class S3StorageBackend(
     val objects = List.newBuilder[S3Object]
     iterator.stream.forEach(p => objects ++= p.contents.asScala)
 
-    objects.result
+    objects.result()
   }
 
   private def getObject(bucket: String, key: String): ResponseInputStream[GetObjectResponse] =

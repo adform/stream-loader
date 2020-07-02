@@ -14,7 +14,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.3")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.0")
 
-libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2020.14"
+libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2020.15"
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
 

@@ -32,7 +32,7 @@ trait VerticaTestFixture extends Vertica with BeforeAndAfterAll { this: Suite wi
     verticaInit()
   }
 
-  override def afterAll: Unit =
+  override def afterAll(): Unit =
     try verticaCleanup()
     finally super.afterAll()
 }
