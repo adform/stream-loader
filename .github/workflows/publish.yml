@@ -42,7 +42,7 @@ jobs:
         PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
 
     - name: Setup Git Token
-      uses: fregante/setup-git-user@v1        
+      uses: fregante/setup-git-user@v1
 
     - name: Publish to Sonatype
       env:
