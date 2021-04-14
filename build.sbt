@@ -2,7 +2,7 @@ name := "stream-loader"
 
 ThisBuild / organization := "com.adform"
 ThisBuild / organizationName := "Adform"
-ThisBuild / scalaVersion := "2.13.3"
+ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.8")
 
 ThisBuild / startYear := Some(2020)
@@ -144,7 +144,7 @@ lazy val `stream-loader-tests` = project
     test := {}, // only integration tests present
     publish := {},
     publishLocal := {},
-    skip in publish := true,
+    publish / skip := true,
     buildInfoPackage := s"${organization.value}.streamloader",
     buildInfoKeys := Seq[BuildInfoKey](
       name,
@@ -164,7 +164,7 @@ lazy val `stream-loader-tests` = project
       (libDir, appLibDir)
     },
     dockerImage := s"adform/${name.value}:${version.value}",
-    dockerfile in docker := {
+    docker / dockerfile := {
 
       val (depLib, appLib) = packAndSplitJars.value
       val lib = s"/opt/${name.value}/lib"
@@ -192,7 +192,7 @@ lazy val `stream-loader-tests` = project
         )
       }
     },
-    imageNames in docker := {
+    docker / imageNames := {
       val Array(dockerImageName, dockerTag) = dockerImage.value.split(":")
       val Array(dockerNs, dockerRepo) = dockerImageName.split("/")
       Seq(
@@ -203,10 +203,10 @@ lazy val `stream-loader-tests` = project
         )
       )
     },
-    test in IntegrationTest := (test in IntegrationTest).dependsOn(docker).value,
-    testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(docker).evaluated,
+    IntegrationTest / test := (IntegrationTest / test).dependsOn(docker).value,
+    IntegrationTest / testOnly := (IntegrationTest / testOnly).dependsOn(docker).evaluated,
     // Prevents slf4j replay warnings during tests
-    testOptions in IntegrationTest ++= Seq(
+    IntegrationTest / testOptions ++= Seq(
       sbt.Tests.Setup(
         cl =>
           cl.loadClass("org.slf4j.LoggerFactory")
@@ -244,7 +244,7 @@ lazy val commonSettings = Seq(
   },
 
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   publishTo := sonatypePublishToBundle.value,
 
   homepage := Some(url(gitRepoUrl)),
@@ -262,9 +262,9 @@ lazy val `stream-loader` = project
   .settings(
     publish := {},
     publishLocal := {},
-    skip in publish := true,
-    scalacOptions in (Compile, doc) ++= Seq("-doc-title", name.value),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(`stream-loader-tests`),
+    publish / skip := true,
+    Compile / doc / scalacOptions ++= Seq("-doc-title", name.value),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(`stream-loader-tests`),
     copyDocAssets := Def.taskDyn {
       val filter = ScopeFilter(inProjects(thisProject.value.aggregate: _*))
       val destination = thisProject.value.base / "target" / "diagrams"
@@ -278,10 +278,10 @@ lazy val `stream-loader` = project
         destination
       }
     }.value,
-    makeSite := makeSite.dependsOn(unidoc in Compile).value,
-    addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
-    siteSubdirName in ScalaUnidoc := "",
-    mappings in makeSite ++= {
+    makeSite := makeSite.dependsOn(Compile / unidoc).value,
+    addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
+    ScalaUnidoc / siteSubdirName := "",
+    makeSite / mappings ++= {
       val diagramDir = copyDocAssets.value
       diagramDir
         .listFiles()
