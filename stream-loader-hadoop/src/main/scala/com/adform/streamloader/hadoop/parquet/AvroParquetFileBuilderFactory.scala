@@ -17,6 +17,7 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.avro.AvroParquetWriter
+import org.apache.parquet.hadoop.util.HadoopOutputFile
 
 /**
   * Parquet file builder for records of any data type that have implicitly defined Avro encoders.
@@ -28,11 +29,12 @@ class AvroParquetFileBuilderFactory[R: Encoder: Decoder: SchemaFor](compression:
   private val recordFormat = RecordFormat[R]
 
   override def newFileBuilder(filenamePrefix: String): FileBuilder[R] = {
+    val conf = new Configuration()
     val file = getFile(filenamePrefix)
     val writer = AvroParquetWriter
-      .builder[GenericRecord](new Path(file.getAbsolutePath))
+      .builder[GenericRecord](HadoopOutputFile.fromPath(new Path(file.getAbsolutePath), conf))
       .withSchema(AvroSchema[R])
-      .withConf(new Configuration())
+      .withConf(conf)
       .withCompressionCodec(compressionCodecName)
       .build()
     val genericBuilder = new ParquetFileBuilder(file, writer)(currentTimeMills)
