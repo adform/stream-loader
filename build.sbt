@@ -15,6 +15,8 @@ ThisBuild / developers := List(
 enablePlugins(GitVersioning)
 ThisBuild / git.useGitDescribe := true
 
+ThisBuild / useCoursier := false
+
 val gitRepo = "git@github.com:adform/stream-loader.git"
 val gitRepoUrl = "https://github.com/adform/stream-loader"
 
