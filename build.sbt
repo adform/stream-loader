@@ -2,7 +2,7 @@ name := "stream-loader"
 
 ThisBuild / organization := "com.adform"
 ThisBuild / organizationName := "Adform"
-ThisBuild / scalaVersion := "2.13.3"
+ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.8")
 
 ThisBuild / startYear := Some(2020)
@@ -15,12 +15,14 @@ ThisBuild / developers := List(
 enablePlugins(GitVersioning)
 ThisBuild / git.useGitDescribe := true
 
+ThisBuild / useCoursier := false
+
 val gitRepo = "git@github.com:adform/stream-loader.git"
 val gitRepoUrl = "https://github.com/adform/stream-loader"
 
-val scalaTestVersion = "3.2.0"
-val scalaCheckVersion = "1.14.3"
-val scalaCheckTestVersion = "3.2.0.0"
+val scalaTestVersion = "3.2.8"
+val scalaCheckVersion = "1.15.3"
+val scalaCheckTestVersion = "3.2.8.0"
 
 lazy val `stream-loader-core` = project
   .in(file("stream-loader-core"))
@@ -31,17 +33,17 @@ lazy val `stream-loader-core` = project
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, git.gitHeadCommit),
     libraryDependencies ++= Seq(
       "org.scala-lang"    % "scala-reflect"     % scalaVersion.value,
-      "org.apache.kafka"  % "kafka-clients"     % "2.5.0",
-      "org.log4s"         %% "log4s"            % "1.8.2",
+      "org.apache.kafka"  % "kafka-clients"     % "2.8.0",
+      "org.log4s"         %% "log4s"            % "1.9.0",
       "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
-      "org.xerial.snappy" % "snappy-java"       % "1.1.7.6",
+      "org.xerial.snappy" % "snappy-java"       % "1.1.8.4",
       "org.lz4"           % "lz4-java"          % "1.7.1",
-      "com.github.luben"  % "zstd-jni"          % "1.4.5-4" classifier "linux_amd64",
-      "com.univocity"     % "univocity-parsers" % "2.8.4",
-      "org.json4s"        %% "json4s-native"    % "3.6.9",
-      "io.micrometer"     % "micrometer-core"   % "1.5.2",
+      "com.github.luben"  % "zstd-jni"          % "1.4.9-5",
+      "com.univocity"     % "univocity-parsers" % "2.9.1",
+      "org.json4s"        %% "json4s-native"    % "3.6.11",
+      "io.micrometer"     % "micrometer-core"   % "1.6.6",
       "org.scalatest"     %% "scalatest"        % scalaTestVersion % "test",
-      "org.scalatestplus" %% "scalacheck-1-14"  % scalaCheckTestVersion % "test",
+      "org.scalatestplus" %% "scalacheck-1-15"  % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion % "test",
       "ch.qos.logback"    % "logback-classic"   % "1.2.3" % "test"
     ),
@@ -58,15 +60,16 @@ lazy val `stream-loader-clickhouse` = project
   .dependsOn(`stream-loader-core` % "compile->compile;test->test")
   .settings(commonSettings)
   .settings(
+    resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
-      "ru.yandex.clickhouse" % "clickhouse-jdbc"  % "0.2.4",
+      "ru.yandex.clickhouse" % "clickhouse-jdbc"  % "0.3.0",
       "org.scalatest"        %% "scalatest"       % scalaTestVersion % "test",
-      "org.scalatestplus"    %% "scalacheck-1-14" % scalaCheckTestVersion % "test",
+      "org.scalatestplus"    %% "scalacheck-1-15" % scalaCheckTestVersion % "test",
       "org.scalacheck"       %% "scalacheck"      % scalaCheckVersion % "test"
     )
   )
 
-val parquetVersion = "1.11.0"
+val parquetVersion = "1.12.0"
 
 lazy val `stream-loader-hadoop` = project
   .in(file("stream-loader-hadoop"))
@@ -74,10 +77,10 @@ lazy val `stream-loader-hadoop` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.sksamuel.avro4s" %% "avro4s-core"     % "3.1.1",
+      "com.sksamuel.avro4s" %% "avro4s-core"     % "4.0.7",
       "org.apache.parquet"  % "parquet-avro"     % parquetVersion,
       "org.apache.parquet"  % "parquet-protobuf" % parquetVersion,
-      "org.apache.hadoop"   % "hadoop-client"    % "3.2.1" exclude ("log4j", "log4j"),
+      "org.apache.hadoop"   % "hadoop-client"    % "3.2.2" exclude ("log4j", "log4j"),
       "org.scalatest"       %% "scalatest"       % scalaTestVersion % "test"
     )
   )
@@ -88,10 +91,10 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.13.42",
+      "software.amazon.awssdk" % "s3"              % "2.16.46",
       "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.808" % "test",
-      "org.gaul"               % "s3proxy"         % "1.7.1" % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.1003" % "test",
+      "org.gaul"               % "s3proxy"         % "1.8.0" % "test",
     )
   )
 
@@ -106,7 +109,7 @@ lazy val `stream-loader-vertica` = project
     libraryDependencies ++= Seq(
       (("com.vertica"     % "vertica-jdbc"     % verticaVersion) from verticaJarUrl) % "provided",
       "org.scalatest"     %% "scalatest"       % scalaTestVersion                    % "test",
-      "org.scalatestplus" %% "scalacheck-1-14" % scalaCheckTestVersion               % "test",
+      "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckTestVersion               % "test",
       "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion                   % "test"
     )
   )
@@ -130,19 +133,19 @@ lazy val `stream-loader-tests` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe"      % "config"           % "1.4.0",
+      "com.typesafe"      % "config"           % "1.4.1",
       "ch.qos.logback"    % "logback-classic"  % "1.2.3",
-      "com.zaxxer"        % "HikariCP"         % "3.4.5",
+      "com.zaxxer"        % "HikariCP"         % "4.0.3",
       "com.vertica"       % "vertica-jdbc"     % verticaVersion from verticaJarUrl,
       "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion,
       "org.scalatest"     %% "scalatest"       % scalaTestVersion % "test,it",
-      "org.scalatestplus" %% "scalacheck-1-14" % scalaCheckTestVersion % "test,it",
+      "org.scalatestplus" %% "scalacheck-1-15" % scalaCheckTestVersion % "test,it",
       ("com.spotify"      % "docker-client"    % "8.16.0" classifier "shaded") % "it"
     ),
     test := {}, // only integration tests present
     publish := {},
     publishLocal := {},
-    skip in publish := true,
+    publish / skip := true,
     buildInfoPackage := s"${organization.value}.streamloader",
     buildInfoKeys := Seq[BuildInfoKey](
       name,
@@ -162,14 +165,14 @@ lazy val `stream-loader-tests` = project
       (libDir, appLibDir)
     },
     dockerImage := s"adform/${name.value}:${version.value}",
-    dockerfile in docker := {
+    docker / dockerfile := {
 
       val (depLib, appLib) = packAndSplitJars.value
       val lib = s"/opt/${name.value}/lib"
       val bin = s"/opt/${name.value}/bin/"
 
       new Dockerfile {
-        from("adoptopenjdk:11.0.7_10-jre-hotspot")
+        from("adoptopenjdk:11.0.10_9-jre-hotspot")
 
         env("APP_CLASS_PATH" -> s"$lib/*")
 
@@ -190,7 +193,7 @@ lazy val `stream-loader-tests` = project
         )
       }
     },
-    imageNames in docker := {
+    docker / imageNames := {
       val Array(dockerImageName, dockerTag) = dockerImage.value.split(":")
       val Array(dockerNs, dockerRepo) = dockerImageName.split("/")
       Seq(
@@ -201,10 +204,10 @@ lazy val `stream-loader-tests` = project
         )
       )
     },
-    test in IntegrationTest := (test in IntegrationTest).dependsOn(docker).value,
-    testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(docker).evaluated,
+    IntegrationTest / test := (IntegrationTest / test).dependsOn(docker).value,
+    IntegrationTest / testOnly := (IntegrationTest / testOnly).dependsOn(docker).evaluated,
     // Prevents slf4j replay warnings during tests
-    testOptions in IntegrationTest ++= Seq(
+    IntegrationTest / testOptions ++= Seq(
       sbt.Tests.Setup(
         cl =>
           cl.loadClass("org.slf4j.LoggerFactory")
@@ -242,7 +245,7 @@ lazy val commonSettings = Seq(
   },
 
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   publishTo := sonatypePublishToBundle.value,
 
   homepage := Some(url(gitRepoUrl)),
@@ -260,9 +263,9 @@ lazy val `stream-loader` = project
   .settings(
     publish := {},
     publishLocal := {},
-    skip in publish := true,
-    scalacOptions in (Compile, doc) ++= Seq("-doc-title", name.value),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(`stream-loader-tests`),
+    publish / skip := true,
+    Compile / doc / scalacOptions ++= Seq("-doc-title", name.value),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(`stream-loader-tests`),
     copyDocAssets := Def.taskDyn {
       val filter = ScopeFilter(inProjects(thisProject.value.aggregate: _*))
       val destination = thisProject.value.base / "target" / "diagrams"
@@ -276,10 +279,10 @@ lazy val `stream-loader` = project
         destination
       }
     }.value,
-    makeSite := makeSite.dependsOn(unidoc in Compile).value,
-    addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
-    siteSubdirName in ScalaUnidoc := "",
-    mappings in makeSite ++= {
+    makeSite := makeSite.dependsOn(Compile / unidoc).value,
+    addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
+    ScalaUnidoc / siteSubdirName := "",
+    makeSite / mappings ++= {
       val diagramDir = copyDocAssets.value
       diagramDir
         .listFiles()
