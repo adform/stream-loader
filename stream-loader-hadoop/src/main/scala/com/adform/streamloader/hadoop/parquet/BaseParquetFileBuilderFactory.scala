@@ -19,9 +19,9 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName
   */
 abstract class BaseParquetFileBuilderFactory[-R](compression: Compression) extends FileBuilderFactory[R] {
 
-  protected def getFile(filenamePrefix: String): File = {
+  protected def getNewTempFile: File = {
     val tmpDir = System.getProperty("java.io.tmpdir")
-    val filename = s"$filenamePrefix${UUID.randomUUID().toString}"
+    val filename = s"${UUID.randomUUID().toString}"
     new File(s"$tmpDir/$filename.parquet")
   }
 

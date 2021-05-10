@@ -12,9 +12,10 @@ package com.adform
   * The entry point of the stream loader library is the [[StreamLoader]] class, which requires a [[KafkaSource]] and a [[Sink]]. Once started
   * it will subscribe to the provided topics and will start polling and sinking records.
   * The sink has to be able to persist records and to look up committed offsets (technically this is optional, but without it there would
-  * be no way to provide any delivery guarantees). A large class of sinks are file based, i.e. they write records to files
-  * using some $FileBuilderFactory and eventually store them to some underlying storage system implemented as a $FileStorage,
-  * such as a database or a distributed file system like HDFS.
+  * be no way to provide any delivery guarantees). A large class of sinks are batch based, implemented as $RecordBatchingSink.
+  * This sink accumulate batches of records using some $RecordBatcher and once ready, stores them to some underlying $RecordBatchStorage.
+  * A common type of batch is file based, i.e. a batcher might write records to a temporary file and once the file is full
+  * the sink commits the file to some underlying storage, such as a database or a distributed file system like HDFS.
   *
   * A sketch of the class hierarchy illustrating the main classes and interfaces can be seen below.
   *
@@ -22,13 +23,12 @@ package com.adform
   * <object type="image/svg+xml" data="../../../diagrams/core_class_hierarchy.svg" style="display: block; margin: auto"></object>
   * <br />
   *
-  * The $LocalFileStorage class is shown here as a reference implementation and probably should not be used in production, for more realistic storage implementations
-  * see the [[clickhouse]], [[hadoop]], [[s3]] and [[vertica]] packages. They also contain more file builder implementations than just the $CsvFileBuilderFactory
-  * included in the core library.
+  * For concrete storage implementations see the [[clickhouse]], [[hadoop]], [[s3]] and [[vertica]] packages.
+  * They also contain more file builder implementations than just the $CsvFileBuilderFactory included in the core library.
   *
-  * @define FileStorage [[com.adform.streamloader.file.storage.FileStorage FileStorage]]
-  * @define FileBuilderFactory [[com.adform.streamloader.file.FileBuilderFactory FileBuilderFactory]]
-  * @define LocalFileStorage [[com.adform.streamloader.file.storage.LocalFileStorage LocalFileStorage]]
+  * @define RecordBatchingSink [[com.adform.streamloader.batch.RecordBatchingSink RecordBatchingSink]]
+  * @define RecordBatcher [[com.adform.streamloader.batch.RecordBatcher RecordBatcher]]
+  * @define RecordBatchStorage [[com.adform.streamloader.batch.storage.RecordBatchStorage RecordBatchStorage]]
   * @define CsvFileBuilderFactory [[com.adform.streamloader.encoding.csv.CsvFileBuilderFactory CsvFileBuilderFactory]]
   */
 package object streamloader

@@ -10,8 +10,7 @@ package com.adform.streamloader.vertica
 
 import java.sql.{Connection, SQLDataException}
 
-import com.adform.streamloader.file.RecordRangeFile
-import com.adform.streamloader.file.storage.InDataOffsetFileStorage
+import com.adform.streamloader.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
 import com.adform.streamloader.util.Logging
 import javax.sql.DataSource
@@ -28,18 +27,15 @@ import scala.util.Using
   * thus storing the topic, partition and offset next to each row might be very expensive licensing-wise.
   * For a cheaper alternative see the [[ExternalOffsetVerticaFileStorage]].
   */
-class InRowOffsetVerticaFileStorage private (
+class InRowOffsetVerticaFileStorage protected (
     dbDataSource: DataSource,
     table: String,
-    verticaCopyStatementProvider: VerticaCopyStatementProvider,
     topicColumnName: String,
     partitionColumnName: String,
     offsetColumnName: String,
     watermarkColumnName: String
-) extends InDataOffsetFileStorage[Unit]
+) extends InDataOffsetBatchStorage[InRowOffsetVerticaFileRecordBatch]
     with Logging {
-
-  override def startNewFile(): Unit = {}
 
   def committedPositions(connection: Connection): TrieMap[TopicPartition, StreamPosition] = {
     val positionQuery =
@@ -78,10 +74,10 @@ class InRowOffsetVerticaFileStorage private (
     }
   }
 
-  override def storeFile(file: RecordRangeFile[Unit]): Unit = {
+  override def commitBatchWithOffsets(batch: InRowOffsetVerticaFileRecordBatch): Unit = {
     Using.resource(dbDataSource.getConnection) { connection =>
       connection.setAutoCommit(false)
-      val copyQuery = verticaCopyStatementProvider.copyStatement(table, file.file)
+      val copyQuery = batch.copyStatement(table)
       Using.resource(connection.prepareStatement(copyQuery)) { copyStatement =>
         try {
           log.info(s"Running statement: $copyQuery")
@@ -104,7 +100,6 @@ object InRowOffsetVerticaFileStorage {
   case class Builder(
       private val _dbDataSource: DataSource,
       private val _table: String,
-      private val _copyStatementProvider: VerticaCopyStatementProvider,
       private val _topicColumnName: String,
       private val _partitionColumnName: String,
       private val _offsetColumnName: String,
@@ -119,11 +114,6 @@ object InRowOffsetVerticaFileStorage {
       * Sets the table to load data to.
       */
     def table(name: String): Builder = copy(_table = name)
-
-    /**
-      * Sets a COPY statement provider to use for loading files.
-      */
-    def copyStatementProvider(provider: VerticaCopyStatementProvider): Builder = copy(_copyStatementProvider = provider)
 
     /**
       * Sets the names of the columns in the table that are used for storing the stream position
@@ -145,12 +135,10 @@ object InRowOffsetVerticaFileStorage {
     def build(): InRowOffsetVerticaFileStorage = {
       if (_dbDataSource == null) throw new IllegalStateException("Must provide a Vertica data source")
       if (_table == null) throw new IllegalStateException("Must provide a valid table name")
-      if (_copyStatementProvider == null) throw new IllegalArgumentException("Must provide a COPY statement provider")
 
       new InRowOffsetVerticaFileStorage(
         _dbDataSource,
         _table,
-        _copyStatementProvider,
         _topicColumnName,
         _partitionColumnName,
         _offsetColumnName,
@@ -158,5 +146,5 @@ object InRowOffsetVerticaFileStorage {
     }
   }
 
-  def builder(): Builder = Builder(null, null, null, "_topic", "_partition", "_offset", "_watermark")
+  def builder(): Builder = Builder(null, null, "_topic", "_partition", "_offset", "_watermark")
 }

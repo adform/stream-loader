@@ -24,36 +24,42 @@ interface Sink [[../com/adform/streamloader/Sink.html{Sink}]] {
   close()
 }
 
-Sink <|-- FileSink
+Sink <|-- RecordBatchingSink
 
-class FileSink [[../com/adform/streamloader/file/FileSink.html{FileSink}]] {
+class RecordBatchingSink [[../com/adform/streamloader/batch/RecordBatchingSink.html{RecordBatchingSink}]] {
   partitionGrouping: TopicPartition => String
 }
 
-interface FileStorage [[../com/adform/streamloader/file/storage/FileStorage.html{FileStorage}]] {
+interface RecordBatcher [[../com/adform/streamloader/batch/RecordBatcher.html{RecordBatcher}]] {
+  newBatchBuilder()
+}
+
+interface RecordBatchStorage [[../com/adform/streamloader/batch/storage/RecordBatchStorage.html{RecordBatchStorage}]] {
   initialize(kafkaContext)
   recover()
-  commitFile(file, offsets)
+  commitBatch(batch, offsets)
   committedPositions(partitions): stream positions
 }
 
-FileSink *-- FileStorage
+RecordBatchingSink *-- RecordBatcher
+RecordBatchingSink *-- RecordBatchStorage
 
-FileStorage <|-- InDataOffsetFileStorage
-FileStorage <|-- TwoPhaseCommitFileStorage
+RecordBatchStorage <|-- InDataOffsetRecordBatchStorage
+RecordBatchStorage <|-- TwoPhaseCommitRecordBatchStorage
 
-abstract class InDataOffsetFileStorage [[../com/adform/streamloader/file/storage/InDataOffsetFileStorage.html{InDataOffsetFileStorage}]] {
-  storeFile(file)
+abstract class InDataOffsetRecordBatchStorage [[../com/adform/streamloader/batch/storage/InDataOffsetRecordBatchStorage.html{InDataOffsetRecordBatchStorage}]] {
+  storeBatch(batch)
 }
 
-abstract class TwoPhaseCommitFileStorage [[../com/adform/streamloader/file/storage/TwoPhaseCommitFileStorage.html{TwoPhaseCommitFileStorage}]] {
-  stageFile(file): staging
-  storeFile(staging)
+abstract class TwoPhaseCommitRecordBatchStorage [[../com/adform/streamloader/batch/storage/TwoPhaseCommitRecordBatchStorage.html{TwoPhaseCommitRecordBatchStorage}]] {
+  stageBatch(batch): staging
+  storeBatch(staging)
 }
 
-class LocalFileStorage [[../com/adform/streamloader/file/storage/LocalFileStorage.html{LocalFileStorage}]]
+class FileRecordBatcher [[../com/adform/streamloader/file/FileRecordBatcher.html{FileRecordBatcher}]] {
+}
 
-TwoPhaseCommitFileStorage <|-- LocalFileStorage
+RecordBatcher <|-- FileRecordBatcher
 
 interface FileBuilderFactory [[../com/adform/streamloader/file/FileBuilderFactory.html{FileBuilderFactory}]] {
   newFileBuilder()
@@ -63,6 +69,11 @@ class CsvFileBuilderFactory [[../com/adform/streamloader/encoding/csv/CsvFileBui
 
 FileBuilderFactory <|-- CsvFileBuilderFactory
 
-FileSink *-- FileBuilderFactory
+FileRecordBatcher *-- FileBuilderFactory
+FileRecordBatcher *-- RecordFormatter
+
+class RecordFormatter [[../com/adform/streamloader/batch/RecordFormatter.html{RecordFormatter}]] {
+  format(record): Seq[Record]
+}
 
 @enduml

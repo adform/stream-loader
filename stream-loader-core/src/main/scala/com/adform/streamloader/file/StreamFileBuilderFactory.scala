@@ -9,9 +9,9 @@
 package com.adform.streamloader.file
 
 import java.io.{BufferedOutputStream, File, FileOutputStream, OutputStream}
-import java.time.Duration
 import java.util.zip.GZIPOutputStream
 
+import com.adform.streamloader.batch.RecordStreamWriter
 import com.adform.streamloader.util.Logging
 import com.github.luben.zstd.ZstdOutputStream
 import net.jpountz.lz4.LZ4BlockOutputStream
@@ -31,12 +31,11 @@ class StreamFileBuilderFactory[-R](
     recordStreamWriterFactory: OutputStream => RecordStreamWriter[R],
     compression: Compression,
     bufferSizeBytes: Int
-)(implicit currentTimeMills: () => Long = () => System.currentTimeMillis())
-    extends FileBuilderFactory[R]
+) extends FileBuilderFactory[R]
     with Logging {
 
-  override def newFileBuilder(filenamePrefix: String): FileBuilder[R] = {
-    val file = File.createTempFile(filenamePrefix, compression.fileExtension.map("." + _).getOrElse(""))
+  override def newFileBuilder(): FileBuilder[R] = {
+    val file = File.createTempFile("loader-", compression.fileExtension.map("." + _).getOrElse(""))
 
     log.debug(s"Created new file '${file.getAbsolutePath}'")
 
@@ -56,13 +55,11 @@ class StreamFileBuilderFactory[-R](
     new FileBuilder[R] {
       private var isClosed = false
       private var recordsWritten = 0L
-      private val fileStarted = currentTimeMills()
 
       streamWriter.writeHeader()
 
       override def getDataSize: Long = fileStream.size
       override def getRecordCount: Long = recordsWritten
-      override def getOpenDuration: Duration = Duration.ofMillis(currentTimeMills() - fileStarted)
 
       override def write(record: R): Unit = {
         streamWriter.writeRecord(record)
@@ -78,6 +75,11 @@ class StreamFileBuilderFactory[-R](
         } else {
           None
         }
+
+      override def discard(): Unit = if (!isClosed) {
+        streamWriter.close()
+        isClosed = true
+      }
     }
   }
 }

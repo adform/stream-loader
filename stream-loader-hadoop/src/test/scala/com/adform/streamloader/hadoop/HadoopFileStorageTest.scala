@@ -14,7 +14,7 @@ import java.nio.file.Files
 import java.util.UUID
 
 import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.{FilePathFormatter, RecordRangeFile}
+import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch}
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.RawLocalFileSystem
@@ -56,11 +56,11 @@ class HadoopFileStorageTest extends AnyFunSpec with Matchers {
     storage.recover(Set(tp))
 
     val sourceFile = File.createTempFile("test", "txt")
-    val rrf = new RecordRangeFile[Unit](sourceFile, (), Seq(RecordRange(tp.topic(), tp.partition(), start, end)), 10)
+    val batch = FileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
     val destFile = new File(s"${baseDir.getAbsolutePath}/stored/filename")
 
     try {
-      storage.commitFile(rrf)
+      storage.commitBatch(batch)
 
       destFile.exists() shouldBe true
       context.committed(Set(tp)) shouldEqual Map(tp -> Some(new OffsetAndMetadata(11, "{\"watermark\":100}")))

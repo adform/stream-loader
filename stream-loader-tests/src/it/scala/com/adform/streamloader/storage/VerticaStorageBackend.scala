@@ -8,16 +8,15 @@
 
 package com.adform.streamloader.storage
 
-import java.io.File
 import java.util.UUID
 
-import com.adform.streamloader.file.storage.FileStorage
+import com.adform.streamloader.batch.storage.RecordBatchStorage
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork, SimpleContainer}
 import com.adform.streamloader.loaders.{TestExternalOffsetVerticaLoader, TestInRowOffsetVerticaLoader}
-import com.adform.streamloader.model.{ExampleMessage, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{ExampleMessage, RecordBatch, StreamPosition, Timestamp}
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.vertica.{ExternalOffsetVerticaFileStorage, InRowOffsetVerticaFileStorage}
-import com.adform.streamloader.{BuildInfo, KafkaContext, Loader}
+import com.adform.streamloader.{BuildInfo, Loader}
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
 import com.zaxxer.hikari.HikariConfig
@@ -30,7 +29,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
 import scala.util.Using
 
-abstract class VerticaStorageBackend[F](
+abstract class VerticaStorageBackend(
     docker: DockerClient,
     dockerNetwork: DockerNetwork,
     kafkaContainer: ContainerWithEndpoint,
@@ -71,7 +70,7 @@ abstract class VerticaStorageBackend[F](
        |  money_spent DECIMAL(${ExampleMessage.SCALE_PRECISION.precision}, ${ExampleMessage.SCALE_PRECISION.scale}) NOT NULL
        |""".stripMargin
 
-  def getFileStorage: FileStorage[F]
+  def getBatchStorage: RecordBatchStorage[RecordBatch]
 
   def createLoaderContainer(loader: Loader, loaderKafkaConfig: LoaderKafkaConfig, batchSize: Long): Container = {
     val consumerGroup = loaderKafkaConfig.consumerGroup
@@ -112,10 +111,10 @@ abstract class VerticaStorageBackend[F](
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
       partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = {
-    val fileStorage = getFileStorage
+    val batchStorage = getBatchStorage
     val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)
-    fileStorage.initialize(kafkaContext)
-    fileStorage.committedPositions(partitions)
+    batchStorage.initialize(kafkaContext)
+    batchStorage.committedPositions(partitions)
   }
 
   def contentSqlQuery: String
@@ -168,7 +167,7 @@ case class ExternalOffsetVerticaStorageBackend(
     verticaConf: HikariConfig,
     dataSource: DataSource,
     table: String)
-    extends VerticaStorageBackend[Long](
+    extends VerticaStorageBackend(
       docker,
       dockerNetwork,
       kafkaContainer,
@@ -177,14 +176,12 @@ case class ExternalOffsetVerticaStorageBackend(
       dataSource,
       table) {
 
-  override def getFileStorage: ExternalOffsetVerticaFileStorage =
+  override def getBatchStorage: RecordBatchStorage[RecordBatch] =
     ExternalOffsetVerticaFileStorage
       .builder()
       .dbDataSource(dataSource)
       .table(table)
-      .copyStatementProvider((table: String, file: File) => "not used")
       .offsetTable(OFFSET_TABLE)
-      .fileIdSequence(FILE_ID_SEQUENCE)
       .offsetTableColumnNames(
         FILE_ID_COLUMN,
         CONSUMER_GROUP_COLUMN,
@@ -195,6 +192,7 @@ case class ExternalOffsetVerticaStorageBackend(
         END_OFFSET_COLUMN,
         END_WATERMARK_COLUMN)
       .build()
+      .asInstanceOf[RecordBatchStorage[RecordBatch]]
 
   override def initialize(): Unit = {
     executeStatement(s"CREATE SEQUENCE IF NOT EXISTS $FILE_ID_SEQUENCE")
@@ -241,7 +239,7 @@ case class InRowOffsetVerticaStorageBackend(
     verticaConf: HikariConfig,
     dataSource: DataSource,
     table: String)
-    extends VerticaStorageBackend[Unit](
+    extends VerticaStorageBackend(
       docker,
       dockerNetwork,
       kafkaContainer,
@@ -250,14 +248,14 @@ case class InRowOffsetVerticaStorageBackend(
       dataSource,
       table) {
 
-  override def getFileStorage: InRowOffsetVerticaFileStorage =
+  override def getBatchStorage: RecordBatchStorage[RecordBatch] =
     InRowOffsetVerticaFileStorage
       .builder()
       .dbDataSource(dataSource)
       .table(table)
-      .copyStatementProvider((table: String, file: File) => "not used")
       .rowOffsetColumnNames(TOPIC_COLUMN, PARTITION_COLUMN, OFFSET_COLUMN, WATERMARK_COLUMN)
       .build()
+      .asInstanceOf[RecordBatchStorage[RecordBatch]]
 
   override def initialize(): Unit = {
     executeStatement(

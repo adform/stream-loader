@@ -9,7 +9,6 @@
 package com.adform.streamloader.file
 
 import java.io.File
-import java.time.Duration
 
 /**
   * A data file builder that keeps adding records and returns the resulting file after flushing to disk.
@@ -34,17 +33,17 @@ trait FileBuilder[-R] {
   def getRecordCount: Long
 
   /**
-    * Gets the duration the file has already been open for.
-    */
-  def getOpenDuration: Duration
-
-  /**
     * Builds a data file from all the added records and flushes it to disk.
     * The builder instance can no longer be used after calling this method.
     *
     * @return The resulting file if any records were added, None otherwise.
     */
   def build(): Option[File]
+
+  /**
+    * Discards the file currently being built and closes the builder.
+    */
+  def discard(): Unit
 }
 
 /**
@@ -56,8 +55,6 @@ trait FileBuilderFactory[-R] {
 
   /**
     * Creates a new instance of a `FileBuilder`.
-    *
-    * @param filenamePrefix Prefix for all created files.
     */
-  def newFileBuilder(filenamePrefix: String): FileBuilder[R]
+  def newFileBuilder(): FileBuilder[R]
 }

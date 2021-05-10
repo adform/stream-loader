@@ -10,8 +10,7 @@ package com.adform.streamloader.vertica
 
 import java.sql.{Connection, SQLDataException, Timestamp => SqlTimestamp}
 
-import com.adform.streamloader.file.RecordRangeFile
-import com.adform.streamloader.file.storage.InDataOffsetFileStorage
+import com.adform.streamloader.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
 import com.adform.streamloader.util.Logging
 import javax.sql.DataSource
@@ -22,8 +21,8 @@ import scala.util.Using
 
 /**
   * A Vertica file storage implementation that loads data to some table and commits offsets to a separate dedicated offset table.
-  * The commit happens in a single transaction, offsets and data can be joined using a file ID that is generated before
-  * starting new files and is stored in both the data table and the offset table. The offset table contains only ranges of offsets
+  * The commit happens in a single transaction, offsets and data can be joined using a file ID that is stored in both
+  * the data table and the offset table. The offset table contains only ranges of offsets
   * from each topic partition contained in the file. Its structure should look as follows (all names can be customized):
   *
   * {{{
@@ -39,24 +38,16 @@ import scala.util.Using
   * );
   * }}}
   *
-  * Additionally a `SEQUENCE` is required for generating the `_file_id` foreign key values, create it as follows:
-  *
-  * {{{
-  *   CREATE SEQUENCE file_id_sequence;
-  * }}}
-  *
   * Compared to the [[InRowOffsetVerticaFileStorage]] this implementation does not preserve individual row offsets,
   * however it is much less expensive in terms of data usage in the licensing scheme, as the license is calculated based
   * on the size of the data as it occupies converted to strings, ignoring compression and encoding.
   * Thus while it does not cost much to store the topic name, partition and offset next to each row physically (this data
   * compresses very well), it can be significant when auditing data usage for licensing.
   */
-class ExternalOffsetVerticaFileStorage private (
+class ExternalOffsetVerticaFileStorage protected (
     dbDataSource: DataSource,
     table: String,
     offsetTable: String,
-    fileIdSequence: String,
-    copyStatementProvider: VerticaCopyStatementProvider,
     fileIdColumnName: String,
     consumerGroupColumnName: String,
     topicColumnName: String,
@@ -65,21 +56,8 @@ class ExternalOffsetVerticaFileStorage private (
     startWatermarkColumnName: String,
     endOffsetColumnName: String,
     endWatermarkColumnName: String,
-) extends InDataOffsetFileStorage[Long]
+) extends InDataOffsetBatchStorage[ExternalOffsetVerticaFileRecordBatch]
     with Logging {
-
-  override def startNewFile(): Long = {
-    Using.resource(dbDataSource.getConnection) { connection =>
-      val query = s"SELECT NEXTVAL('$fileIdSequence')"
-      log.info(s"Running stream position query: $query")
-      Using.resource(connection.prepareStatement(query)) { statement =>
-        Using.resource(statement.executeQuery()) { result =>
-          result.next()
-          result.getLong(1)
-        }
-      }
-    }
-  }
 
   def committedPositions(connection: Connection): TrieMap[TopicPartition, StreamPosition] = {
     val query =
@@ -111,26 +89,26 @@ class ExternalOffsetVerticaFileStorage private (
     }
   }
 
-  override def storeFile(file: RecordRangeFile[Long]): Unit = {
+  override def commitBatchWithOffsets(batch: ExternalOffsetVerticaFileRecordBatch): Unit = {
     Using.resource(dbDataSource.getConnection) { connection =>
       connection.setAutoCommit(false)
-      val copyQuery = copyStatementProvider.copyStatement(table, file.file)
+      val copyQuery = batch.copyStatement(table)
       try {
-        val inserts = file.recordRanges.map { batch =>
+        val inserts = batch.recordRanges.map { range =>
           val batchInsertQuery =
             s"INSERT INTO $offsetTable " +
               s"($fileIdColumnName, $consumerGroupColumnName, $topicColumnName, $partitionColumnName, $startOffsetColumnName, $startWatermarkColumnName, $endOffsetColumnName, $endWatermarkColumnName) " +
               s"VALUES " +
               s"(?, ?, ?, ?, ?, ?, ?, ?)"
           val batchInsertStatement = connection.prepareStatement(batchInsertQuery)
-          batchInsertStatement.setLong(1, file.fileId)
+          batchInsertStatement.setLong(1, batch.fileId)
           batchInsertStatement.setString(2, kafkaContext.consumerGroup)
-          batchInsertStatement.setString(3, batch.topic)
-          batchInsertStatement.setInt(4, batch.partition)
-          batchInsertStatement.setLong(5, batch.start.offset)
-          batchInsertStatement.setTimestamp(6, new SqlTimestamp(batch.start.watermark.millis))
-          batchInsertStatement.setLong(7, batch.end.offset)
-          batchInsertStatement.setTimestamp(8, new SqlTimestamp(batch.end.watermark.millis))
+          batchInsertStatement.setString(3, range.topic)
+          batchInsertStatement.setInt(4, range.partition)
+          batchInsertStatement.setLong(5, range.start.offset)
+          batchInsertStatement.setTimestamp(6, new SqlTimestamp(range.start.watermark.millis))
+          batchInsertStatement.setLong(7, range.end.offset)
+          batchInsertStatement.setTimestamp(8, new SqlTimestamp(range.end.watermark.millis))
 
           log.debug(s"Running statement: $batchInsertQuery")
           val insertResult = batchInsertStatement.executeUpdate()
@@ -163,8 +141,6 @@ object ExternalOffsetVerticaFileStorage {
       private val _dbDataSource: DataSource,
       private val _table: String,
       private val _offsetTable: String,
-      private val _fileIdSequence: String,
-      private val _copyStatementProvider: VerticaCopyStatementProvider,
       private val _fileIdColumnName: String = "_file_id",
       private val _consumerGroupColumnName: String = "_consumer_group",
       private val _topicColumnName: String = "_topic",
@@ -186,19 +162,9 @@ object ExternalOffsetVerticaFileStorage {
     def table(name: String): Builder = copy(_table = name)
 
     /**
-      * Sets a COPY statement provider to use for loading files.
-      */
-    def copyStatementProvider(provider: VerticaCopyStatementProvider): Builder = copy(_copyStatementProvider = provider)
-
-    /**
       * Sets the name of the table used for storing offsets.
       */
     def offsetTable(name: String): Builder = copy(_offsetTable = name)
-
-    /**
-      * Sets the name of the sequence used for generating file IDs.
-      */
-    def fileIdSequence(name: String): Builder = copy(_fileIdSequence = name)
 
     /**
       * Sets the names of the columns in the offset table.
@@ -229,15 +195,11 @@ object ExternalOffsetVerticaFileStorage {
       if (_dbDataSource == null) throw new IllegalStateException("Must provide a Vertica data source")
       if (_table == null) throw new IllegalStateException("Must provide a valid table name")
       if (_offsetTable == null) throw new IllegalStateException("Must provide a valid offset table name")
-      if (_fileIdSequence == null) throw new IllegalStateException("Must provide a valid file ID sequence name")
-      if (_copyStatementProvider == null) throw new IllegalArgumentException("Must provide a COPY statement provider")
 
       new ExternalOffsetVerticaFileStorage(
         _dbDataSource,
         _table,
         _offsetTable,
-        _fileIdSequence,
-        _copyStatementProvider,
         _fileIdColumnName,
         _consumerGroupColumnName,
         _topicColumnName,
@@ -250,5 +212,5 @@ object ExternalOffsetVerticaFileStorage {
     }
   }
 
-  def builder(): Builder = Builder(null, null, null, null, null)
+  def builder[R](): Builder = Builder(null, null, null)
 }

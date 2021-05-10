@@ -18,21 +18,15 @@ import scala.reflect.ClassTag
 /**
   * Parquet file builder factory for encoding protobuf messages.
   */
-class ProtoParquetFileBuilderFactory[-R <: Message: ClassTag](compression: Compression, blockSize: Int, pageSize: Int)(
-    implicit currentTimeMills: () => Long = () => System.currentTimeMillis()
-) extends BaseParquetFileBuilderFactory[R](compression) {
+class ProtoParquetFileBuilderFactory[-R <: Message: ClassTag](compression: Compression, blockSize: Int, pageSize: Int)
+    extends BaseParquetFileBuilderFactory[R](compression) {
 
   private val recordClass = implicitly[ClassTag[R]].runtimeClass.asInstanceOf[Class[_ <: Message]]
 
-  override def newFileBuilder(filenamePrefix: String): FileBuilder[R] = {
-    val file = getFile(filenamePrefix)
+  override def newFileBuilder(): FileBuilder[R] = {
+    val file = getNewTempFile
     new ParquetFileBuilder[R](
       file,
-      new ProtoParquetWriter[R](
-        new Path(file.getAbsolutePath),
-        recordClass,
-        compressionCodecName,
-        blockSize,
-        pageSize))(currentTimeMills)
+      new ProtoParquetWriter[R](new Path(file.getAbsolutePath), recordClass, compressionCodecName, blockSize, pageSize))
   }
 }

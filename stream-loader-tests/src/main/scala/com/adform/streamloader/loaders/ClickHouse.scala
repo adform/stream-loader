@@ -11,16 +11,15 @@ package com.adform.streamloader.loaders
 import java.time.LocalDateTime
 import java.util.UUID
 
-import com.adform.streamloader.clickhouse.ClickHouseFileStorage
-import com.adform.streamloader.clickhouse.rowbinary.RowBinaryClickHouseFileBuilderFactory
+import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
+import com.adform.streamloader.clickhouse._
 import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.DecimalEncoding
-import com.adform.streamloader.file.{FileCommitStrategy, FileSink, RecordFormatter}
+import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.model.{ExampleMessage, Timestamp}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 /*
 CREATE TABLE IF NOT EXISTS test_table (
@@ -110,21 +109,23 @@ object TestClickHouseLoader extends Loader {
       .topics(Seq(cfg.getString("kafka.topic")))
       .build()
 
-    val sink = FileSink
+    val sink = RecordBatchingSink
       .builder()
-      .fileStorage(
+      .recordBatcher(
+        ClickHouseFileRecordBatcher
+          .builder()
+          .recordFormatter(recordFormatter)
+          .fileBuilderFactory(ClickHouseFileBuilderFactory.rowBinary)
+          .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
+          .build()
+      )
+      .batchStorage(
         ClickHouseFileStorage
           .builder()
           .dbDataSource(clickHouseDataSource)
           .table(cfg.getString("clickhouse.table"))
-          .fileFormat(ClickHouseFormat.RowBinary)
           .build()
       )
-      .fileCommitStrategy(
-        FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
-      )
-      .fileBuilderFactory(new RowBinaryClickHouseFileBuilderFactory[TestClickHouseRecord])
-      .recordFormatter(recordFormatter)
       .build()
 
     val loader = new StreamLoader(source, sink)

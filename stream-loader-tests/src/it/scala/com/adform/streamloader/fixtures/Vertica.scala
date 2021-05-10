@@ -73,7 +73,7 @@ trait Vertica { this: Docker =>
 
   private def startVerticaContainer(): ContainerWithEndpoint = {
     val vsql = "/opt/vertica/bin/vsql"
-    val vsqlPassword = if (verticaConfig.password.length > 0) verticaConfig.password else "''"
+    val vsqlPassword = if (verticaConfig.password.nonEmpty) verticaConfig.password else "''"
     val containerName = s"$dockerSandboxId-vertica"
     val config = ContainerConfig
       .builder()
