@@ -73,7 +73,7 @@ abstract class BaseFileRecordBatcher[+R, +B <: BaseFileRecordBatch](
   *
   * @tparam R Type of records being written to files.
   */
-class FileRecordBatcher[+R] protected (
+class FileRecordBatcher[+R](
     recordFormatter: RecordFormatter[R],
     fileBuilderFactory: FileBuilderFactory[R],
     fileCommitStrategy: FileCommitStrategy

@@ -9,7 +9,6 @@
 package com.adform.streamloader.storage
 
 import java.util.UUID
-
 import com.adform.streamloader.file.{FilePathFormatter, TimePartitioningFilePathFormatter}
 import com.adform.streamloader.fixtures._
 import com.adform.streamloader.hadoop.HadoopFileStorage
@@ -25,6 +24,7 @@ import org.apache.parquet.avro.AvroParquetReader
 import org.apache.parquet.hadoop.util.HadoopInputFile
 import org.scalacheck.Arbitrary
 
+import java.time.LocalDate
 import scala.math.BigDecimal.RoundingMode.RoundingMode
 
 case class HdfsStorageBackend(
@@ -41,7 +41,7 @@ case class HdfsStorageBackend(
   override def arbMessage: Arbitrary[ExampleMessage] = ExampleMessage.arbMessage
 
   private val timePartitionPathPattern = "'dt='yyyy'_'MM'_'dd"
-  private val pathFormatter: FilePathFormatter =
+  private val pathFormatter: TimePartitioningFilePathFormatter[LocalDate] =
     new TimePartitioningFilePathFormatter(Some(timePartitionPathPattern), None)
 
   implicit private val scalePrecision: ScalePrecision = ExampleMessage.SCALE_PRECISION

@@ -44,7 +44,7 @@ import scala.util.Using
   * Thus while it does not cost much to store the topic name, partition and offset next to each row physically (this data
   * compresses very well), it can be significant when auditing data usage for licensing.
   */
-class ExternalOffsetVerticaFileStorage protected (
+class ExternalOffsetVerticaFileStorage(
     dbDataSource: DataSource,
     table: String,
     offsetTable: String,

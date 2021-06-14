@@ -8,15 +8,15 @@
 
 package com.adform.streamloader.batch.storage
 
-import java.io.File
-
 import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.{FileRecordBatch, FileStaging}
+import com.adform.streamloader.file.FileRecordBatch
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import java.io.File
 
 class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
 

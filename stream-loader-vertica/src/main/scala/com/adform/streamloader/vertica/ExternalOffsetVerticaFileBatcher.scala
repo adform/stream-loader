@@ -53,7 +53,7 @@ case class ExternalOffsetVerticaFileRecordBatch(
   *
   * @tparam R Type of records written to files.
   */
-class ExternalOffsetVerticaFileBatcher[R] protected (
+class ExternalOffsetVerticaFileBatcher[R](
     dbDataSource: DataSource,
     fileIdSequence: String,
     recordFormatter: (Long, Record) => Seq[R],

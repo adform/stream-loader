@@ -243,11 +243,9 @@ lazy val commonSettings = Seq(
         outFile
       })
   },
-
   publishMavenStyle := true,
   Test / publishArtifact := false,
   publishTo := sonatypePublishToBundle.value,
-
   homepage := Some(url(gitRepoUrl)),
   scmInfo := Some(ScmInfo(url(gitRepoUrl), s"scm:git:$gitRepo"))
 )

@@ -8,29 +8,32 @@
 
 package com.adform.streamloader.file
 
+import com.adform.streamloader.model.RecordRange
+import com.adform.streamloader.util.TimeExtractor
+
 import java.nio.ByteBuffer
 import java.util.UUID
-
-import com.adform.streamloader.model.{RecordRange, Timestamp}
-
 import scala.util.hashing.MurmurHash3
 
 /**
-  * Formats file paths placing them into user defined time based partitions calculated using the min watermark contained.
+  * Formats file paths placing them into time-based directories constructed by formatting the partition using
+  * a given time formatter pattern, e.g. "/dt=2020-06-01/" etc.
   * The filename itself is a UUID based on the hash of the ranges contained, for reproducibility.
   *
   * @param timePartitionPattern Pattern for the time partition, e.g. 'dt='yyyyMMdd
   * @param fileExtension The file extension to use
   */
-class TimePartitioningFilePathFormatter(timePartitionPattern: Option[String], fileExtension: Option[String])
-    extends FilePathFormatter {
+class TimePartitioningFilePathFormatter[P: TimeExtractor](
+    timePartitionPattern: Option[String],
+    fileExtension: Option[String]
+) extends FilePathFormatter[P] {
 
-  override def formatPath(ranges: Seq[RecordRange]): String = {
+  override def formatPath(partition: P, ranges: Seq[RecordRange]): String = {
     val fileExtensionStr = fileExtension.map(ext => s".$ext").getOrElse("")
 
-    val maxWatermark = Timestamp(ranges.map(_.end.watermark.millis).min)
+    val time = implicitly[TimeExtractor[P]].extractTime(partition)
     val timePartition = timePartitionPattern
-      .map(pattern => maxWatermark.format(pattern).get + "/")
+      .map(pattern => time.format(pattern).get + "/")
       .getOrElse("")
 
     def expandHash(hash: Int, times: Int): Seq[Int] = {

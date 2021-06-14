@@ -27,7 +27,7 @@ import scala.util.Using
   * thus storing the topic, partition and offset next to each row might be very expensive licensing-wise.
   * For a cheaper alternative see the [[ExternalOffsetVerticaFileStorage]].
   */
-class InRowOffsetVerticaFileStorage protected (
+class InRowOffsetVerticaFileStorage(
     dbDataSource: DataSource,
     table: String,
     topicColumnName: String,

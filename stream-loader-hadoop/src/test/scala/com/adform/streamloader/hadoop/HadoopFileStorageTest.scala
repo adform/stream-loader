@@ -8,13 +8,8 @@
 
 package com.adform.streamloader.hadoop
 
-import java.io.File
-import java.net.URI
-import java.nio.file.Files
-import java.util.UUID
-
 import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch}
+import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.RawLocalFileSystem
@@ -23,6 +18,10 @@ import org.apache.kafka.common.TopicPartition
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.io.File
+import java.net.URI
+import java.nio.file.Files
+import java.util.UUID
 import scala.jdk.CollectionConverters._
 
 class HadoopFileStorageTest extends AnyFunSpec with Matchers {
@@ -36,13 +35,13 @@ class HadoopFileStorageTest extends AnyFunSpec with Matchers {
     val fs = new RawLocalFileSystem()
     fs.initialize(new URI("file:///"), new Configuration())
 
-    val formatter = new FilePathFormatter {
-      override def formatPath(ranges: Seq[RecordRange]): String = "filename"
+    val formatter = new FilePathFormatter[Unit] {
+      override def formatPath(partition: Unit, ranges: Seq[RecordRange]): String = "filename"
     }
 
     val context = new MockKafkaContext()
     val storage = HadoopFileStorage
-      .builder()
+      .builder[Unit]()
       .hadoopFS(fs)
       .stagingBasePath(s"$baseDir/staged")
       .destinationBasePath(s"$baseDir/stored")
@@ -56,7 +55,8 @@ class HadoopFileStorageTest extends AnyFunSpec with Matchers {
     storage.recover(Set(tp))
 
     val sourceFile = File.createTempFile("test", "txt")
-    val batch = FileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
+    val fileBatch = FileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
+    val batch = PartitionedFileRecordBatch[Unit, FileRecordBatch](Map(() -> fileBatch))
     val destFile = new File(s"${baseDir.getAbsolutePath}/stored/filename")
 
     try {

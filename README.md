@@ -45,20 +45,23 @@ and the sink can be arbitrary, in case of S3 we define it as follows:
 val sink = RecordBatchingSink
   .builder()
   .recordBatcher(
-    FileRecordBatcher
+    PartitioningFileRecordBatcher
       .builder()
-      .recordFormatter((r: Record) => Seq(new String(r.consumerRecord.value(), "UTF-8"))) // (1)
-      .fileBuilderFactory(new CsvFileBuilderFactory(Compression.ZSTD))                    // (2)
-      .fileCommitStrategy(FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(1000)))   // (3)
+      .recordFormatter(r => Seq(new String(r.consumerRecord.value(), "UTF-8")))     // (1)
+      .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)  // (2)
+      .fileBuilderFactory(new CsvFileBuilderFactory(Compression.ZSTD))              // (3)
+      .fileCommitStrategy(
+        MultiFileCommitStrategy.anyFile(ReachedAnyOf(recordsWritten = Some(1000)))  // (4)
+      )
       .build()
   )
   .batchStorage(
-    S3FileStorage          // (4)
+    S3FileStorage          // (5)
       .builder()
-      .s3Client(s3Client)  // (5)
-      .bucket("test")      // (6)
+      .s3Client(s3Client)  // (6)
+      .bucket("test")      // (7)
       .filePathFormatter(
-        new TimePartitioningFilePathFormatter(   // (7)
+        new TimePartitioningFilePathFormatter(
           Some("'dt='yyyyMMdd"),                 // (8)
           Some("zst")                            // (9)
         ))
@@ -67,7 +70,7 @@ val sink = RecordBatchingSink
   .build()
 ```
 
-Reading this from top to bottom we see that this loader will interpret the bytes of incoming Kafka messages as UTF-8 strings _(1)_, construct Zstd compressed CSV files containing these strings _(2)_ and will close and commit them once 1000 records is written _(3)_. The files will get stored to S3 _(4)_ using the specified `s3Client` instance _(5)_ to the `test` bucket _(6)_. The stored files will be time partitioned _(7)_ based on the watermark of the Kafka message timestamps, the partition prefix will look like `dt=20200313/` _(8)_, and the files will have a `zst` extension _(9)_, the names being random UUIDs.
+Reading this from top to bottom we see that this loader will interpret the bytes of incoming Kafka messages as UTF-8 strings _(1)_, partition them by day _(2)_, construct Zstd compressed CSV files for each day partition containing these strings _(3)_ and will close and commit them once 1000 records gets written to at least one file _(4)_. The files will get stored to S3 _(5)_ using the specified `s3Client` instance _(6)_ to the `test` bucket _(7)_. The stored files will be prefixed with their formatted day partition, e.g. `dt=20200313/` _(8)_, and will have a `zst` extension _(9)_, the names being random UUIDs.
 
 Every part of this sink definition can be customized, e.g. your Kafka messages might contain JSON which you might want to encode to Avro and write to parquet files. You can decide to use a different storage and switch to e.g. HDFS and so on.
 

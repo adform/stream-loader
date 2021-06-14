@@ -9,8 +9,7 @@
 package com.adform.streamloader.model
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDateTime, ZoneId}
-
+import java.time._
 import scala.util.Try
 
 /**
@@ -30,6 +29,10 @@ case class Timestamp(millis: Long) extends AnyVal with Ordered[Timestamp] {
       .ofInstant(Instant.ofEpochMilli(millis), ZoneId.of("UTC"))
       .format(DateTimeFormatter.ofPattern(pattern))
   }
+
+  def toInstant: Instant = Instant.ofEpochMilli(millis)
+  def toDate: LocalDate = toInstant.atOffset(ZoneOffset.UTC).toLocalDate
+  def toDateTime: LocalDateTime = toInstant.atOffset(ZoneOffset.UTC).toLocalDateTime
 
   override def compare(that: Timestamp): Int = millis.compare(that.millis)
 }

@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package com.adform.streamloader.file
+package com.adform.streamloader.batch.storage
 
 import com.adform.streamloader.util.JsonSerializer
 import org.json4s.JsonAST._
