@@ -16,7 +16,7 @@ import com.adform.streamloader.model.Record
   * @tparam R Type of formatted records, i.e. the one being written to storage.
   * @tparam P Type of the partition.
   */
-trait RecordPartitioner[R, P] {
+trait RecordPartitioner[-R, +P] {
 
   /**
     * Gets the partition this record belongs to.
