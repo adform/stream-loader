@@ -24,6 +24,7 @@ trait MultiFileCommitStrategy {
 }
 
 object MultiFileCommitStrategy {
-  def anyFile(single: FileCommitStrategy): MultiFileCommitStrategy = (files: Seq[FileStats]) =>
-    files.exists(fs => single.shouldCommit(fs.fileOpenDuration, fs.fileSize, fs.recordsWritten))
+  def anyFile(single: FileCommitStrategy): MultiFileCommitStrategy =
+    (files: Seq[FileStats]) =>
+      files.exists(fs => single.shouldCommit(fs.fileOpenDuration, fs.fileSize, fs.recordsWritten))
 }

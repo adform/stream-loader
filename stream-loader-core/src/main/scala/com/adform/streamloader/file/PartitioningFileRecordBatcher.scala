@@ -99,10 +99,10 @@ class PartitioningFileRecordBatcher[P, R](
 object PartitioningFileRecordBatcher {
 
   case class Builder[P, R](
-    private val _fileBuilderFactory: FileBuilderFactory[R],
-    private val _recordFormatter: RecordFormatter[R],
-    private val _recordPartitioner: RecordPartitioner[R, P],
-    private val _fileCommitStrategy: MultiFileCommitStrategy
+      private val _fileBuilderFactory: FileBuilderFactory[R],
+      private val _recordFormatter: RecordFormatter[R],
+      private val _recordPartitioner: RecordPartitioner[R, P],
+      private val _fileCommitStrategy: MultiFileCommitStrategy
   ) {
 
     /**
@@ -114,6 +114,7 @@ object PartitioningFileRecordBatcher {
       * Sets the record partitioner to use for distributing records to partitions.
       */
     def recordPartitioner(partitioner: RecordPartitioner[R, P]): Builder[P, R] = copy(_recordPartitioner = partitioner)
+
     /**
       * Sets the file builder factory, e.g. CSV.
       */

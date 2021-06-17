@@ -71,10 +71,9 @@ class BaseS3Loader extends Loader {
             .recordFormatter(recordFormatter)
             .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)
             .fileBuilderFactory(new CsvFileBuilderFactory(Compression.NONE))
-            .fileCommitStrategy(
-              MultiFileCommitStrategy.anyFile(
-                ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
-              ))
+            .fileCommitStrategy(MultiFileCommitStrategy.anyFile(
+              ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
+            ))
             .build()
         )
         .batchStorage(

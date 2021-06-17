@@ -32,7 +32,6 @@ class HadoopFileStorage[P](
   private val stagingPath = new Path(stagingDirectory)
   private val basePath = new Path(destinationDirectory)
 
-
   override protected def stageBatch(batch: PartitionedFileRecordBatch[P, BaseFileRecordBatch]): MultiFileStaging = {
     val stagings = batch.partitionBatches.map {
       case (partition, fileBatch) => stageSingleBatch(partition, fileBatch)
