@@ -38,7 +38,7 @@ lazy val `stream-loader-core` = project
       "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
       "org.xerial.snappy" % "snappy-java"       % "1.1.8.4",
       "org.lz4"           % "lz4-java"          % "1.7.1",
-      "com.github.luben"  % "zstd-jni"          % "1.4.9-5",
+      "com.github.luben"  % "zstd-jni"          % "1.5.0-2",
       "com.univocity"     % "univocity-parsers" % "2.9.1",
       "org.json4s"        %% "json4s-native"    % "4.0.0",
       "io.micrometer"     % "micrometer-core"   % "1.7.0",
@@ -91,9 +91,9 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.16.74",
+      "software.amazon.awssdk" % "s3"              % "2.16.86",
       "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.1030" % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.8" % "test",
       "org.gaul"               % "s3proxy"         % "1.8.0" % "test",
     )
   )
@@ -172,7 +172,7 @@ lazy val `stream-loader-tests` = project
       val bin = s"/opt/${name.value}/bin/"
 
       new Dockerfile {
-        from("adoptopenjdk:11.0.10_9-jre-hotspot")
+        from("adoptopenjdk:11.0.11_9-jre-hotspot")
 
         env("APP_CLASS_PATH" -> s"$lib/*")
 
