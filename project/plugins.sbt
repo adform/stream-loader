@@ -1,6 +1,6 @@
 addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.8.2")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.1")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.13")
 

@@ -58,7 +58,7 @@ abstract class PartitionGroupingSink extends Sink with Logging {
 
     val groupPositions = partitions.groupBy(groupForPartition).map {
       case (group, groupPartitions) =>
-        // Check if we already have a sinker for this group, if so, close it and add collect the previously owned partitions
+        // Check if we already have a sinker for this group, if so, close it and collect the previously owned partitions
         val oldGroupPartitions = partitionGroups
           .get(group)
           .map {

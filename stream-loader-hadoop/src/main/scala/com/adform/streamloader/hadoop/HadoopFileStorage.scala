@@ -10,10 +10,9 @@ package com.adform.streamloader.hadoop
 
 import java.io.IOException
 
-import com.adform.streamloader.file.storage.{FileStaging, FileStorage, TwoPhaseCommitFileStorage}
-import com.adform.streamloader.file.{FilePathFormatter, RecordRangeFile}
+import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
+import com.adform.streamloader.file.{BaseFileRecordBatch, FilePathFormatter, FileStaging}
 import com.adform.streamloader.model.RecordRange
-import com.adform.streamloader.util.Logging
 import org.apache.hadoop.fs.{FileSystem, Path}
 
 /**
@@ -22,24 +21,21 @@ import org.apache.hadoop.fs.{FileSystem, Path}
   * The prepare/commit phases for storing a file consist of first uploading it to a staging path
   * and later atomically moving it to the final destination path.
   */
-class HadoopFileStorage private (
+class HadoopFileStorage protected (
     hadoopFS: FileSystem,
     stagingDirectory: String,
     stagingFilePathFormatter: FilePathFormatter,
     destinationDirectory: String,
     destinationFilePathFormatter: FilePathFormatter
-) extends TwoPhaseCommitFileStorage[Unit]
-    with Logging {
+) extends TwoPhaseCommitBatchStorage[BaseFileRecordBatch, FileStaging] {
 
   private val stagingPath = new Path(stagingDirectory)
   private val basePath = new Path(destinationDirectory)
 
-  override def startNewFile(): Unit = {}
-
-  override protected def stageFile(file: RecordRangeFile[Unit]): FileStaging = {
-    val sourceFilePath = new Path(file.file.toPath.toString)
-    val stagingFilePath = new Path(stagingPath, stagingFilePathFormatter.formatPath(file.recordRanges))
-    val targetFilePath = new Path(basePath, destinationFilePathFormatter.formatPath(file.recordRanges))
+  override protected def stageBatch(batch: BaseFileRecordBatch): FileStaging = {
+    val sourceFilePath = new Path(batch.file.toPath.toString)
+    val stagingFilePath = new Path(stagingPath, stagingFilePathFormatter.formatPath(batch.recordRanges))
+    val targetFilePath = new Path(basePath, destinationFilePathFormatter.formatPath(batch.recordRanges))
 
     log.debug(s"Staging file $sourceFilePath to $stagingFilePath")
 
@@ -48,9 +44,9 @@ class HadoopFileStorage private (
     FileStaging(stagingFilePath.toUri.toString, targetFilePath.toUri.toString)
   }
 
-  override protected def storeFile(fileStaging: FileStaging): Unit = {
-    val stagingFilePath = new Path(fileStaging.stagingPath)
-    val targetFilePath = new Path(fileStaging.destinationPath)
+  override protected def storeBatch(staging: FileStaging): Unit = {
+    val stagingFilePath = new Path(staging.stagingPath)
+    val targetFilePath = new Path(staging.destinationPath)
 
     if (!hadoopFS.exists(targetFilePath.getParent)) {
       log.debug(s"Creating directory ${targetFilePath.getParent}")
@@ -59,7 +55,7 @@ class HadoopFileStorage private (
 
     log.debug(s"Moving staged file $stagingFilePath to the destination path $targetFilePath")
     if (!hadoopFS.rename(stagingFilePath, targetFilePath)) {
-      if (!isFileStored(fileStaging)) {
+      if (!isBatchStored(staging)) {
         throw new IOException(
           s"Failed renaming file from $stagingFilePath to $targetFilePath, because $stagingFilePath does not exist")
       } else {
@@ -69,8 +65,8 @@ class HadoopFileStorage private (
     log.info(s"Successfully stored staged file $stagingFilePath to the destination path $targetFilePath")
   }
 
-  override protected def isFileStored(fileStaging: FileStaging): Boolean = {
-    hadoopFS.exists(new Path(fileStaging.destinationPath))
+  override protected def isBatchStored(staging: FileStaging): Boolean = {
+    hadoopFS.exists(new Path(staging.destinationPath))
   }
 }
 
@@ -112,7 +108,7 @@ object HadoopFileStorage {
     def destinationFilePathFormatter(formatter: FilePathFormatter): Builder =
       copy(_destinationFilePathFormatter = formatter)
 
-    def build(): FileStorage[Unit] = {
+    def build(): HadoopFileStorage = {
       if (_hadoopFS == null) throw new IllegalArgumentException("Must provide a Hadoop FileSystem")
       if (_stagingBasePath == null) throw new IllegalArgumentException("Staging base path must be provided")
       if (_destinationBasePath == null) throw new IllegalArgumentException("Destination base path must be provided")

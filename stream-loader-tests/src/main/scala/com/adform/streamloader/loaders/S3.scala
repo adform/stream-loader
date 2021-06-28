@@ -10,12 +10,14 @@ package com.adform.streamloader.loaders
 
 import java.net.URI
 
+import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
 import com.adform.streamloader.encoding.csv.CsvFileBuilderFactory
+import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
 import com.adform.streamloader.s3.S3FileStorage
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.apache.kafka.common.TopicPartition
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.regions.Region
@@ -59,9 +61,17 @@ class BaseS3Loader extends Loader {
       .build()
 
     val sink =
-      FileSink
+      RecordBatchingSink
         .builder()
-        .fileStorage(
+        .recordBatcher(
+          FileRecordBatcher
+            .builder()
+            .recordFormatter(recordFormatter)
+            .fileBuilderFactory(new CsvFileBuilderFactory(Compression.NONE))
+            .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
+            .build()
+        )
+        .batchStorage(
           S3FileStorage
             .builder()
             .s3Client(s3Client)
@@ -71,12 +81,7 @@ class BaseS3Loader extends Loader {
             )
             .build()
         )
-        .fileCommitStrategy(
-          FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
-        )
         .partitionGrouping(groupForPartition)
-        .fileBuilderFactory(new CsvFileBuilderFactory[String](Compression.NONE))
-        .recordFormatter(recordFormatter)
         .build()
 
     val loader = new StreamLoader(source, sink)

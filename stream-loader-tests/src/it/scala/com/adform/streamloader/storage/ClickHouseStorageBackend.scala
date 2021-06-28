@@ -24,7 +24,6 @@ import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Arbitrary
 import ru.yandex.clickhouse.ClickHouseArray
-import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ListBuffer
@@ -58,16 +57,15 @@ case class ClickHouseStorageBackend(
 
   val kafkaContext: KafkaContext = getKafkaContext(kafkaContainer, "test")
 
-  val fileStorage: ClickHouseFileStorage = ClickHouseFileStorage
+  val batchStorage: ClickHouseFileStorage = ClickHouseFileStorage
     .builder()
     .dbDataSource(dataSource)
     .table(table)
-    .fileFormat(ClickHouseFormat.RowBinary) // not used in tests
     .rowOffsetColumnNames(TOPIC_COLUMN, PARTITION_COLUMN, OFFSET_COLUMN, WATERMARK_COLUMN)
     .build()
 
   override def initialize(): Unit = {
-    fileStorage.initialize(kafkaContext)
+    batchStorage.initialize(kafkaContext)
     executeStatement(
       s"""CREATE TABLE IF NOT EXISTS $table (
          |  $TOPIC_COLUMN String,
@@ -165,5 +163,5 @@ case class ClickHouseStorageBackend(
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
       partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] =
-    fileStorage.committedPositions(partitions)
+    batchStorage.committedPositions(partitions)
 }

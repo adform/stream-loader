@@ -2,7 +2,7 @@ name := "stream-loader"
 
 ThisBuild / organization := "com.adform"
 ThisBuild / organizationName := "Adform"
-ThisBuild / scalaVersion := "2.13.5"
+ThisBuild / scalaVersion := "2.13.6"
 ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.8")
 
 ThisBuild / startYear := Some(2020)
@@ -20,9 +20,9 @@ ThisBuild / useCoursier := false
 val gitRepo = "git@github.com:adform/stream-loader.git"
 val gitRepoUrl = "https://github.com/adform/stream-loader"
 
-val scalaTestVersion = "3.2.8"
-val scalaCheckVersion = "1.15.3"
-val scalaCheckTestVersion = "3.2.8.0"
+val scalaTestVersion = "3.2.9"
+val scalaCheckVersion = "1.15.4"
+val scalaCheckTestVersion = "3.2.9.0"
 
 lazy val `stream-loader-core` = project
   .in(file("stream-loader-core"))
@@ -34,14 +34,14 @@ lazy val `stream-loader-core` = project
     libraryDependencies ++= Seq(
       "org.scala-lang"    % "scala-reflect"     % scalaVersion.value,
       "org.apache.kafka"  % "kafka-clients"     % "2.8.0",
-      "org.log4s"         %% "log4s"            % "1.9.0",
+      "org.log4s"         %% "log4s"            % "1.10.0",
       "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
       "org.xerial.snappy" % "snappy-java"       % "1.1.8.4",
       "org.lz4"           % "lz4-java"          % "1.7.1",
       "com.github.luben"  % "zstd-jni"          % "1.4.9-5",
       "com.univocity"     % "univocity-parsers" % "2.9.1",
-      "org.json4s"        %% "json4s-native"    % "3.6.11",
-      "io.micrometer"     % "micrometer-core"   % "1.6.6",
+      "org.json4s"        %% "json4s-native"    % "4.0.0",
+      "io.micrometer"     % "micrometer-core"   % "1.7.0",
       "org.scalatest"     %% "scalatest"        % scalaTestVersion % "test",
       "org.scalatestplus" %% "scalacheck-1-15"  % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion % "test",
@@ -62,7 +62,7 @@ lazy val `stream-loader-clickhouse` = project
   .settings(
     resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
-      "ru.yandex.clickhouse" % "clickhouse-jdbc"  % "0.3.0",
+      "ru.yandex.clickhouse" % "clickhouse-jdbc"  % "0.3.1",
       "org.scalatest"        %% "scalatest"       % scalaTestVersion % "test",
       "org.scalatestplus"    %% "scalacheck-1-15" % scalaCheckTestVersion % "test",
       "org.scalacheck"       %% "scalacheck"      % scalaCheckVersion % "test"
@@ -77,7 +77,7 @@ lazy val `stream-loader-hadoop` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.sksamuel.avro4s" %% "avro4s-core"     % "4.0.7",
+      "com.sksamuel.avro4s" %% "avro4s-core"     % "4.0.9",
       "org.apache.parquet"  % "parquet-avro"     % parquetVersion,
       "org.apache.parquet"  % "parquet-protobuf" % parquetVersion,
       "org.apache.hadoop"   % "hadoop-client"    % "3.2.2" exclude ("log4j", "log4j"),
@@ -91,9 +91,9 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.16.46",
+      "software.amazon.awssdk" % "s3"              % "2.16.74",
       "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.1003" % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.11.1030" % "test",
       "org.gaul"               % "s3proxy"         % "1.8.0" % "test",
     )
   )

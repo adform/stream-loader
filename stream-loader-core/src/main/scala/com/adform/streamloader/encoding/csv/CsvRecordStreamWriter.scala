@@ -10,7 +10,7 @@ package com.adform.streamloader.encoding.csv
 
 import java.io.OutputStream
 
-import com.adform.streamloader.file.RecordStreamWriter
+import com.adform.streamloader.batch.RecordStreamWriter
 import com.univocity.parsers.csv.{CsvWriter, CsvWriterSettings}
 
 case class CsvFormat(columnSeparator: String, rowSeparator: String, includeHeader: Boolean, nullValue: String)

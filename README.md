@@ -42,12 +42,17 @@ val source = KafkaSource
 and the sink can be arbitrary, in case of S3 we define it as follows:
 
 ```scala
-val sink = FileSink
+val sink = RecordBatchingSink
   .builder()
-  .recordFormatter((r: Record) => Seq(new String(r.consumerRecord.value(), "UTF-8"))) // (1)
-  .fileBuilderFactory(new CsvFileBuilderFactory[String](Compression.ZSTD))            // (2)
-  .fileCommitStrategy(FileCommitStrategy.ReachedAnyOf(recordsWritten = 1000))         // (3)
-  .fileStorage(
+  .recordBatcher(
+    FileRecordBatcher
+      .builder()
+      .recordFormatter((r: Record) => Seq(new String(r.consumerRecord.value(), "UTF-8"))) // (1)
+      .fileBuilderFactory(new CsvFileBuilderFactory(Compression.ZSTD))                    // (2)
+      .fileCommitStrategy(FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(1000)))   // (3)
+      .build()
+  )
+  .batchStorage(
     S3FileStorage          // (4)
       .builder()
       .s3Client(s3Client)  // (5)
@@ -62,7 +67,7 @@ val sink = FileSink
   .build()
 ```
 
-Reading this from top to bottom we see that this loader will interpret the bytes of incoming Kafka messages as UTF-8 strings _(1)_, construct Zstd compressed CSV files containing these strings _(2)_ and will close and commit them once a 1000 records is written _(3)_. The files will get stored to S3 _(4)_ using the specified `s3Client` instance _(5)_ to the `test` bucket _(6)_. The stored files will be time partitioned _(7)_ based on the watermark of the Kafka message timestamps, the partition prefix will look like `dt=20200313/` _(8)_ and the files will have a `zst` extension _(9)_, the names being random UUIDs.
+Reading this from top to bottom we see that this loader will interpret the bytes of incoming Kafka messages as UTF-8 strings _(1)_, construct Zstd compressed CSV files containing these strings _(2)_ and will close and commit them once 1000 records is written _(3)_. The files will get stored to S3 _(4)_ using the specified `s3Client` instance _(5)_ to the `test` bucket _(6)_. The stored files will be time partitioned _(7)_ based on the watermark of the Kafka message timestamps, the partition prefix will look like `dt=20200313/` _(8)_, and the files will have a `zst` extension _(9)_, the names being random UUIDs.
 
 Every part of this sink definition can be customized, e.g. your Kafka messages might contain JSON which you might want to encode to Avro and write to parquet files. You can decide to use a different storage and switch to e.g. HDFS and so on.
 

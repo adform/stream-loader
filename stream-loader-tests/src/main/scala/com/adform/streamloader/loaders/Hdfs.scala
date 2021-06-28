@@ -8,6 +8,8 @@
 
 package com.adform.streamloader.loaders
 
+import com.adform.streamloader.batch.RecordBatchingSink
+import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
 import com.adform.streamloader.hadoop.HadoopFileStorage
 import com.adform.streamloader.hadoop.parquet.AvroParquetFileBuilderFactory
@@ -15,7 +17,7 @@ import com.adform.streamloader.model.{ExampleMessage, Record}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
 import com.sksamuel.avro4s.ScalePrecision
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 
@@ -49,11 +51,17 @@ object TestParquetHdfsLoader extends Loader {
     implicit val scalePrecision: ScalePrecision = ExampleMessage.SCALE_PRECISION
     implicit val roundingMode: RoundingMode = ExampleMessage.ROUNDING_MODE
 
-    val sink = FileSink
+    val sink = RecordBatchingSink
       .builder()
-      .recordFormatter((r: Record) => Seq(ExampleMessage.parseFrom(r.consumerRecord.value())))
-      .fileBuilderFactory(new AvroParquetFileBuilderFactory[ExampleMessage](Compression.NONE))
-      .fileStorage(
+      .recordBatcher(
+        FileRecordBatcher
+          .builder()
+          .recordFormatter((r: Record) => Seq(ExampleMessage.parseFrom(r.consumerRecord.value())))
+          .fileBuilderFactory(new AvroParquetFileBuilderFactory[ExampleMessage](Compression.NONE))
+          .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
+          .build()
+      )
+      .batchStorage(
         HadoopFileStorage
           .builder()
           .hadoopFS(hadoopFileSystem)
@@ -63,9 +71,6 @@ object TestParquetHdfsLoader extends Loader {
             new TimePartitioningFilePathFormatter(cfg.getStringOpt("file.time-partition.pattern"), None)
           )
           .build()
-      )
-      .fileCommitStrategy(
-        FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
       )
       .build()
 

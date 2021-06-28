@@ -8,8 +8,8 @@
 
 package com.adform.streamloader.s3
 
-import com.adform.streamloader.file.storage.{FileStaging, FileStorage, TwoPhaseCommitFileStorage}
-import com.adform.streamloader.file.{FilePathFormatter, RecordRangeFile}
+import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
+import com.adform.streamloader.file.{BaseFileRecordBatch, FilePathFormatter, FileStaging}
 import com.adform.streamloader.util.Logging
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
@@ -21,14 +21,12 @@ import scala.jdk.CollectionConverters._
   * An S3 compatible file storage, stores files and commits offsets to Kafka in a two-phase transaction.
   * The file upload prepare/stage phases consist of starting and completing a multi-part upload with a single part.
   */
-class S3FileStorage private (
+class S3FileStorage protected (
     s3Client: S3Client,
     bucket: String,
     filePathFormatter: FilePathFormatter,
-) extends TwoPhaseCommitFileStorage[Unit]
+) extends TwoPhaseCommitBatchStorage[BaseFileRecordBatch, FileStaging]
     with Logging {
-
-  override def startNewFile(): Unit = {}
 
   private def listObjects(prefix: String): Seq[S3Object] = {
     val request = ListObjectsV2Request
@@ -46,8 +44,8 @@ class S3FileStorage private (
     objects.result()
   }
 
-  override protected def stageFile(file: RecordRangeFile[Unit]): FileStaging = {
-    val path = filePathFormatter.formatPath(file.recordRanges)
+  override protected def stageBatch(batch: BaseFileRecordBatch): FileStaging = {
+    val path = filePathFormatter.formatPath(batch.recordRanges)
     val uploadRequest = CreateMultipartUploadRequest.builder().bucket(bucket).key(path).build()
 
     val upload = s3Client.createMultipartUpload(uploadRequest)
@@ -63,15 +61,15 @@ class S3FileStorage private (
 
     log.debug(s"Starting multi-part upload with ID $uploadId for file $path")
 
-    val uploadPartResult = s3Client.uploadPart(uploadPartRequest, RequestBody.fromFile(file.file))
+    val uploadPartResult = s3Client.uploadPart(uploadPartRequest, RequestBody.fromFile(batch.file))
     val uploadedPartTag = uploadPartResult.eTag()
 
     log.info(s"Staged file to multi-part upload ID $uploadId with tag $uploadedPartTag for file $path")
     FileStaging(s"$uploadId;$uploadedPartTag", path)
   }
 
-  override protected def storeFile(fileStaging: FileStaging): Unit = {
-    val Array(uploadId, tag) = fileStaging.stagingPath.split(';')
+  override protected def storeBatch(staging: FileStaging): Unit = {
+    val Array(uploadId, tag) = staging.stagingPath.split(';')
     val completePartRequest = CompletedPart
       .builder()
       .partNumber(1)
@@ -85,17 +83,17 @@ class S3FileStorage private (
       CompleteMultipartUploadRequest
         .builder()
         .bucket(bucket)
-        .key(fileStaging.destinationPath)
+        .key(staging.destinationPath)
         .uploadId(uploadId)
         .multipartUpload(completedUploadRequest)
         .build()
 
     s3Client.completeMultipartUpload(completeRequest)
-    log.info(s"Completed multi-part upload ID $uploadId with tag $tag to file ${fileStaging.destinationPath}")
+    log.info(s"Completed multi-part upload ID $uploadId with tag $tag to file ${staging.destinationPath}")
   }
 
-  override protected def isFileStored(fileStaging: FileStaging): Boolean = {
-    listObjects(fileStaging.destinationPath).nonEmpty
+  override protected def isBatchStored(staging: FileStaging): Boolean = {
+    listObjects(staging.destinationPath).nonEmpty
   }
 }
 
@@ -120,7 +118,7 @@ object S3FileStorage {
       */
     def filePathFormatter(formatter: FilePathFormatter): Builder = copy(_filePathFormatter = formatter)
 
-    def build(): FileStorage[Unit] = {
+    def build(): S3FileStorage = {
       if (_s3Client == null) throw new IllegalArgumentException("Must provide an S3 client")
       if (_bucket == null) throw new IllegalArgumentException("Must provide a valid bucket")
       if (_filePathFormatter == null) throw new IllegalArgumentException("Must provide a file path formatter")

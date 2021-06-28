@@ -63,7 +63,7 @@ class VerticaTests
     dataSource.close()
   }
 
-  def verticaExternalStorageBackend(testId: String): VerticaStorageBackend[Long] = {
+  def verticaExternalStorageBackend(testId: String): VerticaStorageBackend = {
     val table = testId.replace("-", "_")
     val backend =
       ExternalOffsetVerticaStorageBackend(
@@ -78,7 +78,7 @@ class VerticaTests
     backend
   }
 
-  def verticaInRowStorageBackend(testId: String): VerticaStorageBackend[Unit] = {
+  def verticaInRowStorageBackend(testId: String): VerticaStorageBackend = {
     val table = testId.replace("-", "_")
     val backend =
       InRowOffsetVerticaStorageBackend(

@@ -36,4 +36,4 @@ jobs:
         java-version: 1.8
 
     - name: Run Tests
-      run: sbt -Dsbt.color=always -Dsbt.supershell=false headerCheckAll test it:test
+      run: sbt -Dsbt.color=always -Dsbt.supershell=false scalafmtCheck headerCheckAll test it:test

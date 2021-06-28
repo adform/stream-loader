@@ -9,7 +9,6 @@
 package com.adform.streamloader.hadoop.parquet
 
 import java.io.File
-import java.time.Duration
 
 import com.adform.streamloader.file.{Compression, FileBuilder}
 import com.sksamuel.avro4s._
@@ -22,29 +21,28 @@ import org.apache.parquet.hadoop.util.HadoopOutputFile
 /**
   * Parquet file builder for records of any data type that have implicitly defined Avro encoders.
   */
-class AvroParquetFileBuilderFactory[R: Encoder: Decoder: SchemaFor](compression: Compression)(
-    implicit currentTimeMills: () => Long = () => System.currentTimeMillis()
-) extends BaseParquetFileBuilderFactory[R](compression) {
+class AvroParquetFileBuilderFactory[R: Encoder: Decoder: SchemaFor](compression: Compression)
+    extends BaseParquetFileBuilderFactory[R](compression) {
 
   private val recordFormat = RecordFormat[R]
 
-  override def newFileBuilder(filenamePrefix: String): FileBuilder[R] = {
+  override def newFileBuilder(): FileBuilder[R] = {
     val conf = new Configuration()
-    val file = getFile(filenamePrefix)
+    val file = getNewTempFile
     val writer = AvroParquetWriter
       .builder[GenericRecord](HadoopOutputFile.fromPath(new Path(file.getAbsolutePath), conf))
       .withSchema(AvroSchema[R])
       .withConf(conf)
       .withCompressionCodec(compressionCodecName)
       .build()
-    val genericBuilder = new ParquetFileBuilder(file, writer)(currentTimeMills)
+    val genericBuilder = new ParquetFileBuilder(file, writer)
 
     new FileBuilder[R] {
       override def write(record: R): Unit = genericBuilder.write(recordFormat.to(record))
       override def getDataSize: Long = genericBuilder.getDataSize
       override def getRecordCount: Long = genericBuilder.getRecordCount
-      override def getOpenDuration: Duration = genericBuilder.getOpenDuration
       override def build(): Option[File] = genericBuilder.build()
+      override def discard(): Unit = genericBuilder.discard()
     }
   }
 }

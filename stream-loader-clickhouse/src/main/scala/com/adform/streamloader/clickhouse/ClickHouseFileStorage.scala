@@ -10,14 +10,12 @@ package com.adform.streamloader.clickhouse
 
 import java.sql.Connection
 
-import com.adform.streamloader.file.RecordRangeFile
-import com.adform.streamloader.file.storage.InDataOffsetFileStorage
-import com.adform.streamloader.model.{StreamPosition, Timestamp}
+import com.adform.streamloader.batch.storage._
+import com.adform.streamloader.model._
 import com.adform.streamloader.util.Logging
 import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 import ru.yandex.clickhouse.ClickHouseConnection
-import ru.yandex.clickhouse.domain.ClickHouseFormat
 import ru.yandex.clickhouse.settings.ClickHouseQueryParam
 
 import scala.collection.concurrent.TrieMap
@@ -27,18 +25,15 @@ import scala.util.Using
   * A ClickHouse storage implementation, stores offsets in rows of data.
   * Queries ClickHouse upon initialization in order to retrieve committed stream positions.
   */
-class ClickHouseFileStorage private (
+class ClickHouseFileStorage(
     dbDataSource: DataSource,
     table: String,
-    fileFormat: ClickHouseFormat,
     topicColumnName: String,
     partitionColumnName: String,
     offsetColumnName: String,
     watermarkColumnName: String
-) extends InDataOffsetFileStorage[Unit]
+) extends InDataOffsetBatchStorage[ClickHouseFileRecordBatch]
     with Logging {
-
-  override def startNewFile(): Unit = {}
 
   def committedPositions(connection: Connection): TrieMap[TopicPartition, StreamPosition] = {
     val positionQuery =
@@ -81,14 +76,14 @@ class ClickHouseFileStorage private (
     }
   }
 
-  override def storeFile(file: RecordRangeFile[Unit]): Unit = {
+  override def commitBatchWithOffsets(batch: ClickHouseFileRecordBatch): Unit = {
     Using.resource(dbDataSource.getConnection) { connection =>
       Using.resource(connection.unwrap(classOf[ClickHouseConnection]).createStatement) { statement =>
         statement
           .write()
           .table(table)
-          .data(file.file, fileFormat)
-          .addDbParam(ClickHouseQueryParam.MAX_INSERT_BLOCK_SIZE, file.recordCount.toString) // atomic insert
+          .data(batch.file, batch.format)
+          .addDbParam(ClickHouseQueryParam.MAX_INSERT_BLOCK_SIZE, batch.rowCount.toString) // atomic insert
           .send()
       }
     }
@@ -100,11 +95,11 @@ object ClickHouseFileStorage {
   case class Builder(
       private val _dbDataSource: DataSource,
       private val _table: String,
-      private val _fileFormat: ClickHouseFormat,
       private val _topicColumnName: String,
       private val _partitionColumnName: String,
       private val _offsetColumnName: String,
-      private val _watermarkColumnName: String) {
+      private val _watermarkColumnName: String
+  ) {
 
     /**
       * Sets a data source for ClickHouse JDBC connections.
@@ -115,11 +110,6 @@ object ClickHouseFileStorage {
       * Sets the table to load data to.
       */
     def table(name: String): Builder = copy(_table = name)
-
-    /**
-      * Sets the file format that is being used.
-      */
-    def fileFormat(format: ClickHouseFormat): Builder = copy(_fileFormat = format)
 
     /**
       * Sets the names of the columns in the table that are used for storing the stream position
@@ -141,18 +131,17 @@ object ClickHouseFileStorage {
     def build(): ClickHouseFileStorage = {
       if (_dbDataSource == null) throw new IllegalStateException("Must provide a ClickHouse data source")
       if (_table == null) throw new IllegalStateException("Must provide a valid table name")
-      if (_fileFormat == null) throw new IllegalStateException("Must provide the file format")
 
       new ClickHouseFileStorage(
         _dbDataSource,
         _table,
-        _fileFormat,
         _topicColumnName,
         _partitionColumnName,
         _offsetColumnName,
-        _watermarkColumnName)
+        _watermarkColumnName
+      )
     }
   }
 
-  def builder(): Builder = Builder(null, null, null, "_topic", "_partition", "_offset", "_watermark")
+  def builder(): Builder = Builder(null, null, "_topic", "_partition", "_offset", "_watermark")
 }

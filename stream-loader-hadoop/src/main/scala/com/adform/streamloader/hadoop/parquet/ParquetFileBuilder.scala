@@ -9,7 +9,6 @@
 package com.adform.streamloader.hadoop.parquet
 
 import java.io.File
-import java.time.Duration
 
 import com.adform.streamloader.file.FileBuilder
 import org.apache.parquet.hadoop.ParquetWriter
@@ -17,12 +16,10 @@ import org.apache.parquet.hadoop.ParquetWriter
 /**
   * File builder implementation for parquet files, requires a parquet writer.
   */
-class ParquetFileBuilder[-R](file: File, parquetWriter: ParquetWriter[R])(implicit currentTimeMills: () => Long)
-    extends FileBuilder[R] {
+class ParquetFileBuilder[-R](file: File, parquetWriter: ParquetWriter[R]) extends FileBuilder[R] {
 
   private var isClosed = false
   private var recordsWritten = 0L
-  private val fileStarted = currentTimeMills()
 
   override def write(record: R): Unit = {
     recordsWritten += 1
@@ -31,7 +28,6 @@ class ParquetFileBuilder[-R](file: File, parquetWriter: ParquetWriter[R])(implic
 
   override def getRecordCount: Long = recordsWritten
   override def getDataSize: Long = parquetWriter.getDataSize
-  override def getOpenDuration: Duration = Duration.ofMillis(currentTimeMills() - fileStarted)
 
   override def build(): Option[File] = {
     if (!isClosed) {
@@ -41,5 +37,10 @@ class ParquetFileBuilder[-R](file: File, parquetWriter: ParquetWriter[R])(implic
     } else {
       None
     }
+  }
+
+  override def discard(): Unit = if (!isClosed) {
+    parquetWriter.close()
+    isClosed = true
   }
 }

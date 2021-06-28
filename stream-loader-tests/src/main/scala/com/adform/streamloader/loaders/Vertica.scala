@@ -11,12 +11,14 @@ package com.adform.streamloader.loaders
 import java.time.LocalDateTime
 import java.util.UUID
 
+import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
 import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, MaxLength}
+import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
-import com.adform.streamloader.model.{ExampleMessage, Timestamp}
+import com.adform.streamloader.model.{ExampleMessage, Record, Timestamp}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.vertica._
-import com.adform.streamloader.vertica.native.NativeVerticaFileBuilderFactory
+import com.adform.streamloader.vertica.file.native.NativeVerticaFileBuilderFactory
 import com.adform.streamloader.{KafkaSource, Loader, Sink, StreamLoader}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
@@ -105,11 +107,10 @@ case class TestExternalOffsetVerticaRecord(
 object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
 
   private val fileBuilderFactory = new NativeVerticaFileBuilderFactory[TestExternalOffsetVerticaRecord](
-    Compression.ZSTD,
-    VerticaLoadMethod.AUTO
+    Compression.ZSTD
   )
 
-  private val recordFormatter: FileRecordFormatter[TestExternalOffsetVerticaRecord, Long] = (record, fileId) => {
+  private val recordFormatter = (fileId: Long, record: Record) => {
     val msg = ExampleMessage.parseFrom(record.consumerRecord.value())
     Seq(
       TestExternalOffsetVerticaRecord(
@@ -128,23 +129,27 @@ object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
   }
 
   override def sink(cfg: Config, verticaDataSource: HikariDataSource): Sink =
-    FileSink
+    RecordBatchingSink
       .builder()
-      .fileStorage(
+      .recordBatcher(
+        ExternalOffsetVerticaFileBatcher
+          .builder()
+          .dbDataSource(verticaDataSource)
+          .fileIdSequence(cfg.getString("vertica.file-id-sequence"))
+          .recordFormatter(recordFormatter)
+          .fileBuilderFactory(fileBuilderFactory)
+          .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
+          .verticaLoadMethod(VerticaLoadMethod.AUTO)
+          .build()
+      )
+      .batchStorage(
         ExternalOffsetVerticaFileStorage
           .builder()
           .dbDataSource(verticaDataSource)
-          .copyStatementProvider(fileBuilderFactory)
           .table(cfg.getString("vertica.table"))
           .offsetTable(cfg.getString("vertica.offset-table"))
-          .fileIdSequence(cfg.getString("vertica.file-id-sequence"))
           .build()
       )
-      .fileCommitStrategy(
-        FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
-      )
-      .fileBuilderFactory(fileBuilderFactory)
-      .recordFormatter(recordFormatter)
       .build()
 }
 
@@ -187,8 +192,7 @@ case class TestInRowOffsetVerticaRecord(
 object TestInRowOffsetVerticaLoader extends BaseVerticaLoader {
 
   private val fileBuilderFactory = new NativeVerticaFileBuilderFactory[TestInRowOffsetVerticaRecord](
-    Compression.ZSTD,
-    VerticaLoadMethod.AUTO
+    Compression.ZSTD
   )
 
   private val recordFormatter: RecordFormatter[TestInRowOffsetVerticaRecord] = record => {
@@ -214,20 +218,23 @@ object TestInRowOffsetVerticaLoader extends BaseVerticaLoader {
   }
 
   override def sink(cfg: Config, verticaDataSource: HikariDataSource): Sink =
-    FileSink
+    RecordBatchingSink
       .builder()
-      .fileStorage(
+      .recordBatcher(
+        InRowOffsetVerticaFileRecordBatcher
+          .builder()
+          .recordFormatter(recordFormatter)
+          .fileBuilderFactory(fileBuilderFactory)
+          .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
+          .verticaLoadMethod(VerticaLoadMethod.AUTO)
+          .build()
+      )
+      .batchStorage(
         InRowOffsetVerticaFileStorage
           .builder()
           .dbDataSource(verticaDataSource)
-          .copyStatementProvider(fileBuilderFactory)
           .table(cfg.getString("vertica.table"))
           .build()
       )
-      .fileCommitStrategy(
-        FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
-      )
-      .fileBuilderFactory(fileBuilderFactory)
-      .recordFormatter(recordFormatter)
       .build()
 }
