@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.batch.storage
 
-import com.adform.streamloader.file.{FileRecordBatch, FileStaging}
+import com.adform.streamloader.file.FileRecordBatch
 
 import scala.collection.mutable
 

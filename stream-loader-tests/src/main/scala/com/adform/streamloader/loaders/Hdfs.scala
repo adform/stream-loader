@@ -13,7 +13,7 @@ import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
 import com.adform.streamloader.hadoop.HadoopFileStorage
 import com.adform.streamloader.hadoop.parquet.AvroParquetFileBuilderFactory
-import com.adform.streamloader.model.{ExampleMessage, Record}
+import com.adform.streamloader.model.{ExampleMessage, Record, Timestamp}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
 import com.sksamuel.avro4s.ScalePrecision
@@ -21,6 +21,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 
+import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 import scala.math.BigDecimal.RoundingMode.RoundingMode
 
@@ -54,11 +55,14 @@ object TestParquetHdfsLoader extends Loader {
     val sink = RecordBatchingSink
       .builder()
       .recordBatcher(
-        FileRecordBatcher
+        PartitioningFileRecordBatcher
           .builder()
           .recordFormatter((r: Record) => Seq(ExampleMessage.parseFrom(r.consumerRecord.value())))
+          .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)
           .fileBuilderFactory(new AvroParquetFileBuilderFactory[ExampleMessage](Compression.NONE))
-          .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
+          .fileCommitStrategy(
+            MultiFileCommitStrategy.anyFile(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
+          )
           .build()
       )
       .batchStorage(
@@ -68,7 +72,10 @@ object TestParquetHdfsLoader extends Loader {
           .stagingBasePath(cfg.getString("hdfs.staging-directory"))
           .destinationBasePath(cfg.getString("hdfs.base-directory"))
           .destinationFilePathFormatter(
-            new TimePartitioningFilePathFormatter(cfg.getStringOpt("file.time-partition.pattern"), None)
+            new TimePartitioningFilePathFormatter[LocalDate](
+              cfg.getStringOpt("file.time-partition.pattern"),
+              None
+            )
           )
           .build()
       )

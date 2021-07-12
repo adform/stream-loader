@@ -29,7 +29,7 @@ import scala.jdk.DurationConverters._
   * @tparam B Type of record batches.
   * @define RecordBatchStorage [[com.adform.streamloader.batch.storage.RecordBatchStorage RecordBatchStorage]]
   */
-class RecordBatchingSink[+B <: RecordBatch] protected (
+class RecordBatchingSink[+B <: RecordBatch](
     recordBatcher: RecordBatcher[B],
     batchStorage: RecordBatchStorage[B],
     batchCommitQueueSize: Int,

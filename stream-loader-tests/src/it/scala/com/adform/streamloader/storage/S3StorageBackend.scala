@@ -8,8 +8,6 @@
 
 package com.adform.streamloader.storage
 
-import java.util.UUID
-
 import com.adform.streamloader.file.{FilePathFormatter, TimePartitioningFilePathFormatter}
 import com.adform.streamloader.fixtures._
 import com.adform.streamloader.model.{StreamPosition, StringMessage, Timestamp}
@@ -24,6 +22,8 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model._
 import software.amazon.awssdk.utils.IoUtils
 
+import java.time.LocalDate
+import java.util.UUID
 import scala.jdk.CollectionConverters._
 
 case class LoaderS3Config(accessKey: String, secretKey: String, bucket: String)
@@ -41,7 +41,7 @@ case class S3StorageBackend(
   override def arbMessage: Arbitrary[StringMessage] = StringMessage.arbMessage
 
   private val timePartitionPathPattern = "'dt='yyyy'_'MM'_'dd"
-  private val pathFormatter: FilePathFormatter =
+  private val pathFormatter: FilePathFormatter[LocalDate] =
     new TimePartitioningFilePathFormatter(Some(timePartitionPathPattern), None)
 
   override def initialize(): Unit = {

@@ -8,13 +8,14 @@
 
 package com.adform.streamloader.file
 
-import java.util.UUID
-
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+
+import java.time.LocalDate
+import java.util.UUID
 
 class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers with ScalaCheckPropertyChecks {
 
@@ -39,8 +40,17 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
   implicit val arbitraryRecordRange: Arbitrary[RecordRange] = Arbitrary(recordRangeGen)
   implicit val arbitraryRecordRangeSeq: Arbitrary[Seq[RecordRange]] = Arbitrary(recordRangeSeqGen)
 
+  implicit val arbitraryLocalDate: Arbitrary[LocalDate] = {
+    Arbitrary {
+      for {
+        epochDay <- Gen.chooseNum(LocalDate.of(2000, 1, 1).toEpochDay, LocalDate.of(3000, 1, 1).toEpochDay)
+      } yield LocalDate.ofEpochDay(epochDay)
+    }
+  }
+
   it("should format filenames for files with a single record range") {
-    val formatter = new TimePartitioningFilePathFormatter(Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
+    val formatter =
+      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
     val ranges =
       RecordRange(
         "test-topic",
@@ -48,7 +58,7 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
         StreamPosition(100, Timestamp(1554897174000L)),
         StreamPosition(200, Timestamp(1554897175000L)))
 
-    val formatted = formatter.formatPath(Seq(ranges))
+    val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), Seq(ranges))
 
     formatted should startWith("dt=20190410")
     formatted should endWith(".lzo")
@@ -57,7 +67,8 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
   }
 
   it("should format filenames for files with multiple record ranges") {
-    val formatter = new TimePartitioningFilePathFormatter(Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
+    val formatter =
+      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
     val ranges = Seq(
       RecordRange(
         "test-topic",
@@ -71,7 +82,7 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
         StreamPosition(400, Timestamp(1554897175200L)))
     )
 
-    val formatted = formatter.formatPath(ranges)
+    val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), ranges)
 
     formatted should startWith("dt=20190410")
     formatted should endWith(".lzo")
@@ -80,9 +91,10 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
   }
 
   it("should format filenames correctly for arbitrary ranges") {
-    val formatter = new TimePartitioningFilePathFormatter(Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
+    val formatter =
+      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
     forAll { batches: Seq[RecordRange] =>
-      val formatted = formatter.formatPath(batches)
+      val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), batches)
 
       formatted should startWith("dt=")
       formatted should endWith(".lzo")
@@ -93,9 +105,9 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
   }
 
   it("should format filenames reproducibly") {
-    val formatter = new TimePartitioningFilePathFormatter(None, None)
-    forAll { batches: Seq[RecordRange] =>
-      formatter.formatPath(batches) shouldEqual formatter.formatPath(batches)
+    val formatter = new TimePartitioningFilePathFormatter[LocalDate](None, None)
+    forAll { (date: LocalDate, batches: Seq[RecordRange]) =>
+      formatter.formatPath(date, batches) shouldEqual formatter.formatPath(date, batches)
     }
   }
 }

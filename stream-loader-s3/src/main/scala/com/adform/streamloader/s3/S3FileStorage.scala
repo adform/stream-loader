@@ -9,7 +9,7 @@
 package com.adform.streamloader.s3
 
 import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
-import com.adform.streamloader.file.{BaseFileRecordBatch, FilePathFormatter, FileStaging}
+import com.adform.streamloader.file.{BaseFileRecordBatch, FilePathFormatter, PartitionedFileRecordBatch}
 import com.adform.streamloader.util.Logging
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
@@ -21,12 +21,29 @@ import scala.jdk.CollectionConverters._
   * An S3 compatible file storage, stores files and commits offsets to Kafka in a two-phase transaction.
   * The file upload prepare/stage phases consist of starting and completing a multi-part upload with a single part.
   */
-class S3FileStorage protected (
+class S3FileStorage[P](
     s3Client: S3Client,
     bucket: String,
-    filePathFormatter: FilePathFormatter,
-) extends TwoPhaseCommitBatchStorage[BaseFileRecordBatch, FileStaging]
+    filePathFormatter: FilePathFormatter[P]
+) extends TwoPhaseCommitBatchStorage[PartitionedFileRecordBatch[P, BaseFileRecordBatch], S3MultiFileStaging]
     with Logging {
+
+  override protected def stageBatch(batch: PartitionedFileRecordBatch[P, BaseFileRecordBatch]): S3MultiFileStaging = {
+    val stagings = batch.partitionBatches.map {
+      case (partition, partitionBatch) => stageSingleBatch(partition, partitionBatch)
+    }
+    log.debug(s"Successfully staged batch $batch")
+    S3MultiFileStaging(stagings.toSeq)
+  }
+
+  override protected def storeBatch(staging: S3MultiFileStaging): Unit = {
+    staging.fileUploads.foreach(fs => storeSingleBatch(fs))
+    log.info(s"Successfully stored batch $staging")
+  }
+
+  override protected def isBatchStored(staging: S3MultiFileStaging): Boolean = {
+    staging.fileUploads.forall(s => listObjects(s.destinationKey).nonEmpty)
+  }
 
   private def listObjects(prefix: String): Seq[S3Object] = {
     val request = ListObjectsV2Request
@@ -44,8 +61,8 @@ class S3FileStorage protected (
     objects.result()
   }
 
-  override protected def stageBatch(batch: BaseFileRecordBatch): FileStaging = {
-    val path = filePathFormatter.formatPath(batch.recordRanges)
+  private def stageSingleBatch(partition: P, batch: BaseFileRecordBatch): S3FileStaging = {
+    val path = filePathFormatter.formatPath(partition, batch.recordRanges)
     val uploadRequest = CreateMultipartUploadRequest.builder().bucket(bucket).key(path).build()
 
     val upload = s3Client.createMultipartUpload(uploadRequest)
@@ -64,12 +81,12 @@ class S3FileStorage protected (
     val uploadPartResult = s3Client.uploadPart(uploadPartRequest, RequestBody.fromFile(batch.file))
     val uploadedPartTag = uploadPartResult.eTag()
 
-    log.info(s"Staged file to multi-part upload ID $uploadId with tag $uploadedPartTag for file $path")
-    FileStaging(s"$uploadId;$uploadedPartTag", path)
+    log.debug(s"Staged file to multi-part upload ID $uploadId with tag $uploadedPartTag for file $path")
+    S3FileStaging(uploadId, uploadedPartTag, path)
   }
 
-  override protected def storeBatch(staging: FileStaging): Unit = {
-    val Array(uploadId, tag) = staging.stagingPath.split(';')
+  private def storeSingleBatch(staging: S3FileStaging): Unit = {
+    val (tag, uploadId) = (staging.uploadPartTag, staging.uploadId)
     val completePartRequest = CompletedPart
       .builder()
       .partNumber(1)
@@ -83,42 +100,39 @@ class S3FileStorage protected (
       CompleteMultipartUploadRequest
         .builder()
         .bucket(bucket)
-        .key(staging.destinationPath)
+        .key(staging.destinationKey)
         .uploadId(uploadId)
         .multipartUpload(completedUploadRequest)
         .build()
 
     s3Client.completeMultipartUpload(completeRequest)
-    log.info(s"Completed multi-part upload ID $uploadId with tag $tag to file ${staging.destinationPath}")
-  }
-
-  override protected def isBatchStored(staging: FileStaging): Boolean = {
-    listObjects(staging.destinationPath).nonEmpty
+    log.debug(s"Completed multi-part upload ID $uploadId with tag $tag to file ${staging.destinationKey}")
   }
 }
 
 object S3FileStorage {
-  case class Builder(
+  case class Builder[P](
       private val _s3Client: S3Client,
       private val _bucket: String,
-      private val _filePathFormatter: FilePathFormatter) {
+      private val _filePathFormatter: FilePathFormatter[P]
+  ) {
 
     /**
       * Sets the S3 client to use.
       */
-    def s3Client(client: S3Client): Builder = copy(_s3Client = client)
+    def s3Client(client: S3Client): Builder[P] = copy(_s3Client = client)
 
     /**
       * Sets the bucket to upload to.
       */
-    def bucket(name: String): Builder = copy(_bucket = name)
+    def bucket(name: String): Builder[P] = copy(_bucket = name)
 
     /**
       * Sets the formatter for forming file paths, i.e. keys in S3.
       */
-    def filePathFormatter(formatter: FilePathFormatter): Builder = copy(_filePathFormatter = formatter)
+    def filePathFormatter(formatter: FilePathFormatter[P]): Builder[P] = copy(_filePathFormatter = formatter)
 
-    def build(): S3FileStorage = {
+    def build(): S3FileStorage[P] = {
       if (_s3Client == null) throw new IllegalArgumentException("Must provide an S3 client")
       if (_bucket == null) throw new IllegalArgumentException("Must provide a valid bucket")
       if (_filePathFormatter == null) throw new IllegalArgumentException("Must provide a file path formatter")
@@ -127,5 +141,5 @@ object S3FileStorage {
     }
   }
 
-  def builder(): Builder = Builder(null, null, null)
+  def builder[P](): Builder[P] = Builder[P](null, null, null)
 }

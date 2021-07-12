@@ -30,7 +30,7 @@ case class InRowOffsetVerticaFileRecordBatch(
   *
   * @tparam R Type of records being written to files.
   */
-class InRowOffsetVerticaFileRecordBatcher[R] protected (
+class InRowOffsetVerticaFileRecordBatcher[R](
     recordFormatter: RecordFormatter[R],
     fileBuilderFactory: VerticaFileBuilderFactory[R],
     fileCommitStrategy: FileCommitStrategy,

@@ -14,7 +14,7 @@ import com.adform.streamloader.batch.RecordFormatter
 import com.adform.streamloader.file.{BaseFileRecordBatcher, FileCommitStrategy}
 import com.adform.streamloader.model.RecordRange
 
-class ClickHouseFileRecordBatcher[R] protected (
+class ClickHouseFileRecordBatcher[+R](
     recordFormatter: RecordFormatter[R],
     fileBuilderFactory: ClickHouseFileBuilderFactory[R],
     fileCommitStrategy: FileCommitStrategy

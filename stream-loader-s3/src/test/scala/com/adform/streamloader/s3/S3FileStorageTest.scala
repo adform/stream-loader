@@ -10,9 +10,8 @@ package com.adform.streamloader.s3
 
 import java.io.File
 import java.util.UUID
-
 import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch}
+import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
@@ -26,8 +25,8 @@ class S3FileStorageTest extends AnyFunSpec with Matchers with MockS3 {
 
   it("should store files to a mock S3 file system and commit offsets") {
 
-    val formatter = new FilePathFormatter {
-      override def formatPath(ranges: Seq[RecordRange]): String = "filename"
+    val formatter = new FilePathFormatter[Unit] {
+      override def formatPath(partition: Unit, ranges: Seq[RecordRange]): String = "filename"
     }
 
     val bucket = UUID.randomUUID().toString
@@ -49,7 +48,8 @@ class S3FileStorageTest extends AnyFunSpec with Matchers with MockS3 {
     storage.recover(Set(tp))
 
     val sourceFile = File.createTempFile("test", "txt")
-    val batch = FileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
+    val fileBatch = FileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
+    val batch = PartitionedFileRecordBatch[Unit, FileRecordBatch](Map(() -> fileBatch))
 
     try {
       storage.commitBatch(batch)
