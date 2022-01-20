@@ -14,10 +14,12 @@ import com.adform.streamloader.model._
 import com.adform.streamloader.util.Retry
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.util.Optional
 import scala.concurrent.duration._
 
 class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
@@ -50,11 +52,12 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
           offset,
           initialTimestamp + offset * 1000,
           TimestampType.CREATE_TIME,
-          ConsumerRecord.NULL_CHECKSUM,
           ConsumerRecord.NULL_SIZE,
           ConsumerRecord.NULL_SIZE,
           Array.emptyByteArray,
-          Array.emptyByteArray
+          Array.emptyByteArray,
+          new RecordHeaders,
+          Optional.empty[Integer]
         )
 
   def createTestRecords(initialTimestamp: Long): Seq[Record] =

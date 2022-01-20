@@ -39,7 +39,7 @@ class KafkaMetricsReporter extends MetricsReporter with Metrics {
     // which does happen with Kafka, e.g. it measures "records-lag-max" per per topic, but also per partition,
     // so we make metric names unique by appending all tag keys to the name except "client-id".
     val tagKeys = metric.metricName().tags().asScala.keys.toList.filter(_ != "client-id").sorted.mkString(".")
-    val tagPostfix = if (tagKeys.length > 0) s".by.$tagKeys" else ""
+    val tagPostfix = if (tagKeys.nonEmpty) s".by.$tagKeys" else ""
     val group = metric.metricName().group()
     val name = metric.metricName().name()
     s"kafka.$group.$name$tagPostfix"
@@ -81,7 +81,6 @@ class KafkaMetricsReporter extends MetricsReporter with Metrics {
 
   def zeroMetric(mn: MetricName): Metric = new Metric {
     override def metricName(): MetricName = mn
-    override def value(): Double = 0d
     override def metricValue(): Object = java.lang.Double.valueOf(0)
   }
 
