@@ -99,6 +99,22 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
         partitionedBatch.get.partitionBatches.size shouldEqual 1
       }
     }
+
+    describe("cleanup") {
+
+      val builder = batcher.newBatchBuilder()
+      for (i <- 0 until 100) {
+        builder.add(newRecord("topic", 0, Timestamp(i), i, "key", "1"))
+      }
+      val batch = builder.build().get
+      val files = batch.fileBatches.map(_.file)
+
+      batch.discard()
+
+      it("should delete all files after discarding batch") {
+        files.exists(_.exists()) shouldBe false
+      }
+    }
   }
 
   def newRecord(

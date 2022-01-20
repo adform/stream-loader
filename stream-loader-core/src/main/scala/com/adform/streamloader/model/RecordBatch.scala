@@ -21,6 +21,13 @@ trait RecordBatch {
     * Gets the ranges of records in each topic partition contained in the batch.
     */
   def recordRanges: Seq[RecordRange]
+
+  /**
+    * Performs any necessary cleanup after the batch is no longer needed, e.g. deletes any underlying files.
+    *
+    * @return Whether the discard operation succeeded.
+    */
+  def discard(): Boolean
 }
 
 /**

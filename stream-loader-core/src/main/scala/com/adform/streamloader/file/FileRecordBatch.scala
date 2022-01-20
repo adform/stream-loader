@@ -17,6 +17,8 @@ import com.adform.streamloader.model.{RecordBatch, RecordRange}
   */
 trait BaseFileRecordBatch extends RecordBatch {
   val file: File
+
+  override def discard(): Boolean = file.delete()
 }
 
 case class FileRecordBatch(file: File, recordRanges: Seq[RecordRange]) extends BaseFileRecordBatch

@@ -76,6 +76,10 @@ class RecordBatchingSinker[B <: RecordBatch](
           retryOnFailureIf(retryPolicy)(!batchCommittedAfterFailure(batch)) {
             batchStorage.commitBatch(batch)
         })
+        if (!batch.discard()) {
+          log.warn("Failed discarding batch")
+        }
+
       } catch {
         case e if isInterruptionException(e) =>
           log.debug("Batch commit thread interrupted")
