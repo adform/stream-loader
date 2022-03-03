@@ -2,7 +2,7 @@ name := "stream-loader"
 
 ThisBuild / organization := "com.adform"
 ThisBuild / organizationName := "Adform"
-ThisBuild / scalaVersion := "2.13.6"
+ThisBuild / scalaVersion := "2.13.8"
 ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.8")
 
 ThisBuild / startYear := Some(2020)
@@ -20,9 +20,9 @@ ThisBuild / useCoursier := false
 val gitRepo = "git@github.com:adform/stream-loader.git"
 val gitRepoUrl = "https://github.com/adform/stream-loader"
 
-val scalaTestVersion = "3.2.9"
+val scalaTestVersion = "3.2.10"
 val scalaCheckVersion = "1.15.4"
-val scalaCheckTestVersion = "3.2.9.0"
+val scalaCheckTestVersion = "3.2.10.0"
 
 lazy val `stream-loader-core` = project
   .in(file("stream-loader-core"))
@@ -33,19 +33,19 @@ lazy val `stream-loader-core` = project
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, git.gitHeadCommit),
     libraryDependencies ++= Seq(
       "org.scala-lang"    % "scala-reflect"     % scalaVersion.value,
-      "org.apache.kafka"  % "kafka-clients"     % "2.8.0",
+      "org.apache.kafka"  % "kafka-clients"     % "3.0.0",
       "org.log4s"         %% "log4s"            % "1.10.0",
       "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
       "org.xerial.snappy" % "snappy-java"       % "1.1.8.4",
-      "org.lz4"           % "lz4-java"          % "1.7.1",
-      "com.github.luben"  % "zstd-jni"          % "1.5.0-2",
+      "org.lz4"           % "lz4-java"          % "1.8.0",
+      "com.github.luben"  % "zstd-jni"          % "1.5.1-1",
       "com.univocity"     % "univocity-parsers" % "2.9.1",
-      "org.json4s"        %% "json4s-native"    % "4.0.0",
-      "io.micrometer"     % "micrometer-core"   % "1.7.0",
+      "org.json4s"        %% "json4s-native"    % "4.0.3",
+      "io.micrometer"     % "micrometer-core"   % "1.8.2",
       "org.scalatest"     %% "scalatest"        % scalaTestVersion % "test",
       "org.scalatestplus" %% "scalacheck-1-15"  % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion % "test",
-      "ch.qos.logback"    % "logback-classic"   % "1.2.3" % "test"
+      "ch.qos.logback"    % "logback-classic"   % "1.2.10" % "test"
     ),
     testOptions += sbt.Tests.Setup(
       cl =>
@@ -69,7 +69,7 @@ lazy val `stream-loader-clickhouse` = project
     )
   )
 
-val parquetVersion = "1.12.0"
+val parquetVersion = "1.12.2"
 
 lazy val `stream-loader-hadoop` = project
   .in(file("stream-loader-hadoop"))
@@ -77,10 +77,10 @@ lazy val `stream-loader-hadoop` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.sksamuel.avro4s" %% "avro4s-core"     % "4.0.9",
+      "com.sksamuel.avro4s" %% "avro4s-core"     % "4.0.12",
       "org.apache.parquet"  % "parquet-avro"     % parquetVersion,
       "org.apache.parquet"  % "parquet-protobuf" % parquetVersion,
-      "org.apache.hadoop"   % "hadoop-client"    % "3.2.2" exclude ("log4j", "log4j"),
+      "org.apache.hadoop"   % "hadoop-client"    % "3.3.1" exclude ("log4j", "log4j"),
       "org.scalatest"       %% "scalatest"       % scalaTestVersion % "test"
     )
   )
@@ -91,10 +91,10 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.16.86",
+      "software.amazon.awssdk" % "s3"              % "2.17.114",
       "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.8" % "test",
-      "org.gaul"               % "s3proxy"         % "1.8.0" % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.143" % "test",
+      "org.gaul"               % "s3proxy"         % "1.9.0" % "test",
     )
   )
 
@@ -134,8 +134,8 @@ lazy val `stream-loader-tests` = project
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe"      % "config"           % "1.4.1",
-      "ch.qos.logback"    % "logback-classic"  % "1.2.3",
-      "com.zaxxer"        % "HikariCP"         % "4.0.3",
+      "ch.qos.logback"    % "logback-classic"  % "1.2.10",
+      "com.zaxxer"        % "HikariCP"         % "5.0.1",
       "com.vertica"       % "vertica-jdbc"     % verticaVersion from verticaJarUrl,
       "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion,
       "org.scalatest"     %% "scalatest"       % scalaTestVersion % "test,it",
@@ -172,7 +172,7 @@ lazy val `stream-loader-tests` = project
       val bin = s"/opt/${name.value}/bin/"
 
       new Dockerfile {
-        from("adoptopenjdk:11.0.11_9-jre-hotspot")
+        from("eclipse-temurin:11.0.13_8-jre")
 
         env("APP_CLASS_PATH" -> s"$lib/*")
 

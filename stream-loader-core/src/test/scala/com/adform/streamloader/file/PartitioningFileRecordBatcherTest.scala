@@ -11,12 +11,14 @@ package com.adform.streamloader.file
 import com.adform.streamloader.encoding.csv.CsvFileBuilderFactory
 import com.adform.streamloader.model.{Record, RecordRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.io.File
 import java.nio.file.Files
+import java.util.Optional
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -97,6 +99,22 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
         partitionedBatch.get.partitionBatches.size shouldEqual 1
       }
     }
+
+    describe("cleanup") {
+
+      val builder = batcher.newBatchBuilder()
+      for (i <- 0 until 100) {
+        builder.add(newRecord("topic", 0, Timestamp(i), i, "key", "1"))
+      }
+      val batch = builder.build().get
+      val files = batch.fileBatches.map(_.file)
+
+      batch.discard()
+
+      it("should delete all files after discarding batch") {
+        files.exists(_.exists()) shouldBe false
+      }
+    }
   }
 
   def newRecord(
@@ -114,9 +132,10 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
       TimestampType.CREATE_TIME,
       -1,
       -1,
-      -1,
       key.getBytes("UTF-8"),
-      value.getBytes("UTF-8")
+      value.getBytes("UTF-8"),
+      new RecordHeaders,
+      Optional.empty[Integer]
     )
     Record(cr, timestamp)
   }

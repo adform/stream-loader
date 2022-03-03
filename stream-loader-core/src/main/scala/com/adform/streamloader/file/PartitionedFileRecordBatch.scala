@@ -31,4 +31,6 @@ case class PartitionedFileRecordBatch[P, +B <: BaseFileRecordBatch](partitionBat
       }
       .toSeq
   }
+
+  final override def discard(): Boolean = fileBatches.forall(_.discard())
 }
