@@ -136,6 +136,9 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
 
     createTestRecords(validTimestampMillis).foreach(sinker.write)
 
+    while (sinker.commitQueueSize > 0) // wait until the commit queue clears
+      Thread.sleep(10)
+
     batchProvider.batches.forall(_.isDiscarded) shouldBe true
   }
 }
