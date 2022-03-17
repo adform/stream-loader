@@ -10,19 +10,19 @@ package com.adform.streamloader.vertica.file
 
 import java.io.File
 
-import com.adform.streamloader.encoding.csv.{CsvFileBuilderFactory, CsvFormat, CsvRecordEncoder}
+import com.adform.streamloader.encoding.csv.{CsvFileBuilder, CsvFormat, CsvRecordEncoder}
 import com.adform.streamloader.file.Compression
 import com.adform.streamloader.vertica.VerticaLoadMethod
 
 /**
   * A CSV file builder factory that is also a [[VerticaFileBuilderFactory]].
   */
-class CsvVerticaFileBuilderFactory[-R: CsvRecordEncoder](
+class CsvVerticaFileBuilder[-R: CsvRecordEncoder](
     compression: Compression,
     bufferSizeBytes: Int,
     format: CsvFormat = CsvFormat.DEFAULT
-) extends CsvFileBuilderFactory(compression, bufferSizeBytes, format)
-    with VerticaFileBuilderFactory[R] {
+) extends CsvFileBuilder(compression, bufferSizeBytes, format)
+    with VerticaFileBuilder[R] {
 
   override def copyStatement(file: File, table: String, loadMethod: VerticaLoadMethod): String = {
     val skipHeader = if (format.includeHeader) "SKIP 1" else ""

@@ -8,26 +8,26 @@
 
 package com.adform.streamloader.clickhouse.rowbinary
 
-import com.adform.streamloader.clickhouse.ClickHouseFileBuilderFactory
-import com.adform.streamloader.file.{Compression, StreamFileBuilderFactory}
+import com.adform.streamloader.clickhouse.ClickHouseFileBuilder
+import com.adform.streamloader.file.{Compression, StreamFileBuilder}
 import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 /**
-  * File builder factory for the ClickHouse native RowBinary file format, requires
+  * File builder for the ClickHouse native RowBinary file format, requires
   * an implicit [[RowBinaryClickHouseRecordEncoder]] in scope.
   *
   * @param bufferSizeBytes Size of the file write buffer.
   *
   * @tparam R type of the records written to files being built.
   */
-class RowBinaryClickHouseFileBuilderFactory[-R: RowBinaryClickHouseRecordEncoder](
+class RowBinaryClickHouseFileBuilder[-R: RowBinaryClickHouseRecordEncoder](
     bufferSizeBytes: Int = 8192,
-) extends StreamFileBuilderFactory[R](
+) extends StreamFileBuilder[R](
       os => new RowBinaryClickHouseRecordStreamWriter[R](os),
       Compression.NONE,
       bufferSizeBytes
     )
-    with ClickHouseFileBuilderFactory[R] {
+    with ClickHouseFileBuilder[R] {
 
   override val format: ClickHouseFormat = ClickHouseFormat.RowBinary
 }

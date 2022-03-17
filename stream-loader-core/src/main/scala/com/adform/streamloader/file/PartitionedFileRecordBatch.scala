@@ -17,7 +17,7 @@ import com.adform.streamloader.model.{RecordBatch, RecordRange}
   * @tparam P Type of the partitioning information, e.g. date or a tuple of client/country, etc.
   * @tparam B Type of the file record batches.
   */
-case class PartitionedFileRecordBatch[P, +B <: BaseFileRecordBatch](partitionBatches: Map[P, B]) extends RecordBatch {
+case class PartitionedFileRecordBatch[P, +B <: FileRecordBatch](partitionBatches: Map[P, B]) extends RecordBatch {
 
   def fileBatches: Seq[B] = partitionBatches.values.toSeq
 

@@ -8,11 +8,13 @@
 
 package com.adform.streamloader.loaders
 
+import java.time.LocalDate
+
 import com.adform.streamloader.batch.RecordBatchingSink
 import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
 import com.adform.streamloader.hadoop.HadoopFileStorage
-import com.adform.streamloader.hadoop.parquet.{AvroParquetFileBuilder, DerivedAvroParquetFileBuilder, ParquetConfig}
+import com.adform.streamloader.hadoop.parquet.DerivedAvroParquetFileBuilder
 import com.adform.streamloader.model.{ExampleMessage, Record, Timestamp}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
@@ -21,7 +23,6 @@ import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 
-import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 import scala.math.BigDecimal.RoundingMode.RoundingMode
 
@@ -59,7 +60,7 @@ object TestParquetHdfsLoader extends Loader {
           .builder()
           .recordFormatter((r: Record) => Seq(ExampleMessage.parseFrom(r.consumerRecord.value())))
           .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)
-          .fileBuilderFactory(() => new DerivedAvroParquetFileBuilder[ExampleMessage]())
+          .fileBuilderFactory(_ => new DerivedAvroParquetFileBuilder[ExampleMessage]())
           .fileCommitStrategy(
             MultiFileCommitStrategy.anyFile(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
           )

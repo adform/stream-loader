@@ -11,15 +11,15 @@ package com.adform.streamloader.vertica
 import java.io.File
 
 import com.adform.streamloader.batch.RecordFormatter
-import com.adform.streamloader.file.{BaseFileRecordBatch, BaseFileRecordBatcher, FileCommitStrategy}
+import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatch, FileRecordBatcher}
 import com.adform.streamloader.model.RecordRange
-import com.adform.streamloader.vertica.file.VerticaFileBuilderFactory
+import com.adform.streamloader.vertica.file.{VerticaFileBuilder, VerticaFileBuilderFactory}
 
 case class InRowOffsetVerticaFileRecordBatch(
     file: File,
     recordRanges: Seq[RecordRange],
     copyStatementTemplate: String
-) extends BaseFileRecordBatch
+) extends FileRecordBatch
     with VerticaRecordBatch {
   override def copyStatement(table: String): String = String.format(copyStatementTemplate, table)
 }
@@ -35,20 +35,20 @@ class InRowOffsetVerticaFileRecordBatcher[R](
     fileBuilderFactory: VerticaFileBuilderFactory[R],
     fileCommitStrategy: FileCommitStrategy,
     verticaLoadMethod: VerticaLoadMethod
-) extends BaseFileRecordBatcher[R, InRowOffsetVerticaFileRecordBatch](
+) extends FileRecordBatcher[R, InRowOffsetVerticaFileRecordBatch, VerticaFileBuilder[R]](
       recordFormatter,
       fileBuilderFactory,
       fileCommitStrategy) {
 
   override def constructBatch(
-      file: File,
+      fileBuilder: VerticaFileBuilder[R],
       recordRanges: Seq[RecordRange],
-      recordCount: Long,
-      formattedRecordCount: Long): InRowOffsetVerticaFileRecordBatch =
-    InRowOffsetVerticaFileRecordBatch(
-      file,
-      recordRanges,
-      fileBuilderFactory.copyStatement(file, "%s", verticaLoadMethod))
+      recordCount: Long): Option[InRowOffsetVerticaFileRecordBatch] = {
+    fileBuilder
+      .build()
+      .map(file =>
+        InRowOffsetVerticaFileRecordBatch(file, recordRanges, fileBuilder.copyStatement(file, "%s", verticaLoadMethod)))
+  }
 }
 
 object InRowOffsetVerticaFileRecordBatcher {

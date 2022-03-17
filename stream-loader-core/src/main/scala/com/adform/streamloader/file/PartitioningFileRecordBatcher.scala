@@ -8,12 +8,13 @@
 
 package com.adform.streamloader.file
 
+import java.time.Duration
+
 import com.adform.streamloader.batch.{RecordBatcher, RecordFormatter, RecordPartitioner}
 import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.model.{Record, RecordBatchBuilder}
 import com.adform.streamloader.util.TimeProvider
 
-import java.time.Duration
 import scala.collection.concurrent.TrieMap
 
 /**
@@ -22,7 +23,7 @@ import scala.collection.concurrent.TrieMap
   *
   * @param recordFormatter Record formatter to use when writing to files.
   * @param recordPartitioner Partitioner for distributing records to partitions.
-  * @param fileBuilderFactory File builder factory to use.
+  * @param fileBuilderFactory File builder factory to use to construct files for partitions.
   * @param fileCommitStrategy File commit strategy to use.
   * @tparam P Type of the partition values.
   * @tparam R Type of formatted records.
@@ -30,13 +31,13 @@ import scala.collection.concurrent.TrieMap
 class PartitioningFileRecordBatcher[P, R](
     recordFormatter: RecordFormatter[R],
     recordPartitioner: RecordPartitioner[R, P],
-    fileBuilderFactory: FileBuilderFactory[R],
+    fileBuilderFactory: P => FileBuilder[R],
     fileCommitStrategy: MultiFileCommitStrategy
 )(implicit timeProvider: TimeProvider = TimeProvider.system)
-    extends RecordBatcher[PartitionedFileRecordBatch[P, FileRecordBatch]] {
+    extends RecordBatcher[PartitionedFileRecordBatch[P, SingleFileRecordBatch]] {
 
   private case class FileRecordBatchBuilder(startTimeMs: Long, fileBuilder: FileBuilder[R])
-      extends RecordBatchBuilder[FileRecordBatch] {
+      extends RecordBatchBuilder[SingleFileRecordBatch] {
 
     def write(record: Record, formattedRecord: R): Unit = {
       add(record)
@@ -44,14 +45,14 @@ class PartitioningFileRecordBatcher[P, R](
     }
     override def isBatchReady: Boolean = false
 
-    override def build(): Option[FileRecordBatch] =
-      fileBuilder.build().map(f => FileRecordBatch(f, currentRecordRanges))
+    override def build(): Option[SingleFileRecordBatch] =
+      fileBuilder.build().map(f => SingleFileRecordBatch(f, currentRecordRanges))
 
     override def discard(): Unit = fileBuilder.discard()
   }
 
-  override def newBatchBuilder(): RecordBatchBuilder[PartitionedFileRecordBatch[P, FileRecordBatch]] =
-    new RecordBatchBuilder[PartitionedFileRecordBatch[P, FileRecordBatch]] {
+  override def newBatchBuilder(): RecordBatchBuilder[PartitionedFileRecordBatch[P, SingleFileRecordBatch]] =
+    new RecordBatchBuilder[PartitionedFileRecordBatch[P, SingleFileRecordBatch]] {
 
       private val partitionBuilders: TrieMap[P, FileRecordBatchBuilder] = TrieMap.empty
 
@@ -63,7 +64,7 @@ class PartitioningFileRecordBatcher[P, R](
             val partition = recordPartitioner.partition(record, formatted)
             val partitionBuilder = partitionBuilders.getOrElseUpdate(
               partition,
-              FileRecordBatchBuilder(timeProvider.currentMillis, fileBuilderFactory.newFileBuilder())
+              FileRecordBatchBuilder(timeProvider.currentMillis, fileBuilderFactory(partition))
             )
             partitionBuilder.write(record, formatted)
           })
@@ -80,7 +81,7 @@ class PartitioningFileRecordBatcher[P, R](
         }.toSeq
       )
 
-      override def build(): Option[PartitionedFileRecordBatch[P, FileRecordBatch]] = {
+      override def build(): Option[PartitionedFileRecordBatch[P, SingleFileRecordBatch]] = {
         val batches = for {
           (partition, builder) <- partitionBuilders
           batch <- builder.build()
@@ -99,7 +100,7 @@ class PartitioningFileRecordBatcher[P, R](
 object PartitioningFileRecordBatcher {
 
   case class Builder[P, R](
-      private val _fileBuilderFactory: FileBuilderFactory[R],
+      private val _fileBuilderFactory: P => FileBuilder[R],
       private val _recordFormatter: RecordFormatter[R],
       private val _recordPartitioner: RecordPartitioner[R, P],
       private val _fileCommitStrategy: MultiFileCommitStrategy
@@ -116,9 +117,9 @@ object PartitioningFileRecordBatcher {
     def recordPartitioner(partitioner: RecordPartitioner[R, P]): Builder[P, R] = copy(_recordPartitioner = partitioner)
 
     /**
-      * Sets the file builder factory, e.g. CSV.
+      * Sets the file builder factory to use for constructing files for partitions, e.g. CSV.
       */
-    def fileBuilderFactory(factory: FileBuilderFactory[R]): Builder[P, R] = copy(_fileBuilderFactory = factory)
+    def fileBuilderFactory(factory: P => FileBuilder[R]): Builder[P, R] = copy(_fileBuilderFactory = factory)
 
     /**
       * Sets the strategy for determining if a batch of files is ready.

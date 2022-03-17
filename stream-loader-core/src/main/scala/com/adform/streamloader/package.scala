@@ -24,11 +24,11 @@ package com.adform
   * <br />
   *
   * For concrete storage implementations see the [[clickhouse]], [[hadoop]], [[s3]] and [[vertica]] packages.
-  * They also contain more file builder implementations than just the $CsvFileBuilderFactory included in the core library.
+  * They also contain more file builder implementations than just the $CsvFileBuilder included in the core library.
   *
   * @define RecordBatchingSink [[com.adform.streamloader.batch.RecordBatchingSink RecordBatchingSink]]
   * @define RecordBatcher [[com.adform.streamloader.batch.RecordBatcher RecordBatcher]]
   * @define RecordBatchStorage [[com.adform.streamloader.batch.storage.RecordBatchStorage RecordBatchStorage]]
-  * @define CsvFileBuilderFactory [[com.adform.streamloader.encoding.csv.CsvFileBuilderFactory CsvFileBuilderFactory]]
+  * @define CsvFileBuilder [[com.adform.streamloader.encoding.csv.CsvFileBuilder CsvFileBuilder]]
   */
 package object streamloader

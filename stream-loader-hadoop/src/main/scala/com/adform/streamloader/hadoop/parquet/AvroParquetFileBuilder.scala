@@ -8,6 +8,9 @@
 
 package com.adform.streamloader.hadoop.parquet
 
+import java.io.File
+import java.util.UUID
+
 import com.adform.streamloader.file.BaseFileBuilder
 import com.sksamuel.avro4s._
 import org.apache.avro.Schema
@@ -17,9 +20,6 @@ import org.apache.hadoop.fs.Path
 import org.apache.parquet.avro.AvroParquetWriter
 import org.apache.parquet.hadoop.ParquetWriter
 import org.apache.parquet.hadoop.util.HadoopOutputFile
-
-import java.io.File
-import java.util.UUID
 
 /**
   * Base class for Avro based parquet file builders.

@@ -8,11 +8,11 @@
 
 package com.adform.streamloader.batch.storage
 
-import com.adform.streamloader.file.FileRecordBatch
+import com.adform.streamloader.file.SingleFileRecordBatch
 
 import scala.collection.mutable
 
-class MockTwoPhaseCommitFileStorage extends TwoPhaseCommitBatchStorage[FileRecordBatch, FileStaging] {
+class MockTwoPhaseCommitFileStorage extends TwoPhaseCommitBatchStorage[SingleFileRecordBatch, FileStaging] {
 
   val stagedFiles = mutable.Set.empty[String]
   val storedFiles = mutable.Set.empty[String]
@@ -25,7 +25,7 @@ class MockTwoPhaseCommitFileStorage extends TwoPhaseCommitBatchStorage[FileRecor
     failOnStage = seqNo
   }
 
-  override def stageBatch(batch: FileRecordBatch): FileStaging = {
+  override def stageBatch(batch: SingleFileRecordBatch): FileStaging = {
     stagesInvoked += 1
     if (stagesInvoked == failOnStage) {
       throw new UnsupportedOperationException("File staging failed")

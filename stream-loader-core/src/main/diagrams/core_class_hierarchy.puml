@@ -61,15 +61,16 @@ class FileRecordBatcher [[../com/adform/streamloader/file/FileRecordBatcher.html
 
 RecordBatcher <|-- FileRecordBatcher
 
-interface FileBuilderFactory [[../com/adform/streamloader/file/FileBuilderFactory.html{FileBuilderFactory}]] {
-  newFileBuilder()
+interface FileBuilder [[../com/adform/streamloader/file/FileBuilder.html{FileBuilder}]] {
+  write(record)
+  build(): Option[File]
 }
 
-class CsvFileBuilderFactory [[../com/adform/streamloader/encoding/csv/CsvFileBuilderFactory.html{CsvFileBuilderFactory}]]
+class CsvFileBuilder [[../com/adform/streamloader/encoding/csv/CsvFileBuilder.html{CsvFileBuilder}]]
 
-FileBuilderFactory <|-- CsvFileBuilderFactory
+FileBuilder <|-- CsvFileBuilder
 
-FileRecordBatcher *-- FileBuilderFactory
+FileRecordBatcher *-- FileBuilder
 FileRecordBatcher *-- RecordFormatter
 
 class RecordFormatter [[../com/adform/streamloader/batch/RecordFormatter.html{RecordFormatter}]] {

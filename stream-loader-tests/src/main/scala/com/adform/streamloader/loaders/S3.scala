@@ -8,8 +8,11 @@
 
 package com.adform.streamloader.loaders
 
+import java.net.URI
+import java.time.LocalDate
+
 import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
-import com.adform.streamloader.encoding.csv.CsvFileBuilderFactory
+import com.adform.streamloader.encoding.csv.CsvFileBuilder
 import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
 import com.adform.streamloader.model.Timestamp
@@ -21,9 +24,6 @@ import org.apache.kafka.common.TopicPartition
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-
-import java.net.URI
-import java.time.LocalDate
 
 class BaseS3Loader extends Loader {
 
@@ -70,7 +70,7 @@ class BaseS3Loader extends Loader {
             .builder()
             .recordFormatter(recordFormatter)
             .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)
-            .fileBuilderFactory(new CsvFileBuilderFactory(Compression.NONE))
+            .fileBuilderFactory(_ => new CsvFileBuilder(Compression.NONE))
             .fileCommitStrategy(MultiFileCommitStrategy.anyFile(
               ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
             ))

@@ -8,16 +8,15 @@
 
 package com.adform.streamloader.clickhouse
 
-import com.adform.streamloader.clickhouse.rowbinary._
-import com.adform.streamloader.file.FileBuilderFactory
+import com.adform.streamloader.file.{FileBuilder, FileBuilderFactory}
 import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 /**
-  * A FileBuilderFactory able to build files that can be loaded to ClickHouse.
+  * A FileBuilder able to build files that can be loaded to ClickHouse.
   *
   * @tparam R type of the records written to files being built.
   */
-trait ClickHouseFileBuilderFactory[-R] extends FileBuilderFactory[R] {
+trait ClickHouseFileBuilder[-R] extends FileBuilder[R] {
 
   /**
     * The ClickHouse file format for the files being built.
@@ -25,6 +24,6 @@ trait ClickHouseFileBuilderFactory[-R] extends FileBuilderFactory[R] {
   def format: ClickHouseFormat
 }
 
-object ClickHouseFileBuilderFactory {
-  def rowBinary[R: RowBinaryClickHouseRecordEncoder] = new RowBinaryClickHouseFileBuilderFactory[R]
+trait ClickHouseFileBuilderFactory[R] extends FileBuilderFactory[R, ClickHouseFileBuilder[R]] {
+  def newFileBuilder(): ClickHouseFileBuilder[R]
 }

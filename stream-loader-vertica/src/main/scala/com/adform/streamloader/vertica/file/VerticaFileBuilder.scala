@@ -10,21 +10,21 @@ package com.adform.streamloader.vertica.file
 
 import java.io.File
 
-import com.adform.streamloader.file.{Compression, FileBuilderFactory}
+import com.adform.streamloader.file.{Compression, FileBuilder, FileBuilderFactory}
 import com.adform.streamloader.vertica.VerticaLoadMethod
 
 /**
-  * A file builder factory that additionally knows how to generate
+  * A file builder that additionally knows how to generate
   * COPY statements to load resulting files to Vertica tables.
   *
   * @tparam R type of the records written to files being built.
   */
-trait VerticaFileBuilderFactory[-R] extends FileBuilderFactory[R] {
+trait VerticaFileBuilder[-R] extends FileBuilder[R] {
 
   /**
     * Generates a COPY statement to load a given file to the destination table.
     *
-    * @param file       The file to load.
+    * @param file       File being loaded to.
     * @param table      Vertica table to load data into.
     * @param loadMethod The Vertica load method to use in the `COPY` statement.
     * @return A COPY statement.
@@ -45,4 +45,8 @@ trait VerticaFileBuilderFactory[-R] extends FileBuilderFactory[R] {
     case VerticaLoadMethod.DIRECT => "DIRECT"
     case VerticaLoadMethod.TRICKLE => "TRICKLE"
   }
+}
+
+trait VerticaFileBuilderFactory[R] extends FileBuilderFactory[R, VerticaFileBuilder[R]] {
+  def newFileBuilder(): VerticaFileBuilder[R]
 }

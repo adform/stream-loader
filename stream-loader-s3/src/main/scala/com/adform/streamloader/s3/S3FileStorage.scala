@@ -9,7 +9,7 @@
 package com.adform.streamloader.s3
 
 import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
-import com.adform.streamloader.file.{BaseFileRecordBatch, FilePathFormatter, PartitionedFileRecordBatch}
+import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.util.Logging
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
@@ -25,10 +25,10 @@ class S3FileStorage[P](
     s3Client: S3Client,
     bucket: String,
     filePathFormatter: FilePathFormatter[P]
-) extends TwoPhaseCommitBatchStorage[PartitionedFileRecordBatch[P, BaseFileRecordBatch], S3MultiFileStaging]
+) extends TwoPhaseCommitBatchStorage[PartitionedFileRecordBatch[P, FileRecordBatch], S3MultiFileStaging]
     with Logging {
 
-  override protected def stageBatch(batch: PartitionedFileRecordBatch[P, BaseFileRecordBatch]): S3MultiFileStaging = {
+  override protected def stageBatch(batch: PartitionedFileRecordBatch[P, FileRecordBatch]): S3MultiFileStaging = {
     val stagings = batch.partitionBatches.map {
       case (partition, partitionBatch) => stageSingleBatch(partition, partitionBatch)
     }
@@ -61,7 +61,7 @@ class S3FileStorage[P](
     objects.result()
   }
 
-  private def stageSingleBatch(partition: P, batch: BaseFileRecordBatch): S3FileStaging = {
+  private def stageSingleBatch(partition: P, batch: FileRecordBatch): S3FileStaging = {
     val path = filePathFormatter.formatPath(partition, batch.recordRanges)
     val uploadRequest = CreateMultipartUploadRequest.builder().bucket(bucket).key(path).build()
 

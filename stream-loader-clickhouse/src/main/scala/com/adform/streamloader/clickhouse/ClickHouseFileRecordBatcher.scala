@@ -8,24 +8,27 @@
 
 package com.adform.streamloader.clickhouse
 
-import java.io.File
-
 import com.adform.streamloader.batch.RecordFormatter
-import com.adform.streamloader.file.{BaseFileRecordBatcher, FileCommitStrategy}
+import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatcher}
 import com.adform.streamloader.model.RecordRange
 
-class ClickHouseFileRecordBatcher[+R](
+class ClickHouseFileRecordBatcher[R](
     recordFormatter: RecordFormatter[R],
     fileBuilderFactory: ClickHouseFileBuilderFactory[R],
     fileCommitStrategy: FileCommitStrategy
-) extends BaseFileRecordBatcher[R, ClickHouseFileRecordBatch](recordFormatter, fileBuilderFactory, fileCommitStrategy) {
+) extends FileRecordBatcher[R, ClickHouseFileRecordBatch, ClickHouseFileBuilder[R]](
+      recordFormatter,
+      fileBuilderFactory,
+      fileCommitStrategy) {
 
   override def constructBatch(
-      file: File,
+      fileBuilder: ClickHouseFileBuilder[R],
       recordRanges: Seq[RecordRange],
-      recordCount: Long,
-      formattedRecordCount: Long): ClickHouseFileRecordBatch =
-    ClickHouseFileRecordBatch(file, fileBuilderFactory.format, recordRanges, formattedRecordCount)
+      recordCount: Long): Option[ClickHouseFileRecordBatch] = {
+    fileBuilder
+      .build()
+      .map(f => ClickHouseFileRecordBatch(f, fileBuilder.format, recordRanges, fileBuilder.getRecordCount))
+  }
 }
 
 object ClickHouseFileRecordBatcher {

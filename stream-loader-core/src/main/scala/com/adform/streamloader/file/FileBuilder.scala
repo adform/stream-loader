@@ -85,11 +85,12 @@ abstract class BaseFileBuilder[-R] extends FileBuilder[R] {
   * A [[FileBuilder]] instance producer.
   *
   * @tparam R type of the records written to files being built.
+  * @tparam FB type of FileBuilder instances produced.
   */
-trait FileBuilderFactory[-R] {
+trait FileBuilderFactory[-R, FB <: FileBuilder[R]] {
 
   /**
     * Creates a new instance of a `FileBuilder`.
     */
-  def newFileBuilder(): FileBuilder[R]
+  def newFileBuilder(): FB
 }
