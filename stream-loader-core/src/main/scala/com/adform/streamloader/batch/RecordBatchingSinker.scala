@@ -88,6 +88,8 @@ class RecordBatchingSinker[B <: RecordBatch](
     s"${Thread.currentThread().getName}-$groupName-batch-commit-thread" // e.g. loader-1-root-batch-commit-thread
   )
 
+  def commitQueueSize: Int = commitQueue.size()
+
   override def initialize(context: KafkaContext): Map[TopicPartition, Option[StreamPosition]] = {
     if (isInitialized)
       throw new IllegalStateException(s"Loader for '$groupName' already initialized")

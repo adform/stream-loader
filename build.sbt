@@ -20,9 +20,9 @@ ThisBuild / useCoursier := false
 val gitRepo = "git@github.com:adform/stream-loader.git"
 val gitRepoUrl = "https://github.com/adform/stream-loader"
 
-val scalaTestVersion = "3.2.10"
+val scalaTestVersion = "3.2.11"
 val scalaCheckVersion = "1.15.4"
-val scalaCheckTestVersion = "3.2.10.0"
+val scalaCheckTestVersion = "3.2.11.0"
 
 lazy val `stream-loader-core` = project
   .in(file("stream-loader-core"))
@@ -33,19 +33,19 @@ lazy val `stream-loader-core` = project
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, git.gitHeadCommit),
     libraryDependencies ++= Seq(
       "org.scala-lang"    % "scala-reflect"     % scalaVersion.value,
-      "org.apache.kafka"  % "kafka-clients"     % "3.0.0",
+      "org.apache.kafka"  % "kafka-clients"     % "3.1.0",
       "org.log4s"         %% "log4s"            % "1.10.0",
       "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
       "org.xerial.snappy" % "snappy-java"       % "1.1.8.4",
       "org.lz4"           % "lz4-java"          % "1.8.0",
-      "com.github.luben"  % "zstd-jni"          % "1.5.1-1",
+      "com.github.luben"  % "zstd-jni"          % "1.5.2-2",
       "com.univocity"     % "univocity-parsers" % "2.9.1",
-      "org.json4s"        %% "json4s-native"    % "4.0.3",
-      "io.micrometer"     % "micrometer-core"   % "1.8.2",
+      "org.json4s"        %% "json4s-native"    % "4.0.4",
+      "io.micrometer"     % "micrometer-core"   % "1.8.4",
       "org.scalatest"     %% "scalatest"        % scalaTestVersion % "test",
       "org.scalatestplus" %% "scalacheck-1-15"  % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion % "test",
-      "ch.qos.logback"    % "logback-classic"   % "1.2.10" % "test"
+      "ch.qos.logback"    % "logback-classic"   % "1.2.11" % "test"
     ),
     testOptions += sbt.Tests.Setup(
       cl =>
@@ -91,9 +91,9 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.17.114",
+      "software.amazon.awssdk" % "s3"              % "2.17.151",
       "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.143" % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.180" % "test",
       "org.gaul"               % "s3proxy"         % "1.9.0" % "test",
     )
   )
@@ -133,8 +133,8 @@ lazy val `stream-loader-tests` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe"      % "config"           % "1.4.1",
-      "ch.qos.logback"    % "logback-classic"  % "1.2.10",
+      "com.typesafe"      % "config"           % "1.4.2",
+      "ch.qos.logback"    % "logback-classic"  % "1.2.11",
       "com.zaxxer"        % "HikariCP"         % "5.0.1",
       "com.vertica"       % "vertica-jdbc"     % verticaVersion from verticaJarUrl,
       "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion,
@@ -172,7 +172,7 @@ lazy val `stream-loader-tests` = project
       val bin = s"/opt/${name.value}/bin/"
 
       new Dockerfile {
-        from("eclipse-temurin:11.0.13_8-jre")
+        from("eclipse-temurin:11.0.14.1_1-jre")
 
         env("APP_CLASS_PATH" -> s"$lib/*")
 

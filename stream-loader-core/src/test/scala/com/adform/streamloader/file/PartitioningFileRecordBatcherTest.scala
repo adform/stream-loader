@@ -8,7 +8,11 @@
 
 package com.adform.streamloader.file
 
-import com.adform.streamloader.encoding.csv.CsvFileBuilderFactory
+import java.io.File
+import java.nio.file.Files
+import java.util.Optional
+
+import com.adform.streamloader.encoding.csv.CsvFileBuilder
 import com.adform.streamloader.model.{Record, RecordRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
@@ -16,9 +20,6 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.File
-import java.nio.file.Files
-import java.util.Optional
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -29,7 +30,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
     val batcher = new PartitioningFileRecordBatcher[Int, String](
       (record: Record) => Seq(new String(record.consumerRecord.value(), "UTF-8")),
       (record, value) => value.toInt % 10,
-      new CsvFileBuilderFactory[String](Compression.NONE),
+      _ => new CsvFileBuilder[String](Compression.NONE),
       stats => stats.exists(f => f.recordsWritten >= 20)
     )
 

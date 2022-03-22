@@ -13,6 +13,7 @@ import java.util.UUID
 
 import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
 import com.adform.streamloader.clickhouse._
+import com.adform.streamloader.clickhouse.rowbinary.RowBinaryClickHouseFileBuilder
 import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.DecimalEncoding
 import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.model.{ExampleMessage, Timestamp}
@@ -115,7 +116,7 @@ object TestClickHouseLoader extends Loader {
         ClickHouseFileRecordBatcher
           .builder()
           .recordFormatter(recordFormatter)
-          .fileBuilderFactory(ClickHouseFileBuilderFactory.rowBinary)
+          .fileBuilderFactory(() => new RowBinaryClickHouseFileBuilder())
           .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
           .build()
       )

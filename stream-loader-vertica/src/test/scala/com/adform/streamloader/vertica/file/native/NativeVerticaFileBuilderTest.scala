@@ -15,14 +15,14 @@ import com.adform.streamloader.vertica.VerticaLoadMethod
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class NativeVerticaFileBuilderFactoryTest extends AnyFunSpec with Matchers {
+class NativeVerticaFileBuilderTest extends AnyFunSpec with Matchers {
 
   case class ExampleRecord(id: Int, name: String)
 
   it("should produce correct COPY statements") {
-    val factory = new NativeVerticaFileBuilderFactory[ExampleRecord](Compression.ZSTD)
+    val builder = new NativeVerticaFileBuilder[ExampleRecord](Compression.ZSTD)
 
-    factory.copyStatement(new File("/tmp/test.zst"), "table", VerticaLoadMethod.AUTO) shouldEqual
+    builder.copyStatement(new File("/tmp/test.zst"), "table", VerticaLoadMethod.AUTO) shouldEqual
       "COPY table FROM LOCAL '/tmp/test.zst' ZSTD NATIVE ABORT ON ERROR AUTO NO COMMIT"
   }
 }

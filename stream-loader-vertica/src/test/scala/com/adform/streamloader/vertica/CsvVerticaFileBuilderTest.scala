@@ -12,22 +12,23 @@ import java.io.File
 
 import com.adform.streamloader.encoding.csv.CsvFormat
 import com.adform.streamloader.file.Compression
-import com.adform.streamloader.vertica.file.CsvVerticaFileBuilderFactory
+import com.adform.streamloader.vertica.file.CsvVerticaFileBuilder
+//import com.adform.streamloader.vertica.file.CsvVerticaFileBuilderFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class CsvVerticaFileBuilderFactoryTest extends AnyFunSpec with Matchers {
+class CsvVerticaFileBuilderTest extends AnyFunSpec with Matchers {
 
   case class ExampleRecord(id: Int, name: String)
 
   it("should produce correct COPY statements") {
-    val factory = new CsvVerticaFileBuilderFactory[ExampleRecord](
+    val builder = new CsvVerticaFileBuilder[ExampleRecord](
       Compression.ZSTD,
       bufferSizeBytes = 1024,
       CsvFormat(columnSeparator = ";", rowSeparator = "\n", includeHeader = true, nullValue = "\\N")
     )
 
-    factory.copyStatement(new File("/tmp/test.zst"), "table", VerticaLoadMethod.AUTO) shouldEqual
+    builder.copyStatement(new File("/tmp/test.zst"), "table", VerticaLoadMethod.AUTO) shouldEqual
       "COPY table FROM LOCAL '/tmp/test.zst' ZSTD DELIMITER ';' SKIP 1 ABORT ON ERROR AUTO NO COMMIT"
   }
 }

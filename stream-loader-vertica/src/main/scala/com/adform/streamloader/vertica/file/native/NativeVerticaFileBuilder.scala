@@ -10,27 +10,26 @@ package com.adform.streamloader.vertica.file.native
 
 import java.io.File
 
-import com.adform.streamloader.file.{Compression, StreamFileBuilderFactory}
+import com.adform.streamloader.file.{Compression, StreamFileBuilder}
 import com.adform.streamloader.vertica.VerticaLoadMethod
-import com.adform.streamloader.vertica.file.VerticaFileBuilderFactory
+import com.adform.streamloader.vertica.file.VerticaFileBuilder
 
 /**
-  * File builder factory for the native Vertica file format, requires an implicit [[NativeVerticaRecordEncoder]] in scope.
+  * File builder for the native Vertica file format, requires an implicit [[NativeVerticaRecordEncoder]] in scope.
   *
   * @param compression File compression to use.
   * @param bufferSizeBytes Size of the file write buffer.
-  *
   * @tparam R type of the records written to files being built.
   */
-class NativeVerticaFileBuilderFactory[-R: NativeVerticaRecordEncoder](
+class NativeVerticaFileBuilder[-R: NativeVerticaRecordEncoder](
     compression: Compression,
     bufferSizeBytes: Int = 8192
-) extends StreamFileBuilderFactory[R](
+) extends StreamFileBuilder[R](
       os => new NativeVerticaRecordStreamWriter[R](os),
       compression,
       bufferSizeBytes
     )
-    with VerticaFileBuilderFactory[R] {
+    with VerticaFileBuilder[R] {
 
   override def copyStatement(file: File, table: String, loadMethod: VerticaLoadMethod): String = {
     s"COPY $table FROM LOCAL '${file.getAbsolutePath}' ${compressionStr(compression)} NATIVE ABORT ON ERROR ${loadMethodStr(loadMethod)} NO COMMIT"

@@ -11,7 +11,7 @@ package com.adform.streamloader.s3
 import java.io.File
 import java.util.UUID
 import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
+import com.adform.streamloader.file.{FilePathFormatter, SingleFileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
@@ -48,8 +48,8 @@ class S3FileStorageTest extends AnyFunSpec with Matchers with MockS3 {
     storage.recover(Set(tp))
 
     val sourceFile = File.createTempFile("test", "txt")
-    val fileBatch = FileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
-    val batch = PartitionedFileRecordBatch[Unit, FileRecordBatch](Map(() -> fileBatch))
+    val fileBatch = SingleFileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
+    val batch = PartitionedFileRecordBatch[Unit, SingleFileRecordBatch](Map(() -> fileBatch))
 
     try {
       storage.commitBatch(batch)

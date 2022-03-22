@@ -10,7 +10,7 @@ package com.adform.streamloader.clickhouse
 
 import java.io.File
 
-import com.adform.streamloader.file.BaseFileRecordBatch
+import com.adform.streamloader.file.FileRecordBatch
 import com.adform.streamloader.model.RecordRange
 import ru.yandex.clickhouse.domain.ClickHouseFormat
 
@@ -22,4 +22,4 @@ case class ClickHouseFileRecordBatch(
     format: ClickHouseFormat,
     recordRanges: Seq[RecordRange],
     rowCount: Long
-) extends BaseFileRecordBatch
+) extends FileRecordBatch

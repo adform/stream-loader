@@ -8,12 +8,12 @@
 
 package com.adform.streamloader.hadoop
 
+import java.io.IOException
+
 import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
-import com.adform.streamloader.file.{BaseFileRecordBatch, FilePathFormatter, PartitionedFileRecordBatch}
+import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.model.RecordRange
 import org.apache.hadoop.fs.{FileSystem, Path}
-
-import java.io.IOException
 
 /**
   * A Hadoop compatible file system based storage, most likely used for storing to HDFS.
@@ -27,12 +27,12 @@ class HadoopFileStorage[P](
     stagingFilePathFormatter: FilePathFormatter[P],
     destinationDirectory: String,
     destinationFilePathFormatter: FilePathFormatter[P]
-) extends TwoPhaseCommitBatchStorage[PartitionedFileRecordBatch[P, BaseFileRecordBatch], MultiFileStaging] {
+) extends TwoPhaseCommitBatchStorage[PartitionedFileRecordBatch[P, FileRecordBatch], MultiFileStaging] {
 
   private val stagingPath = new Path(stagingDirectory)
   private val basePath = new Path(destinationDirectory)
 
-  override protected def stageBatch(batch: PartitionedFileRecordBatch[P, BaseFileRecordBatch]): MultiFileStaging = {
+  override protected def stageBatch(batch: PartitionedFileRecordBatch[P, FileRecordBatch]): MultiFileStaging = {
     val stagings = batch.partitionBatches.map {
       case (partition, fileBatch) => stageSingleBatch(partition, fileBatch)
     }
@@ -49,7 +49,7 @@ class HadoopFileStorage[P](
     staging.fileStagings.forall(fs => isSingleBatchStored(fs))
   }
 
-  private def stageSingleBatch(partition: P, batch: BaseFileRecordBatch): FileStaging = {
+  private def stageSingleBatch(partition: P, batch: FileRecordBatch): FileStaging = {
     val sourceFilePath = new Path(batch.file.toPath.toString)
     val stagingFilePath = new Path(stagingPath, stagingFilePathFormatter.formatPath(partition, batch.recordRanges))
     val targetFilePath = new Path(basePath, destinationFilePathFormatter.formatPath(partition, batch.recordRanges))

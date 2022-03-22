@@ -11,7 +11,7 @@ package com.adform.streamloader.batch.storage
 import java.io.File
 
 import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.FileRecordBatch
+import com.adform.streamloader.file.SingleFileRecordBatch
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 
 class InDataOffsetFileStorageTest extends AnyFunSpec with Matchers {
 
-  private val exampleFile = FileRecordBatch(
+  private val exampleFile = SingleFileRecordBatch(
     new File("/tmp/file.parquet"),
     Seq(
       RecordRange(
@@ -40,9 +40,9 @@ class InDataOffsetFileStorageTest extends AnyFunSpec with Matchers {
 
   private val topicPartitions = exampleFile.recordRanges.map(r => new TopicPartition(r.topic, r.partition)).toSet
 
-  class MockInDataOffsetFileStorage extends InDataOffsetBatchStorage[FileRecordBatch] {
+  class MockInDataOffsetFileStorage extends InDataOffsetBatchStorage[SingleFileRecordBatch] {
     val storedFiles: ListBuffer[File] = ListBuffer.empty[File]
-    override def commitBatchWithOffsets(batch: FileRecordBatch): Unit = storedFiles.addOne(batch.file)
+    override def commitBatchWithOffsets(batch: SingleFileRecordBatch): Unit = storedFiles.addOne(batch.file)
     override def committedPositions(topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] =
       Map.empty
   }

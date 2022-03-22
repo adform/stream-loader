@@ -8,7 +8,6 @@
 
 package com.adform.streamloader.file
 
-import java.io.File
 import java.time.Duration
 
 import com.adform.streamloader.batch.{RecordBatcher, RecordFormatter}
@@ -25,10 +24,11 @@ import com.adform.streamloader.util.TimeProvider
   *
   * @tparam R Type of records being written to files.
   * @tparam B Type of record batches being built.
+  * @tparam FB Type of file builder being used.
   */
-abstract class BaseFileRecordBatcher[+R, +B <: BaseFileRecordBatch](
+abstract class FileRecordBatcher[R, +B <: FileRecordBatch, FB <: FileBuilder[R]](
     recordFormatter: RecordFormatter[R],
-    fileBuilderFactory: FileBuilderFactory[R],
+    fileBuilderFactory: FileBuilderFactory[R, FB],
     fileCommitStrategy: FileCommitStrategy
 )(implicit timeProvider: TimeProvider = TimeProvider.system)
     extends RecordBatcher[B] {
@@ -36,7 +36,7 @@ abstract class BaseFileRecordBatcher[+R, +B <: BaseFileRecordBatch](
   /**
     * Constructs the final batch of a concrete type given the formed file and the accumulated record statistics.
     */
-  def constructBatch(file: File, recordRanges: Seq[RecordRange], recordCount: Long, formattedRecordCount: Long): B
+  def constructBatch(fileBuilder: FB, recordRanges: Seq[RecordRange], recordCount: Long): Option[B]
 
   override def newBatchBuilder(): RecordBatchBuilder[B] = {
     val fileStartTimeMillis = timeProvider.currentMillis
@@ -57,74 +57,9 @@ abstract class BaseFileRecordBatcher[+R, +B <: BaseFileRecordBatch](
         fileBuilder.getRecordCount
       )
 
-      override def build(): Option[B] =
-        fileBuilder
-          .build()
-          .map(file => constructBatch(file, currentRecordRanges, currentRecordCount, fileBuilder.getRecordCount))
+      override def build(): Option[B] = constructBatch(fileBuilder, currentRecordRanges, currentRecordCount)
 
       override def discard(): Unit = fileBuilder.discard()
     }
   }
-}
-
-/**
-  * A record batcher that passes records through a custom record formatter and forms batches by writing
-  * the resulting records to files using a provided file builder.
-  *
-  * @tparam R Type of records being written to files.
-  */
-class FileRecordBatcher[+R](
-    recordFormatter: RecordFormatter[R],
-    fileBuilderFactory: FileBuilderFactory[R],
-    fileCommitStrategy: FileCommitStrategy
-) extends BaseFileRecordBatcher[R, FileRecordBatch](recordFormatter, fileBuilderFactory, fileCommitStrategy) {
-
-  override def constructBatch(
-      file: File,
-      recordRanges: Seq[RecordRange],
-      recordCount: Long,
-      formattedRecordCount: Long): FileRecordBatch =
-    FileRecordBatch(file, recordRanges)
-}
-
-object FileRecordBatcher {
-
-  case class Builder[R](
-      private val _fileBuilderFactory: FileBuilderFactory[R],
-      private val _recordFormatter: RecordFormatter[R],
-      private val _fileCommitStrategy: FileCommitStrategy
-  ) {
-
-    /**
-      * Sets the record formatter that converts from consumer records to records written to the file.
-      */
-    def recordFormatter(formatter: RecordFormatter[R]): Builder[R] = copy(_recordFormatter = formatter)
-
-    /**
-      * Sets the file builder factory, e.g. CSV.
-      */
-    def fileBuilderFactory(factory: FileBuilderFactory[R]): Builder[R] = copy(_fileBuilderFactory = factory)
-
-    /**
-      * Sets the strategy for determining if a file is ready.
-      */
-    def fileCommitStrategy(strategy: FileCommitStrategy): Builder[R] = copy(_fileCommitStrategy = strategy)
-
-    def build(): FileRecordBatcher[R] = {
-      if (_recordFormatter == null) throw new IllegalStateException("Must specify a RecordFormatter")
-      if (_fileBuilderFactory == null) throw new IllegalStateException("Must specify a FileBuilderFactory")
-
-      new FileRecordBatcher(
-        _recordFormatter,
-        _fileBuilderFactory,
-        _fileCommitStrategy,
-      )
-    }
-  }
-
-  def builder[R](): Builder[R] = Builder[R](
-    _fileBuilderFactory = null,
-    _recordFormatter = null,
-    _fileCommitStrategy = FileCommitStrategy.ReachedAnyOf(recordsWritten = Some(1000))
-  )
 }

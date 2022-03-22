@@ -9,7 +9,7 @@
 package com.adform.streamloader.batch.storage
 
 import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.FileRecordBatch
+import com.adform.streamloader.file.SingleFileRecordBatch
 import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
@@ -20,7 +20,7 @@ import java.io.File
 
 class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
 
-  private val exampleFile = FileRecordBatch(
+  private val exampleFile = SingleFileRecordBatch(
     new File("/tmp/file.parquet"),
     Seq(
       RecordRange(
@@ -36,7 +36,7 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
     )
   )
 
-  private val secondFile = FileRecordBatch(
+  private val secondFile = SingleFileRecordBatch(
     new File("/tmp/file2.parquet"),
     Seq(
       RecordRange(
@@ -54,8 +54,8 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
 
   private val filePartitions: Set[TopicPartition] = Set(new TopicPartition("topic", 0), new TopicPartition("topic", 1))
 
-  private def fileStoredPath(batch: FileRecordBatch): String = batch.file.getAbsolutePath
-  private def fileOffsets(batch: FileRecordBatch): Map[TopicPartition, Some[OffsetAndMetadata]] =
+  private def fileStoredPath(batch: SingleFileRecordBatch): String = batch.file.getAbsolutePath
+  private def fileOffsets(batch: SingleFileRecordBatch): Map[TopicPartition, Some[OffsetAndMetadata]] =
     batch.recordRanges
       .map(
         range =>

@@ -8,6 +8,8 @@
 
 package com.adform.streamloader.batch
 
+import java.util.Optional
+
 import com.adform.streamloader.MockKafkaContext
 import com.adform.streamloader.batch.storage.RecordBatchStorage
 import com.adform.streamloader.model._
@@ -19,7 +21,6 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.util.Optional
 import scala.collection.mutable
 import scala.concurrent.duration._
 
@@ -135,6 +136,8 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
     val sinker = newAssertiveSinker(shouldUpdateWatermark = true, batchProvider)
 
     createTestRecords(validTimestampMillis).foreach(sinker.write)
+
+    while (sinker.commitQueueSize > 0) Thread.sleep(10) // wait until the commit queue clears
 
     batchProvider.batches.forall(_.isDiscarded) shouldBe true
   }

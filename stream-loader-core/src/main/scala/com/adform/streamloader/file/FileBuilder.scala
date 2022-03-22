@@ -47,14 +47,50 @@ trait FileBuilder[-R] {
 }
 
 /**
+  * Base file builder implementation that provides record counting and basic clean up.
+  *
+  * @tparam R type of the records being added.
+  */
+abstract class BaseFileBuilder[-R] extends FileBuilder[R] {
+
+  protected var isClosed = false
+  protected var recordsWritten = 0L
+
+  protected def createFile(): File
+
+  protected lazy val file: File = createFile()
+
+  override def write(record: R): Unit = {
+    recordsWritten += 1
+  }
+
+  override def getRecordCount: Long = recordsWritten
+
+  override def build(): Option[File] = {
+    if (!isClosed) {
+      isClosed = true
+      if (recordsWritten > 0) Some(file) else None
+    } else {
+      None
+    }
+  }
+
+  override def discard(): Unit = if (!isClosed) {
+    if (file.exists()) file.delete()
+    isClosed = true
+  }
+}
+
+/**
   * A [[FileBuilder]] instance producer.
   *
   * @tparam R type of the records written to files being built.
+  * @tparam FB type of FileBuilder instances produced.
   */
-trait FileBuilderFactory[-R] {
+trait FileBuilderFactory[-R, FB <: FileBuilder[R]] {
 
   /**
     * Creates a new instance of a `FileBuilder`.
     */
-  def newFileBuilder(): FileBuilder[R]
+  def newFileBuilder(): FB
 }

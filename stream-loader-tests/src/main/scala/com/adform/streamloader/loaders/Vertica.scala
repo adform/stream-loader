@@ -18,7 +18,7 @@ import com.adform.streamloader.file._
 import com.adform.streamloader.model.{ExampleMessage, Record, Timestamp}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.vertica._
-import com.adform.streamloader.vertica.file.native.NativeVerticaFileBuilderFactory
+import com.adform.streamloader.vertica.file.native.NativeVerticaFileBuilder
 import com.adform.streamloader.{KafkaSource, Loader, Sink, StreamLoader}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
@@ -106,10 +106,6 @@ case class TestExternalOffsetVerticaRecord(
 
 object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
 
-  private val fileBuilderFactory = new NativeVerticaFileBuilderFactory[TestExternalOffsetVerticaRecord](
-    Compression.ZSTD
-  )
-
   private val recordFormatter = (fileId: Long, record: Record) => {
     val msg = ExampleMessage.parseFrom(record.consumerRecord.value())
     Seq(
@@ -137,7 +133,7 @@ object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
           .dbDataSource(verticaDataSource)
           .fileIdSequence(cfg.getString("vertica.file-id-sequence"))
           .recordFormatter(recordFormatter)
-          .fileBuilderFactory(fileBuilderFactory)
+          .fileBuilderFactory(() => new NativeVerticaFileBuilder(Compression.ZSTD))
           .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
           .verticaLoadMethod(VerticaLoadMethod.AUTO)
           .build()
@@ -191,10 +187,6 @@ case class TestInRowOffsetVerticaRecord(
 
 object TestInRowOffsetVerticaLoader extends BaseVerticaLoader {
 
-  private val fileBuilderFactory = new NativeVerticaFileBuilderFactory[TestInRowOffsetVerticaRecord](
-    Compression.ZSTD
-  )
-
   private val recordFormatter: RecordFormatter[TestInRowOffsetVerticaRecord] = record => {
     val msg = ExampleMessage.parseFrom(record.consumerRecord.value())
     Seq(
@@ -224,7 +216,7 @@ object TestInRowOffsetVerticaLoader extends BaseVerticaLoader {
         InRowOffsetVerticaFileRecordBatcher
           .builder()
           .recordFormatter(recordFormatter)
-          .fileBuilderFactory(fileBuilderFactory)
+          .fileBuilderFactory(() => new NativeVerticaFileBuilder(Compression.ZSTD))
           .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
           .verticaLoadMethod(VerticaLoadMethod.AUTO)
           .build()

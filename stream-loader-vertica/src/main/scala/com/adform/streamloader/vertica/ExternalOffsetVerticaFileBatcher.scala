@@ -12,7 +12,7 @@ import java.io.File
 import java.time.Duration
 
 import com.adform.streamloader.batch.RecordBatcher
-import com.adform.streamloader.file.{BaseFileRecordBatch, FileCommitStrategy}
+import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatch}
 import com.adform.streamloader.model.{Record, RecordBatchBuilder, RecordRange}
 import com.adform.streamloader.util.{Logging, TimeProvider}
 import com.adform.streamloader.vertica.file.VerticaFileBuilderFactory
@@ -29,7 +29,7 @@ case class ExternalOffsetVerticaFileRecordBatch(
     fileId: Long,
     recordRanges: Seq[RecordRange],
     copyStatementTemplate: String
-) extends BaseFileRecordBatch
+) extends FileRecordBatch
     with VerticaRecordBatch {
   override def copyStatement(table: String): String = String.format(copyStatementTemplate, table)
 }
@@ -93,7 +93,7 @@ class ExternalOffsetVerticaFileBatcher[R](
                 file,
                 fileId,
                 currentRecordRanges,
-                fileBuilderFactory.copyStatement(file, "%s", verticaLoadMethod)))
+                fileBuilder.copyStatement(file, "%s", verticaLoadMethod)))
 
       override def discard(): Unit = fileBuilder.discard()
     }
