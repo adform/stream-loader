@@ -37,4 +37,4 @@ jobs:
         java-version: '11'
 
     - name: Run Tests
-      run: sbt -Dsbt.color=always -Dsbt.supershell=false scalafmtCheck scalafmtSbtCheck headerCheckAll test it:test
+      run: sbt -Dsbt.color=always -Dsbt.supershell=false scalafmtCheck scalafmtSbtCheck headerCheckAll test IntegrationTest/test
