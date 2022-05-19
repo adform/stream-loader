@@ -11,6 +11,7 @@ package com.adform.streamloader
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.locks.ReentrantLock
+import java.util.regex.Pattern
 
 import com.adform.streamloader.model.StreamPosition
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRebalanceListener, ConsumerRecord, KafkaConsumer}
@@ -24,10 +25,10 @@ import scala.jdk.CollectionConverters._
   * Not thread safe, create separate instances when loading data from multiple threads.
   *
   * @param consumerProperties Kafka consumer properties to use.
-  * @param topics Topics to subscribe to.
+  * @param topics Topics to subscribe to, either a list or a pattern of topics.
   * @param pollTimeout Timeout when polling data from Kafka.
   */
-class KafkaSource(consumerProperties: Properties, topics: Seq[String], pollTimeout: Duration) {
+class KafkaSource(consumerProperties: Properties, topics: Either[Seq[String], Pattern], pollTimeout: Duration) {
 
   private val props = new Properties()
 
@@ -67,7 +68,10 @@ class KafkaSource(consumerProperties: Properties, topics: Seq[String], pollTimeo
     */
   def subscribe(listener: ConsumerRebalanceListener): Unit = {
     // do not lock as this is invoked during poll, so would result in a deadlock
-    consumer.subscribe(topics.asJava, listener)
+    topics match {
+      case Left(tp) => consumer.subscribe(tp.asJava, listener)
+      case Right(pt) => consumer.subscribe(pt, listener)
+    }
   }
 
   /**
@@ -102,15 +106,16 @@ class KafkaSource(consumerProperties: Properties, topics: Seq[String], pollTimeo
 object KafkaSource {
   case class Builder(
       private val _consumerProperties: Properties,
-      private val _topics: Seq[String],
+      private val _topics: Either[Seq[String], Pattern],
       private val _pollTimeout: Duration) {
 
     def consumerProperties(props: Properties): Builder = copy(_consumerProperties = props)
-    def topics(topics: Seq[String]): Builder = copy(_topics = topics)
+    def topics(topics: Seq[String]): Builder = copy(_topics = Left(topics))
+    def topics(pattern: Pattern): Builder = copy(_topics = Right(pattern))
     def pollTimeout(timeout: Duration): Builder = copy(_pollTimeout = timeout)
 
     def build(): KafkaSource = new KafkaSource(_consumerProperties, _topics, _pollTimeout)
   }
 
-  def builder(): Builder = Builder(new Properties(), Seq.empty, Duration.ofSeconds(1))
+  def builder(): Builder = Builder(new Properties(), Left(Seq.empty), Duration.ofSeconds(1))
 }

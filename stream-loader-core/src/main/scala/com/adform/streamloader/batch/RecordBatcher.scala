@@ -21,4 +21,9 @@ trait RecordBatcher[+B <: RecordBatch] {
     * Gets a new record batch builder.
     */
   def newBatchBuilder(): RecordBatchBuilder[B]
+
+  /**
+    * Closes the batcher.
+    */
+  def close(): Unit = {}
 }

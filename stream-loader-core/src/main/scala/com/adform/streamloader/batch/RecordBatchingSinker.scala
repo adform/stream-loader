@@ -176,6 +176,7 @@ class RecordBatchingSinker[B <: RecordBatch](
   override def close(): Unit = if (isRunning.compareAndSet(true, false)) {
     log.info(s"Closing partition loader for '$groupName', discarding the current batch")
     builder.discard()
+    recordBatcher.close()
 
     log.debug("Interrupting batch commit thread and waiting for it to stop")
     commitThread.interrupt()
