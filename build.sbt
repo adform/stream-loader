@@ -42,6 +42,7 @@ lazy val `stream-loader-core` = project
       "com.univocity"     % "univocity-parsers" % "2.9.1",
       "org.json4s"        %% "json4s-native"    % "4.0.5",
       "io.micrometer"     % "micrometer-core"   % "1.9.0",
+      "it.unimi.dsi"      % "fastutil"          % "8.5.9",
       "org.scalatest"     %% "scalatest"        % scalaTestVersion % "test",
       "org.scalatestplus" %% "scalacheck-1-16"  % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion % "test",

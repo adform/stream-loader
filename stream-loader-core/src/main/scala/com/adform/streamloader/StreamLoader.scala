@@ -9,8 +9,7 @@
 package com.adform.streamloader
 
 import java.util.concurrent.atomic.AtomicBoolean
-
-import com.adform.streamloader.util.{Logging, MetricTag, Metrics}
+import com.adform.streamloader.util.{FifoHashSet, KeyCache, Logging, MetricTag, Metrics}
 import io.micrometer.core.instrument.MeterRegistry
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener
 import org.apache.kafka.common.TopicPartition
@@ -29,6 +28,11 @@ class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics
   override protected def metricsRoot: String = "stream_loader"
 
   private val running: AtomicBoolean = new AtomicBoolean(false)
+
+  //should be in properties
+  private val cacheSize = 1000000
+
+  private val cache: KeyCache[Array[Byte]] = KeyCache[Array[Byte]](cacheSize)
 
   /**
     * Starts stream loading in the current thread, blocks until `stop()` is called from another thread.
@@ -49,10 +53,12 @@ class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics
           override def onPartitionsRevoked(tps: java.util.Collection[TopicPartition]): Unit = {
             val partitions = tps.asScala.toSet
             log.info(s"Revoking partitions from stream loader: ${partitions.mkString(", ")}")
+            cache.clearCache()
             sink.revokePartitions(partitions).foreach {
               case (tp, Some(position)) =>
-                log.info(s"Resetting offset for $tp to $position")
-                source.seek(tp, position)
+                val cachePosition = position.offset - cacheSize
+                log.info(s"Resetting offset for $tp to $position, cache offset from: $cachePosition")
+                source.seek(tp, cachePosition)
               case (tp, None) =>
                 log.info(s"No committed offset found for $tp, resetting to default offset")
             }
@@ -61,10 +67,12 @@ class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics
           override def onPartitionsAssigned(tps: java.util.Collection[TopicPartition]): Unit = {
             val partitions = tps.asScala.toSet
             log.info(s"Assigning partitions to stream loader: ${partitions.mkString(", ")}")
+            cache.clearCache()
             sink.assignPartitions(partitions).foreach {
               case (tp, Some(position)) =>
-                log.info(s"Resetting offset for $tp to $position")
-                source.seek(tp, position)
+                val cachePosition = position.offset - cacheSize
+                log.info(s"Resetting offset for $tp to $position, cache offset from: $cachePosition")
+                source.seek(tp, cachePosition)
               case (tp, None) =>
                 log.info(s"No committed offset found for $tp, resetting to default offset")
             }
@@ -77,8 +85,13 @@ class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics
         var recordsPolled = 0
 
         for (record <- source.poll()) {
-          sink.write(record)
-          recordsPolled += 1
+          val key = record.key()
+          val partition = record.partition()
+          if (cache.partitionReady(partition) && !cache.contains(partition, key)) {
+            sink.write(record)
+            recordsPolled += 1
+          }
+          cache.add(partition, key)
         }
 
         if (recordsPolled == 0)

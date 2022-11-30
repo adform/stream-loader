@@ -85,6 +85,11 @@ class KafkaSource(consumerProperties: Properties, topics: Either[Seq[String], Pa
     consumer.seek(partition, position.offset)
   }
 
+  def seek(partition: TopicPartition, offset: Long): Unit = {
+    // do not lock as this can be invoked during poll on a rebalance, so would result in a deadlock
+    consumer.seek(partition, offset)
+  }
+
   /**
     * Polls Kafka for new records.
     *
