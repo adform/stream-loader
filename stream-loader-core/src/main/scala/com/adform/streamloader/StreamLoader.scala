@@ -23,16 +23,13 @@ import scala.jdk.CollectionConverters._
   * Runs in the active thread and blocks it. When running multiple instances in multiple threads
   * you must provide separate sources and sinks.
   */
-class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics {
+class StreamLoader(source: KafkaSource, sink: Sink, cache: KeyCache[Array[Byte]] = KeyCache.noop())
+    extends Logging
+    with Metrics {
 
   override protected def metricsRoot: String = "stream_loader"
 
   private val running: AtomicBoolean = new AtomicBoolean(false)
-
-  //should be in properties
-  private val cacheSize = 1000000
-
-  private val cache: KeyCache[Array[Byte]] = KeyCache[Array[Byte]](cacheSize)
 
   /**
     * Starts stream loading in the current thread, blocks until `stop()` is called from another thread.
@@ -54,12 +51,13 @@ class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics
             val partitions = tps.asScala.toSet
             log.info(s"Revoking partitions from stream loader: ${partitions.mkString(", ")}")
             cache.clearCache()
+            cache.initCache(partitions)
             sink.revokePartitions(partitions).foreach {
               case (tp, Some(position)) =>
-                val cachePosition = position.offset - cacheSize
+                val cachePosition = position.offset - cache.size()
                 log.info(s"Resetting offset for $tp to $position, cache offset from: $cachePosition")
                 source.seek(tp, cachePosition)
-              case (tp, None) =>
+              case (tp, None) => //TODO this will cause data loss
                 log.info(s"No committed offset found for $tp, resetting to default offset")
             }
           }
@@ -70,10 +68,10 @@ class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics
             cache.clearCache()
             sink.assignPartitions(partitions).foreach {
               case (tp, Some(position)) =>
-                val cachePosition = position.offset - cacheSize
+                val cachePosition = position.offset - cache.size()
                 log.info(s"Resetting offset for $tp to $position, cache offset from: $cachePosition")
                 source.seek(tp, cachePosition)
-              case (tp, None) =>
+              case (tp, None) => //TODO this will cause data loss
                 log.info(s"No committed offset found for $tp, resetting to default offset")
             }
           }
@@ -87,7 +85,7 @@ class StreamLoader(source: KafkaSource, sink: Sink) extends Logging with Metrics
         for (record <- source.poll()) {
           val key = record.key()
           val partition = record.partition()
-          if (cache.partitionReady(partition) && !cache.contains(partition, key)) {
+          if (cache.ready(partition) && !cache.contains(partition, key)) {
             sink.write(record)
             recordsPolled += 1
           }
