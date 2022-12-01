@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.util
 
-import org.apache.kafka.common.TopicPartition
+import scala.collection.mutable
 
 /**
   * Interface hiding cache implementations
@@ -16,12 +16,14 @@ import org.apache.kafka.common.TopicPartition
   * @tparam A
   */
 trait KeyCache[A] {
-  def initCache(partitions: Set[TopicPartition]): Unit
+  def assignPartition(partition: Int, startOffset: Long, ready: Boolean): Unit
+  def revokePartitions(partition: Int): Unit
   def clearCache(): Unit
   def add(partition: Int, key: A): Unit
   def contains(partition: Int, key: A): Boolean
-  def ready(partition: Int): Boolean
-  def size(): Int
+  def switchIfReady(partition: Int, offset: Long): Boolean
+  def keysSize(): Int
+  def partitionSize(partition: Int): Int
 }
 
 object KeyCache {
@@ -33,35 +35,75 @@ object KeyCache {
   * Not thread safe
   *
   * Create separate FIFO HashSet per partition
+  * KafkaSource polls data in uneven manner for each partition, to be sure that we build cache properly
+  * we verify partition for each record and add it to proper Set
   *
   * @param cacheSize - number of cached keys per partition
-  * @tparam A
+  * @tparam A - key type
   */
-class PerPartitionKeyCache[A] private (cacheSize: Int) extends KeyCache[A] {
+class PerPartitionKeyCache[A] private (cacheSize: Int, val cacheForPartition: mutable.Map[Int, PartitionData[A]])
+    extends KeyCache[A]
+    with Logging {
 
-  var cacheForPartition: Map[Int, FifoHashSet[A]] = _
+  /**
+    * Called on `ConsumerRebalanceListener.onPartitionsAssigned`
+    *
+    * Two scenarios for initialization:
+    *  - there is lastOffset - fill cache to `cacheSize` before marking cache for partition as `ready`
+    *  - no information about lastOffset - mark cache for partition as `ready` and fill cache as we Sink data
+    *
+    * @see {@link org.apache.kafka.clients.consumer.ConsumerRebalanceListener#onPartitionsAssigned(Collection<TopicPartition> partitions) }
+    * @param partition - partition assigned to consumer
+    * @param ready - is ready for consumption
+    */
+  override def assignPartition(partition: Int, startOffset: Long, ready: Boolean): Unit = {
+    cacheForPartition.addOne((partition, PartitionData[A](ready, startOffset, FifoHashSet[A](cacheSize))))
+  }
 
-  //TODO if no offset set as partition as ready
-  override def initCache(partitions: Set[TopicPartition]): Unit =
-    cacheForPartition = partitions.map(p => (p.partition(), FifoHashSet[A](cacheSize))).toMap
+  /**
+    * Called on `ConsumerRebalanceListener.onPartitionsRevoked`
+    *
+    *
+    * @see {@link org.apache.kafka.clients.consumer.ConsumerRebalanceListener#onPartitionsRevoked(Collection<TopicPartition> partitions) }
+    * @param partition - partition revoked from consumer
+    */
+  override def revokePartitions(partition: Int): Unit = {
+    cacheForPartition.remove(partition)
+  }
 
-  override def clearCache(): Unit = cacheForPartition.values.foreach(_.clear())
+  override def clearCache(): Unit = cacheForPartition.clear()
 
-  override def add(partition: Int, key: A): Unit = cacheForPartition(partition).add(key)
+  override def add(partition: Int, key: A): Unit = cacheForPartition(partition).addKey(key)
 
-  override def contains(partition: Int, key: A): Boolean = cacheForPartition(partition).contains(key)
+  override def contains(partition: Int, key: A): Boolean = cacheForPartition(partition).containsKey(key)
 
-  override def ready(partition: Int): Boolean = cacheSize == cacheForPartition(partition).size()
+  override def switchIfReady(partition: Int, offset: Long): Boolean = {
+    val partitionData = cacheForPartition(partition)
+    if (partitionData.isReady) {
+      true
+    } else if (partitionData.startOffset <= offset) {
+      partitionData.isReady = true
+      log.info(s"Cache for partition $partition ready")
+      partitionData.isReady
+    } else {
+      false
+    }
+  }
 
-  override def size(): Int = cacheSize
+  override def keysSize(): Int = cacheSize
+
+  override def partitionSize(partition: Int): Int = cacheForPartition(partition).keySize()
 }
 
 object PerPartitionKeyCache {
-  def apply[A](cacheSize: Int): PerPartitionKeyCache[A] = new PerPartitionKeyCache[A](cacheSize)
+  def apply[A](cacheSize: Int): PerPartitionKeyCache[A] =
+    new PerPartitionKeyCache[A](cacheSize, mutable.Map[Int, PartitionData[A]]())
 }
 
 class NoopKeyCache[A] private () extends KeyCache[A] {
-  override def initCache(partitions: Set[TopicPartition]): Unit = {}
+  override def assignPartition(partition: Int, startOffset: Long, ready: Boolean): Unit = {}
+
+  override def revokePartitions(partition: Int): Unit = {}
 
   override def clearCache(): Unit = {}
 
@@ -69,11 +111,21 @@ class NoopKeyCache[A] private () extends KeyCache[A] {
 
   override def contains(partition: Int, key: A): Boolean = false
 
-  override def ready(partition: Int): Boolean = true
+  override def switchIfReady(partition: Int, offset: Long): Boolean = true
 
-  override def size(): Int = 0
+  override def keysSize(): Int = 0
+
+  override def partitionSize(partition: Int): Int = 0
 }
 
 object NoopKeyCache {
   def apply[A](): NoopKeyCache[A] = new NoopKeyCache()
+}
+
+case class PartitionData[A](var isReady: Boolean, startOffset: Long, keys: FifoHashSet[A]) {
+  def addKey(a: A): Unit = {
+    keys.add(a)
+  }
+  def containsKey(a: A): Boolean = keys.add(a)
+  def keySize(): Int = keys.size()
 }

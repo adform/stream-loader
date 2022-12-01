@@ -50,14 +50,14 @@ class StreamLoader(source: KafkaSource, sink: Sink, cache: KeyCache[Array[Byte]]
           override def onPartitionsRevoked(tps: java.util.Collection[TopicPartition]): Unit = {
             val partitions = tps.asScala.toSet
             log.info(s"Revoking partitions from stream loader: ${partitions.mkString(", ")}")
-            cache.clearCache()
-            cache.initCache(partitions)
-            sink.revokePartitions(partitions).foreach {
+            val revokedPartitions = sink.revokePartitions(partitions)
+            revokedPartitions.foreach {
               case (tp, Some(position)) =>
-                val cachePosition = position.offset - cache.size()
-                log.info(s"Resetting offset for $tp to $position, cache offset from: $cachePosition")
-                source.seek(tp, cachePosition)
-              case (tp, None) => //TODO this will cause data loss
+                log.info(s"Resetting offset for $tp to $position")
+                cache.revokePartitions(tp.partition())
+                source.seek(tp, position)
+              case (tp, None) =>
+                cache.revokePartitions(tp.partition())
                 log.info(s"No committed offset found for $tp, resetting to default offset")
             }
           }
@@ -65,13 +65,15 @@ class StreamLoader(source: KafkaSource, sink: Sink, cache: KeyCache[Array[Byte]]
           override def onPartitionsAssigned(tps: java.util.Collection[TopicPartition]): Unit = {
             val partitions = tps.asScala.toSet
             log.info(s"Assigning partitions to stream loader: ${partitions.mkString(", ")}")
-            cache.clearCache()
-            sink.assignPartitions(partitions).foreach {
+            val assignedPartitions = sink.assignPartitions(partitions)
+            assignedPartitions.foreach {
               case (tp, Some(position)) =>
-                val cachePosition = position.offset - cache.size()
+                val cachePosition = calculateOffset(position.offset, cache.keysSize())
                 log.info(s"Resetting offset for $tp to $position, cache offset from: $cachePosition")
+                cache.assignPartition(tp.partition(), position.offset, ready = false)
                 source.seek(tp, cachePosition)
-              case (tp, None) => //TODO this will cause data loss
+              case (tp, None) =>
+                cache.assignPartition(tp.partition(), 0, ready = true)
                 log.info(s"No committed offset found for $tp, resetting to default offset")
             }
           }
@@ -85,7 +87,7 @@ class StreamLoader(source: KafkaSource, sink: Sink, cache: KeyCache[Array[Byte]]
         for (record <- source.poll()) {
           val key = record.key()
           val partition = record.partition()
-          if (cache.ready(partition) && !cache.contains(partition, key)) {
+          if (cache.switchIfReady(partition, record.offset()) && !cache.contains(partition, key)) {
             sink.write(record)
             recordsPolled += 1
           }
@@ -104,6 +106,8 @@ class StreamLoader(source: KafkaSource, sink: Sink, cache: KeyCache[Array[Byte]]
       source.close()
       recordsPolledDistribution.close()
     }
+
+  private def calculateOffset(offset: Long, cacheSize: Long): Long = Math.max(0, offset - cacheSize)
 
   /**
     * Stops the stream loader, performs any necessary clean up.
