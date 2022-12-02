@@ -50,7 +50,7 @@ abstract class BaseVerticaLoader extends Loader {
       .topics(Seq(cfg.getString("kafka.topic")))
       .build()
 
-    val loader = new StreamLoader(source, sink(cfg, verticaDataSource))
+    val loader = StreamLoader.default(source, sink(cfg, verticaDataSource))
 
     sys.addShutdownHook {
       loader.stop()

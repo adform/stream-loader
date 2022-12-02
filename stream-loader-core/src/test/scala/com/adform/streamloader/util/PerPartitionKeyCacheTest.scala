@@ -19,14 +19,14 @@ class PerPartitionKeyCacheTest extends AnyFunSpec with Matchers with ScalaCheckP
       val cache = KeyCache.perPartition[String](10)
       cache.assignPartition(1, 110, ready = true)
 
-      cache.switchIfReady(1, 10) shouldBe true
+      cache.verifyAndSwitchIfReady(1, 10) shouldBe true
     }
 
     it("should not be ready when marked as not ready") {
       val cache = KeyCache.perPartition[String](10)
       cache.assignPartition(1, 110, ready = false)
 
-      cache.switchIfReady(1, 10) shouldBe false
+      cache.verifyAndSwitchIfReady(1, 10) shouldBe false
     }
   }
 }

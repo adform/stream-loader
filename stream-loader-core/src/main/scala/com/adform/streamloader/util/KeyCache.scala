@@ -21,7 +21,7 @@ trait KeyCache[A] {
   def clearCache(): Unit
   def add(partition: Int, key: A): Unit
   def contains(partition: Int, key: A): Boolean
-  def switchIfReady(partition: Int, offset: Long): Boolean
+  def verifyAndSwitchIfReady(partition: Int, offset: Long): Boolean
   def keysSize(): Int
   def partitionSize(partition: Int): Int
 }
@@ -77,7 +77,7 @@ class PerPartitionKeyCache[A] private (cacheSize: Int, val cacheForPartition: mu
 
   override def contains(partition: Int, key: A): Boolean = cacheForPartition(partition).containsKey(key)
 
-  override def switchIfReady(partition: Int, offset: Long): Boolean = {
+  override def verifyAndSwitchIfReady(partition: Int, offset: Long): Boolean = {
     val partitionData = cacheForPartition(partition)
     if (partitionData.isReady) {
       true
@@ -111,7 +111,7 @@ class NoopKeyCache[A] private () extends KeyCache[A] {
 
   override def contains(partition: Int, key: A): Boolean = false
 
-  override def switchIfReady(partition: Int, offset: Long): Boolean = true
+  override def verifyAndSwitchIfReady(partition: Int, offset: Long): Boolean = true
 
   override def keysSize(): Int = 0
 

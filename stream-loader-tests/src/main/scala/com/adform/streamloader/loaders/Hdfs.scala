@@ -82,7 +82,7 @@ object TestParquetHdfsLoader extends Loader {
       )
       .build()
 
-    val loader = new StreamLoader(source, sink)
+    val loader = StreamLoader.default(source, sink)
 
     sys.addShutdownHook {
       loader.stop()

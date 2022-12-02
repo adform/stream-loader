@@ -89,7 +89,7 @@ class BaseS3Loader extends Loader {
         .partitionGrouping(groupForPartition)
         .build()
 
-    val loader = new StreamLoader(source, sink)
+    val loader = StreamLoader.default(source, sink)
 
     sys.addShutdownHook {
       loader.stop()
