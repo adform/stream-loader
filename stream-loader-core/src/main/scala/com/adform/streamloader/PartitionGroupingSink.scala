@@ -76,11 +76,12 @@ abstract class PartitionGroupingSink extends Sink with Logging {
             s"newly assigned partitions ${groupPartitions
               .mkString(", ")} and previously owned partitions ${oldGroupPartitions.mkString(", ")}")
 
-        val sinker = sinkerForPartitionGroup(group, groupPartitions ++ oldGroupPartitions)
+        val newGroupPartitions = groupPartitions ++ oldGroupPartitions
+        val sinker = sinkerForPartitionGroup(group, newGroupPartitions)
         val positions = sinker.initialize(kafkaContext)
 
-        partitionGroups.put(group, groupPartitions -> sinker)
-        groupPartitions.foreach(tp => partitionSinkers.put(tp, sinker))
+        partitionGroups.put(group, newGroupPartitions -> sinker)
+        newGroupPartitions.foreach(tp => partitionSinkers.put(tp, sinker))
         positions
     }
 

@@ -21,6 +21,7 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
 
   class TestTopicGroupingSink extends PartitionGroupingSink {
     val partitionSinkers: mutable.HashSet[PartitionGroupSinker] = mutable.HashSet.empty[PartitionGroupSinker]
+    val groupValuesWritten: mutable.ArrayBuffer[(String, String)] = mutable.ArrayBuffer.empty[(String, String)]
 
     override def groupForPartition(topicPartition: TopicPartition): String = topicPartition.topic()
 
@@ -29,12 +30,18 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
         override val groupName: String = name
         override val groupPartitions: Set[TopicPartition] = partitions
         override def initialize(kc: KafkaContext): Map[TopicPartition, Option[StreamPosition]] = Map.empty
-        override def write(record: ConsumerRecord[Array[Byte], Array[Byte]]): Unit = {}
+        override def write(record: ConsumerRecord[Array[Byte], Array[Byte]]): Unit = {
+          groupValuesWritten.addOne(name -> new String(record.value(), "UTF-8"))
+        }
         override def heartbeat(): Unit = {}
         override def close(): Unit = partitionSinkers.remove(this)
       }
       partitionSinkers.add(sinker)
       sinker
+    }
+
+    def writeValue(topic: String, partition: Int, value: String): Unit = {
+      write(new ConsumerRecord[Array[Byte], Array[Byte]](topic, partition, 0, Array.empty[Byte], value.getBytes("UTF-8")))
     }
   }
 
@@ -64,7 +71,7 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
     )
   }
 
-  it("should stop loading a partition group when all its partitions get revoked") {
+  it("should stop sinking a partition group when all its partitions get revoked") {
 
     val sink = new TestTopicGroupingSink
 
@@ -111,7 +118,7 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
     )
   }
 
-  it("should create new loaders when new partition groups get assigned") {
+  it("should create new sinkers when new partition groups get assigned") {
 
     val sink = new TestTopicGroupingSink
 
@@ -135,5 +142,53 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
       new TopicPartition("test", 1),
       new TopicPartition("new", 0)
     )
+  }
+
+  it("should continue sinking records after new partitions get assigned to existing group") {
+    val sink = new TestTopicGroupingSink
+
+    sink.assignPartitions(
+      Set(
+        new TopicPartition("test", 0),
+        new TopicPartition("test", 1)
+      )
+    )
+
+    sink.assignPartitions(
+      Set(
+        new TopicPartition("test", 2)
+      )
+    )
+
+    sink.writeValue("test", 0, "a")
+    sink.writeValue("test", 1, "b")
+    sink.writeValue("test", 2, "c")
+
+    sink.groupValuesWritten should contain theSameElementsAs Seq(
+      "test" -> "a",
+      "test" -> "b",
+      "test" -> "c"
+    )
+  }
+
+  it("should continue sinking records after partitions get revoked from existing group") {
+    val sink = new TestTopicGroupingSink
+
+    sink.assignPartitions(
+      Set(
+        new TopicPartition("test", 0),
+        new TopicPartition("test", 1)
+      )
+    )
+
+    sink.revokePartitions(
+      Set(
+        new TopicPartition("test", 1)
+      )
+    )
+
+    sink.writeValue("test", 0, "a")
+
+    sink.groupValuesWritten should contain theSameElementsAs Seq("test" -> "a")
   }
 }
