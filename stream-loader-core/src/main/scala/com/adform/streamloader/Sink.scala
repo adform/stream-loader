@@ -8,8 +8,7 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.model.StreamPosition
-import org.apache.kafka.clients.consumer.ConsumerRecord
+import com.adform.streamloader.model.{Record, StreamPosition}
 import org.apache.kafka.common.TopicPartition
 
 /**
@@ -52,9 +51,9 @@ trait Sink {
   /**
     * Writes a record to the underlying storage.
     *
-    * @param record Kafka consumer record to write
+    * @param record Stream record to write.
     */
-  def write(record: ConsumerRecord[Array[Byte], Array[Byte]]): Unit
+  def write(record: Record): Unit
 
   /**
     * Notifies the sink that record consumption is still active, called when no records get polled from Kafka.

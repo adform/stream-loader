@@ -9,6 +9,7 @@
 package com.adform.streamloader.model
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.TopicPartition
 
 /**
   * A single record consumed from the source.
@@ -16,4 +17,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
   * @param consumerRecord The Kafka consumer record.
   * @param watermark The calculated watermark, i.e. the maximum timestamp seen.
   */
-case class Record(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], watermark: Timestamp)
+case class Record(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], watermark: Timestamp) {
+  def topicPartition: TopicPartition = new TopicPartition(consumerRecord.topic(), consumerRecord.partition())
+}

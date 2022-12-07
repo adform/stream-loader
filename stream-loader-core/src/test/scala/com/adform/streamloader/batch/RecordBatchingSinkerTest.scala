@@ -8,8 +8,6 @@
 
 package com.adform.streamloader.batch
 
-import java.util.Optional
-
 import com.adform.streamloader.MockKafkaContext
 import com.adform.streamloader.batch.storage.RecordBatchStorage
 import com.adform.streamloader.model._
@@ -21,12 +19,11 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.util.Optional
 import scala.collection.mutable
 import scala.concurrent.duration._
 
 class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
-
-  type Record = ConsumerRecord[Array[Byte], Array[Byte]]
 
   case class TestBatch(recordRanges: Seq[RecordRange], var isDiscarded: Boolean) extends RecordBatch {
     override def discard(): Boolean = {
@@ -49,11 +46,6 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
   val recordsPerBatch = 10
   val batchCount = 10
 
-  val validWatermarkDiffMillis: Long = 1 * 60 * 60 * 1000
-
-  val validTimestampMillis: Long = System.currentTimeMillis()
-  val nonValidTimestampMillis: Long = System.currentTimeMillis() + validWatermarkDiffMillis * 2
-
   def createRecords(
       topic: String,
       partition: Int,
@@ -61,29 +53,30 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
       initialOffset: Int,
       recordCount: Int): Seq[Record] =
     for (offset <- initialOffset until (initialOffset + recordCount))
-      yield
-        new Record(
-          topic,
-          partition,
-          offset,
-          initialTimestamp + offset * 1000,
-          TimestampType.CREATE_TIME,
-          ConsumerRecord.NULL_SIZE,
-          ConsumerRecord.NULL_SIZE,
-          Array.emptyByteArray,
-          Array.emptyByteArray,
-          new RecordHeaders,
-          Optional.empty[Integer]
+      yield {
+        val timestamp = initialTimestamp + offset * 1000
+        Record(
+          new ConsumerRecord[Array[Byte], Array[Byte]](
+            topic,
+            partition,
+            offset,
+            timestamp,
+            TimestampType.CREATE_TIME,
+            ConsumerRecord.NULL_SIZE,
+            ConsumerRecord.NULL_SIZE,
+            Array.emptyByteArray,
+            Array.emptyByteArray,
+            new RecordHeaders,
+            Optional.empty[Integer]
+          ),
+          Timestamp(timestamp)
         )
+      }
 
   def createTestRecords(initialTimestamp: Long): Seq[Record] =
     createRecords(tp.topic(), tp.partition(), initialTimestamp, initialOffset = 0, recordsPerBatch * batchCount)
 
-  def newAssertiveSinker(
-      shouldUpdateWatermark: Boolean,
-      batchProvider: TestBatchProvider = new TestBatchProvider): RecordBatchingSinker[TestBatch] = {
-    var maxTimestamp = Timestamp(-1L)
-
+  def newTestSinker(batchProvider: TestBatchProvider = new TestBatchProvider): RecordBatchingSinker[TestBatch] = {
     val sinker: RecordBatchingSinker[TestBatch] =
       new RecordBatchingSinker[TestBatch](
         groupName = "root",
@@ -91,29 +84,16 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
         () =>
           new RecordBatchBuilder[TestBatch] {
             override def isBatchReady: Boolean = currentRecordCount >= recordsPerBatch
-
             override def build(): Option[TestBatch] = Some(batchProvider.newBatch(currentRecordRanges))
-
             override def discard(): Unit = {}
         },
         new RecordBatchStorage[TestBatch] {
           override def recover(topicPartitions: Set[TopicPartition]): Unit = {}
-
           override def committedPositions(
               topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = Map(tp -> None)
-
-          override def commitBatch(batch: TestBatch): Unit = {
-            val watermark = batch.recordRanges.head.end.watermark
-            if (shouldUpdateWatermark) {
-              assert(batch.recordRanges.head.end.watermark.millis > maxTimestamp.millis)
-            } else {
-              assert(batch.recordRanges.head.end.watermark == maxTimestamp)
-            }
-            maxTimestamp = watermark
-          }
+          override def commitBatch(batch: TestBatch): Unit = {}
         },
         batchCommitQueueSize = 1,
-        validWatermarkDiffMillis = validWatermarkDiffMillis,
         retryPolicy = Retry.Policy(0, 0.seconds, 0)
       )
 
@@ -121,21 +101,11 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
     sinker
   }
 
-  it("should push the watermark forward if record timestamp is greater and valid") {
-    val sinker = newAssertiveSinker(shouldUpdateWatermark = true)
-    createTestRecords(validTimestampMillis).foreach(sinker.write)
-  }
-
-  it("should not update watermark if record timestamp is greater but exceeds permitted time window") {
-    val sinker = newAssertiveSinker(shouldUpdateWatermark = false)
-    createTestRecords(nonValidTimestampMillis).foreach(sinker.write)
-  }
-
   it("should discard all batches after committing them") {
     val batchProvider = new TestBatchProvider
-    val sinker = newAssertiveSinker(shouldUpdateWatermark = true, batchProvider)
+    val sinker = newTestSinker(batchProvider)
 
-    createTestRecords(validTimestampMillis).foreach(sinker.write)
+    createTestRecords(System.currentTimeMillis()).foreach(sinker.write)
 
     while (sinker.commitQueueSize > 0) Thread.sleep(10) // wait until the commit queue clears
 

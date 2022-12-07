@@ -8,20 +8,17 @@
 
 package com.adform.streamloader.batch
 
-import java.time.Duration
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.atomic.AtomicBoolean
-
 import com.adform.streamloader.batch.storage.RecordBatchStorage
 import com.adform.streamloader.model._
 import com.adform.streamloader.util.Retry._
 import com.adform.streamloader.util._
 import com.adform.streamloader.{KafkaContext, PartitionGroupSinker}
 import io.micrometer.core.instrument.{Counter, Gauge, Meter, Timer}
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.TopicPartition
 
-import scala.collection.concurrent.TrieMap
+import java.time.Duration
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
   * A [[PartitionGroupSinker]] that accumulates records to batches and stores them to some storage once ready.
@@ -31,7 +28,6 @@ import scala.collection.concurrent.TrieMap
   * @param recordBatcher A record batcher to use.
   * @param batchStorage A storage to use.
   * @param batchCommitQueueSize Size of the batch commit queue, once full further attempts to store batches will block.
-  * @param validWatermarkDiffMillis Upper limit for setting watermarks greater than currentTimeMillis.
   * @param retryPolicy The retry policy to use for all retriable operations.
   * @tparam B Type of record batches persisted to storage.
   */
@@ -41,10 +37,8 @@ class RecordBatchingSinker[B <: RecordBatch](
     recordBatcher: RecordBatcher[B],
     batchStorage: RecordBatchStorage[B],
     batchCommitQueueSize: Int,
-    validWatermarkDiffMillis: Long,
     retryPolicy: Retry.Policy
-)(implicit timeProvider: TimeProvider = TimeProvider.system)
-    extends PartitionGroupSinker
+) extends PartitionGroupSinker
     with Logging
     with Metrics {
   self =>
@@ -57,7 +51,6 @@ class RecordBatchingSinker[B <: RecordBatch](
   private val isRunning = new AtomicBoolean(false)
 
   private var builder: RecordBatchBuilder[B] = _
-  private val watermarks: TrieMap[TopicPartition, Timestamp] = TrieMap.empty
 
   private val commitQueue = new ArrayBlockingQueue[B](batchCommitQueueSize)
   private val commitThread = new Thread(
@@ -104,9 +97,6 @@ class RecordBatchingSinker[B <: RecordBatch](
 
     log.info(s"Looking up offsets for partitions ${groupPartitions.mkString(", ")}")
     val positions = batchStorage.committedPositions(groupPartitions)
-    positions.foreach {
-      case (tp, position) => watermarks.put(tp, position.map(_.watermark).getOrElse(Timestamp(-1L)))
-    }
 
     startNewBatch()
 
@@ -118,34 +108,13 @@ class RecordBatchingSinker[B <: RecordBatch](
     positions
   }
 
-  override def write(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]]): Unit = if (isRunning.get()) {
+  override def write(record: Record): Unit = if (isRunning.get()) {
     if (!isInitialized)
       throw new IllegalStateException("Loader has to be initialized before starting writes")
 
-    // Update watermark
-    val tp = new TopicPartition(consumerRecord.topic(), consumerRecord.partition())
-    val recordTimestamp = Timestamp(consumerRecord.timestamp())
-    val watermark = if (recordTimestamp.millis <= timeProvider.currentMillis + validWatermarkDiffMillis) {
-      val currentWatermark = watermarks(tp)
-      if (recordTimestamp.millis > currentWatermark.millis) {
-        watermarks(tp) = recordTimestamp
-        recordTimestamp
-      } else {
-        currentWatermark
-      }
-    } else {
-      log.warn(
-        s"Received a message with an out of bounds timestamp $recordTimestamp (" +
-          recordTimestamp.format("yyyy/MM/dd HH:mm:ss").get +
-          s") at $tp offset ${consumerRecord.offset()}.")
-      watermarks(tp)
-    }
+    builder.add(record)
+    Metrics.recordsWritten(record.topicPartition).increment()
 
-    // Write records to batch
-    builder.add(Record(consumerRecord, watermark))
-    Metrics.recordsWritten(tp).increment()
-
-    // Check if batch needs to be committed
     checkAndCommitBatchIfNeeded()
   }
 
@@ -199,16 +168,6 @@ class RecordBatchingSinker[B <: RecordBatch](
     private def partitionTags(tp: TopicPartition) =
       Seq(MetricTag("topic", tp.topic()), MetricTag("partition", tp.partition().toString))
 
-    val partitionWatermarkDelays: Set[Gauge] = groupPartitions.map(
-      tp =>
-        createGauge(
-          "watermark.delay.ms",
-          self,
-          (_: RecordBatchingSinker[B]) =>
-            watermarks.get(tp).map(w => timeProvider.currentMillis - w.millis).getOrElse(0L).toDouble,
-          commonTags ++ partitionTags(tp)
-      ))
-
     val recordsWritten: Map[TopicPartition, Counter] =
       groupPartitions.map(tp => tp -> createCounter("records.written", commonTags ++ partitionTags(tp))).toMap
 
@@ -217,6 +176,6 @@ class RecordBatchingSinker[B <: RecordBatch](
       createGauge("commit.queue.size", self, (_: RecordBatchingSinker[B]) => self.commitQueue.size(), commonTags)
 
     val allMeters: Seq[Meter] =
-      Seq(commitDuration, commitQueueSize) ++ recordsWritten.values ++ partitionWatermarkDelays
+      Seq(commitDuration, commitQueueSize) ++ recordsWritten.values
   }
 }
