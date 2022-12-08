@@ -12,7 +12,6 @@ import java.io.File
 import com.adform.streamloader.sink.encoding.csv.CsvFormat
 import com.adform.streamloader.sink.file.Compression
 import com.adform.streamloader.vertica.file.CsvVerticaFileBuilder
-//import com.adform.streamloader.vertica.file.CsvVerticaFileBuilderFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
