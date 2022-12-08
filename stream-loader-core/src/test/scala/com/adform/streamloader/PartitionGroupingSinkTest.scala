@@ -8,7 +8,7 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.model.{Record, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamRecord, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.funspec.AnyFunSpec
@@ -30,7 +30,7 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
         override val groupName: String = name
         override val groupPartitions: Set[TopicPartition] = partitions
         override def initialize(kc: KafkaContext): Map[TopicPartition, Option[StreamPosition]] = Map.empty
-        override def write(record: Record): Unit = {
+        override def write(record: StreamRecord): Unit = {
           groupValuesWritten.addOne(name -> new String(record.consumerRecord.value(), "UTF-8"))
         }
         override def heartbeat(): Unit = {}
@@ -42,7 +42,7 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
 
     def writeValue(topic: String, partition: Int, value: String): Unit = {
       write(
-        Record(
+        StreamRecord(
           new ConsumerRecord[Array[Byte], Array[Byte]](topic, partition, 0, Array.empty[Byte], value.getBytes("UTF-8")),
           Timestamp(0L)))
     }

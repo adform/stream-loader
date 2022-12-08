@@ -12,12 +12,12 @@ import java.io.File
 
 import com.adform.streamloader.batch.RecordFormatter
 import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatch, FileRecordBatcher}
-import com.adform.streamloader.model.RecordRange
+import com.adform.streamloader.model.StreamRange
 import com.adform.streamloader.vertica.file.{VerticaFileBuilder, VerticaFileBuilderFactory}
 
 case class InRowOffsetVerticaFileRecordBatch(
     file: File,
-    recordRanges: Seq[RecordRange],
+    recordRanges: Seq[StreamRange],
     copyStatementTemplate: String
 ) extends FileRecordBatch
     with VerticaRecordBatch {
@@ -42,7 +42,7 @@ class InRowOffsetVerticaFileRecordBatcher[R](
 
   override def constructBatch(
       fileBuilder: VerticaFileBuilder[R],
-      recordRanges: Seq[RecordRange],
+      recordRanges: Seq[StreamRange],
       recordCount: Long): Option[InRowOffsetVerticaFileRecordBatch] = {
     fileBuilder
       .build()

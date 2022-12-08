@@ -8,7 +8,7 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.model.{Record, StreamPosition}
+import com.adform.streamloader.model.{StreamRecord, StreamPosition}
 import com.adform.streamloader.util.Logging
 import org.apache.kafka.common.TopicPartition
 
@@ -135,7 +135,7 @@ abstract class PartitionGroupingSink extends Sink with Logging {
     *
     * @param record Stream record to write.
     */
-  override def write(record: Record): Unit = {
+  override def write(record: StreamRecord): Unit = {
     partitionSinkers(record.topicPartition).write(record)
   }
 

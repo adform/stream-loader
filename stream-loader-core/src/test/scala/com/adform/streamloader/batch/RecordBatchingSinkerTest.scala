@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 
 class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
 
-  case class TestBatch(recordRanges: Seq[RecordRange], var isDiscarded: Boolean) extends RecordBatch {
+  case class TestBatch(recordRanges: Seq[StreamRange], var isDiscarded: Boolean) extends RecordBatch {
     override def discard(): Boolean = {
       isDiscarded = true
       true
@@ -35,7 +35,7 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
   class TestBatchProvider {
     val batches: mutable.ListBuffer[TestBatch] = mutable.ListBuffer.empty
 
-    def newBatch(recordRanges: Seq[RecordRange]): TestBatch = {
+    def newBatch(recordRanges: Seq[StreamRange]): TestBatch = {
       val batch = TestBatch(recordRanges, isDiscarded = false)
       batches.addOne(batch)
       batch
@@ -51,11 +51,11 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
       partition: Int,
       initialTimestamp: Long,
       initialOffset: Int,
-      recordCount: Int): Seq[Record] =
+      recordCount: Int): Seq[StreamRecord] =
     for (offset <- initialOffset until (initialOffset + recordCount))
       yield {
         val timestamp = initialTimestamp + offset * 1000
-        Record(
+        StreamRecord(
           new ConsumerRecord[Array[Byte], Array[Byte]](
             topic,
             partition,
@@ -73,7 +73,7 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
         )
       }
 
-  def createTestRecords(initialTimestamp: Long): Seq[Record] =
+  def createTestRecords(initialTimestamp: Long): Seq[StreamRecord] =
     createRecords(tp.topic(), tp.partition(), initialTimestamp, initialOffset = 0, recordsPerBatch * batchCount)
 
   def newTestSinker(batchProvider: TestBatchProvider = new TestBatchProvider): RecordBatchingSinker[TestBatch] = {

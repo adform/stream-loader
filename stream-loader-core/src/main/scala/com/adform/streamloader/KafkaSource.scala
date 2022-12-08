@@ -8,7 +8,7 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.model.{Record, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamRecord, StreamPosition, Timestamp}
 import com.adform.streamloader.util.{MetricTag, Metrics}
 import io.micrometer.core.instrument.Gauge
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRebalanceListener, KafkaConsumer}
@@ -125,7 +125,7 @@ class KafkaSource(
     *
     * @return An iterator of polled records.
     */
-  def poll(): Iterable[Record] = withLock {
+  def poll(): Iterable[StreamRecord] = withLock {
     // loaders can commit offsets in the background, so take a lock on the consumer
     consumer
       .poll(pollTimeout)
@@ -133,7 +133,7 @@ class KafkaSource(
       .map(consumerRecord => {
         val partition = new TopicPartition(consumerRecord.topic(), consumerRecord.partition())
         val watermark = watermarkProviders(partition).observeEvent(Timestamp(consumerRecord.timestamp()))
-        Record(consumerRecord, watermark)
+        StreamRecord(consumerRecord, watermark)
       })
   }
 

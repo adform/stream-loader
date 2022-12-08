@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.file
 
-import com.adform.streamloader.model.RecordRange
+import com.adform.streamloader.model.StreamRange
 import com.adform.streamloader.util.TimeExtractor
 
 import java.nio.ByteBuffer
@@ -28,7 +28,7 @@ class TimePartitioningFilePathFormatter[P: TimeExtractor](
     fileExtension: Option[String]
 ) extends FilePathFormatter[P] {
 
-  override def formatPath(partition: P, ranges: Seq[RecordRange]): String = {
+  override def formatPath(partition: P, ranges: Seq[StreamRange]): String = {
     val fileExtensionStr = fileExtension.map(ext => s".$ext").getOrElse("")
 
     val time = implicitly[TimeExtractor[P]].extractTime(partition)

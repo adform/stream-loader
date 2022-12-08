@@ -12,7 +12,7 @@ import java.io.File
 
 import com.adform.streamloader.MockKafkaContext
 import com.adform.streamloader.file.SingleFileRecordBatch
-import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.funspec.AnyFunSpec
@@ -25,12 +25,12 @@ class InDataOffsetFileStorageTest extends AnyFunSpec with Matchers {
   private val exampleFile = SingleFileRecordBatch(
     new File("/tmp/file.parquet"),
     Seq(
-      RecordRange(
+      StreamRange(
         "topic",
         0,
         StreamPosition(0, Timestamp(1570109555000L)),
         StreamPosition(100, Timestamp(1570109655000L))),
-      RecordRange(
+      StreamRange(
         "topic",
         1,
         StreamPosition(50, Timestamp(1570109565000L)),

@@ -6,8 +6,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package com.adform.streamloader.model
+package com.adform.streamloader.batch
 
+import com.adform.streamloader.model.{StreamPosition, StreamRange, StreamRangeBuilder, StreamRecord}
 import org.apache.kafka.common.TopicPartition
 
 import scala.collection.concurrent.TrieMap
@@ -20,7 +21,7 @@ trait RecordBatch {
   /**
     * Gets the ranges of records in each topic partition contained in the batch.
     */
-  def recordRanges: Seq[RecordRange]
+  def recordRanges: Seq[StreamRange]
 
   /**
     * Performs any necessary cleanup after the batch is no longer needed, e.g. deletes any underlying files.
@@ -37,21 +38,21 @@ trait RecordBatch {
   * @tparam B Type of the batches being built.
   */
 abstract class RecordBatchBuilder[+B <: RecordBatch] {
-  private val recordRangeBuilders: TrieMap[TopicPartition, RecordRangeBuilder] = TrieMap.empty
+  private val recordRangeBuilders: TrieMap[TopicPartition, StreamRangeBuilder] = TrieMap.empty
   private var recordCount = 0L
 
-  def currentRecordRanges: Seq[RecordRange] = recordRangeBuilders.values.map(_.build()).toSeq
+  def currentRecordRanges: Seq[StreamRange] = recordRangeBuilders.values.map(_.build()).toSeq
   def currentRecordCount: Long = recordCount
 
   /**
     * Adds a new record to the current batch.
     * The default implementation only counts records added and keeps track of contained record ranges.
     */
-  def add(record: Record): Unit = {
+  def add(record: StreamRecord): Unit = {
     val tp = new TopicPartition(record.consumerRecord.topic(), record.consumerRecord.partition())
     val position = StreamPosition(record.consumerRecord.offset(), record.watermark)
     val recordRangeBuilder =
-      recordRangeBuilders.getOrElseUpdate(tp, new RecordRangeBuilder(tp.topic(), tp.partition(), position))
+      recordRangeBuilders.getOrElseUpdate(tp, new StreamRangeBuilder(tp.topic(), tp.partition(), position))
     recordRangeBuilder.extend(position)
     recordCount += 1
   }

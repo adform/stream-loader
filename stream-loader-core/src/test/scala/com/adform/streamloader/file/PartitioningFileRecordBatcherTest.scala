@@ -13,7 +13,7 @@ import java.nio.file.Files
 import java.util.Optional
 
 import com.adform.streamloader.encoding.csv.CsvFileBuilder
-import com.adform.streamloader.model.{Record, RecordRange, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamRecord, StreamRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.record.TimestampType
@@ -28,7 +28,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
   describe("mod 10 partitioning batcher with a 100 records") {
 
     val batcher = new PartitioningFileRecordBatcher[Int, String](
-      (record: Record) => Seq(new String(record.consumerRecord.value(), "UTF-8")),
+      (record: StreamRecord) => Seq(new String(record.consumerRecord.value(), "UTF-8")),
       (record, value) => value.toInt % 10,
       _ => new CsvFileBuilder[String](Compression.NONE),
       stats => stats.exists(f => f.recordsWritten >= 20)
@@ -79,7 +79,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
 
       it("should have correct overall record ranges") {
         partitionedBatch.recordRanges should contain theSameElementsAs
-          Seq(RecordRange("topic", 0, StreamPosition(0, Timestamp(0)), StreamPosition(99, Timestamp(99))))
+          Seq(StreamRange("topic", 0, StreamPosition(0, Timestamp(0)), StreamPosition(99, Timestamp(99))))
       }
     }
 
@@ -124,7 +124,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
       timestamp: Timestamp,
       offset: Long,
       key: String,
-      value: String): Record = {
+      value: String): StreamRecord = {
     val cr = new ConsumerRecord[Array[Byte], Array[Byte]](
       topic,
       partition,
@@ -138,7 +138,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
       new RecordHeaders,
       Optional.empty[Integer]
     )
-    Record(cr, timestamp)
+    StreamRecord(cr, timestamp)
   }
 
   def readAllLines(file: File): Seq[String] = Using.resource(Files.lines(file.toPath))(_.iterator().asScala.toSeq)

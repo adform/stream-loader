@@ -8,7 +8,7 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.model.{Record, StreamPosition}
+import com.adform.streamloader.model.{StreamRecord, StreamPosition}
 import org.apache.kafka.common.TopicPartition
 
 /**
@@ -46,7 +46,7 @@ trait PartitionGroupSinker {
     * Calling this method does not ensure that the record will be flushed to storage,
     * e.g. the sinker might implement batching thus delaying the actual storage.
     */
-  def write(record: Record): Unit
+  def write(record: StreamRecord): Unit
 
   /**
     * Notifies the sinker that record consumption is still active.

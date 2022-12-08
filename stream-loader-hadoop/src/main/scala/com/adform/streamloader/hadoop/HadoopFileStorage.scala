@@ -12,7 +12,7 @@ import java.io.IOException
 
 import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
 import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
-import com.adform.streamloader.model.RecordRange
+import com.adform.streamloader.model.StreamRange
 import org.apache.hadoop.fs.{FileSystem, Path}
 
 /**
@@ -137,7 +137,7 @@ object HadoopFileStorage {
         _stagingFilePathFormatter
       } else {
         new FilePathFormatter[P] {
-          override def formatPath(partition: P, ranges: Seq[RecordRange]): String =
+          override def formatPath(partition: P, ranges: Seq[StreamRange]): String =
             _destinationFilePathFormatter.formatPath(partition, ranges) + ".tmp"
         }
       }

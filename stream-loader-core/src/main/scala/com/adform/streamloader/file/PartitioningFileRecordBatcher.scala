@@ -10,9 +10,9 @@ package com.adform.streamloader.file
 
 import java.time.Duration
 
-import com.adform.streamloader.batch.{RecordBatcher, RecordFormatter, RecordPartitioner}
+import com.adform.streamloader.batch.{RecordBatchBuilder, RecordBatcher, RecordFormatter, RecordPartitioner}
 import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
-import com.adform.streamloader.model.{Record, RecordBatchBuilder}
+import com.adform.streamloader.model.StreamRecord
 import com.adform.streamloader.util.TimeProvider
 
 import scala.collection.concurrent.TrieMap
@@ -39,7 +39,7 @@ class PartitioningFileRecordBatcher[P, R](
   private case class FileRecordBatchBuilder(startTimeMs: Long, fileBuilder: FileBuilder[R])
       extends RecordBatchBuilder[SingleFileRecordBatch] {
 
-    def write(record: Record, formattedRecord: R): Unit = {
+    def write(record: StreamRecord, formattedRecord: R): Unit = {
       add(record)
       fileBuilder.write(formattedRecord)
     }
@@ -56,7 +56,7 @@ class PartitioningFileRecordBatcher[P, R](
 
       private val partitionBuilders: TrieMap[P, FileRecordBatchBuilder] = TrieMap.empty
 
-      override def add(record: Record): Unit = {
+      override def add(record: StreamRecord): Unit = {
         super.add(record)
         recordFormatter
           .format(record)

@@ -10,8 +10,8 @@ package com.adform.streamloader.file
 
 import java.time.Duration
 
-import com.adform.streamloader.batch.{RecordBatcher, RecordFormatter}
-import com.adform.streamloader.model.{Record, RecordBatchBuilder, RecordRange}
+import com.adform.streamloader.batch.{RecordBatchBuilder, RecordBatcher, RecordFormatter}
+import com.adform.streamloader.model.{StreamRecord, StreamRange}
 import com.adform.streamloader.util.TimeProvider
 
 /**
@@ -36,7 +36,7 @@ abstract class FileRecordBatcher[R, +B <: FileRecordBatch, FB <: FileBuilder[R]]
   /**
     * Constructs the final batch of a concrete type given the formed file and the accumulated record statistics.
     */
-  def constructBatch(fileBuilder: FB, recordRanges: Seq[RecordRange], recordCount: Long): Option[B]
+  def constructBatch(fileBuilder: FB, recordRanges: Seq[StreamRange], recordCount: Long): Option[B]
 
   override def newBatchBuilder(): RecordBatchBuilder[B] = {
     val fileStartTimeMillis = timeProvider.currentMillis
@@ -44,7 +44,7 @@ abstract class FileRecordBatcher[R, +B <: FileRecordBatch, FB <: FileBuilder[R]]
 
     new RecordBatchBuilder[B] {
 
-      override def add(record: Record): Unit = {
+      override def add(record: StreamRecord): Unit = {
         super.add(record)
         recordFormatter
           .format(record)

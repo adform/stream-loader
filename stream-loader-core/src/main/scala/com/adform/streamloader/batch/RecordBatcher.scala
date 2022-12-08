@@ -8,8 +8,6 @@
 
 package com.adform.streamloader.batch
 
-import com.adform.streamloader.model.{RecordBatch, RecordBatchBuilder}
-
 /**
   * A record batcher that provides new record batch builders.
   *

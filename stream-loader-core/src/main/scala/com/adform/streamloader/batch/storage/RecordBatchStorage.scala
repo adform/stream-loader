@@ -9,6 +9,7 @@
 package com.adform.streamloader.batch.storage
 
 import com.adform.streamloader.KafkaContext
+import com.adform.streamloader.batch.RecordBatch
 import com.adform.streamloader.model._
 import org.apache.kafka.common.TopicPartition
 

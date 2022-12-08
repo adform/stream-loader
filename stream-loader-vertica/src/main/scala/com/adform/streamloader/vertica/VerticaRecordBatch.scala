@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.vertica
 
-import com.adform.streamloader.model.RecordBatch
+import com.adform.streamloader.batch.RecordBatch
 
 /**
   * A record batch that can be loaded to Vertica, implementers must define a COPY statement generator method.

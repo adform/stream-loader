@@ -8,9 +8,10 @@
 
 package com.adform.streamloader.file
 
+import com.adform.streamloader.batch.RecordBatch
 import java.io.File
 
-import com.adform.streamloader.model.{RecordBatch, RecordRange}
+import com.adform.streamloader.model.StreamRange
 
 /**
   * Base trait for file based record batches.
@@ -21,4 +22,4 @@ trait FileRecordBatch extends RecordBatch {
   override def discard(): Boolean = file.delete()
 }
 
-case class SingleFileRecordBatch(file: File, recordRanges: Seq[RecordRange]) extends FileRecordBatch
+case class SingleFileRecordBatch(file: File, recordRanges: Seq[StreamRange]) extends FileRecordBatch

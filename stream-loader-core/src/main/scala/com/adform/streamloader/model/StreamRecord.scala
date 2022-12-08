@@ -17,6 +17,6 @@ import org.apache.kafka.common.TopicPartition
   * @param consumerRecord The Kafka consumer record.
   * @param watermark The calculated watermark, i.e. the maximum timestamp seen.
   */
-case class Record(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], watermark: Timestamp) {
+case class StreamRecord(consumerRecord: ConsumerRecord[Array[Byte], Array[Byte]], watermark: Timestamp) {
   def topicPartition: TopicPartition = new TopicPartition(consumerRecord.topic(), consumerRecord.partition())
 }

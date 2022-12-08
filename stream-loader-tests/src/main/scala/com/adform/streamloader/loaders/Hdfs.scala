@@ -15,7 +15,7 @@ import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
 import com.adform.streamloader.hadoop.HadoopFileStorage
 import com.adform.streamloader.hadoop.parquet.DerivedAvroParquetFileBuilder
-import com.adform.streamloader.model.{ExampleMessage, Record, Timestamp}
+import com.adform.streamloader.model.{ExampleMessage, StreamRecord, Timestamp}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
 import com.sksamuel.avro4s.ScalePrecision
@@ -58,7 +58,7 @@ object TestParquetHdfsLoader extends Loader {
       .recordBatcher(
         PartitioningFileRecordBatcher
           .builder()
-          .recordFormatter((r: Record) => Seq(ExampleMessage.parseFrom(r.consumerRecord.value())))
+          .recordFormatter((r: StreamRecord) => Seq(ExampleMessage.parseFrom(r.consumerRecord.value())))
           .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)
           .fileBuilderFactory(_ => new DerivedAvroParquetFileBuilder[ExampleMessage]())
           .fileCommitStrategy(

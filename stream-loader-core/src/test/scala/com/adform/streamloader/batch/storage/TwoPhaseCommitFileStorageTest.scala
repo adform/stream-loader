@@ -10,7 +10,7 @@ package com.adform.streamloader.batch.storage
 
 import com.adform.streamloader.MockKafkaContext
 import com.adform.streamloader.file.SingleFileRecordBatch
-import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.funspec.AnyFunSpec
@@ -23,12 +23,12 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
   private val exampleFile = SingleFileRecordBatch(
     new File("/tmp/file.parquet"),
     Seq(
-      RecordRange(
+      StreamRange(
         "topic",
         0,
         StreamPosition(0, Timestamp(1570109555000L)),
         StreamPosition(100, Timestamp(1570109655000L))),
-      RecordRange(
+      StreamRange(
         "topic",
         1,
         StreamPosition(50, Timestamp(1570109565000L)),
@@ -39,12 +39,12 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
   private val secondFile = SingleFileRecordBatch(
     new File("/tmp/file2.parquet"),
     Seq(
-      RecordRange(
+      StreamRange(
         "topic",
         0,
         StreamPosition(101, Timestamp(1570109655001L)),
         StreamPosition(200, Timestamp(1570109655100L))),
-      RecordRange(
+      StreamRange(
         "topic",
         1,
         StreamPosition(51, Timestamp(1570109685001L)),

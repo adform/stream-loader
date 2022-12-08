@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.batch.storage
 
-import com.adform.streamloader.model.RecordBatch
+import com.adform.streamloader.batch.RecordBatch
 import com.adform.streamloader.util.Logging
 import com.adform.streamloader.util.Retry.isInterruptionException
 import org.apache.kafka.clients.consumer.OffsetAndMetadata

@@ -12,16 +12,16 @@ package com.adform.streamloader.model
   * Specification of a range of records consumed from a single topic partition,
   * the start and end positions are both inclusive.
   */
-case class RecordRange(topic: String, partition: Int, start: StreamPosition, end: StreamPosition)
+case class StreamRange(topic: String, partition: Int, start: StreamPosition, end: StreamPosition)
 
 /**
-  * A mutable builder of [[RecordRange]].
+  * A mutable builder of [[StreamRange]].
   *
   * @param topic Topic the range is in.
   * @param partition Partition the range is in.
   * @param start The start position of the range.
   */
-class RecordRangeBuilder(topic: String, partition: Int, start: StreamPosition) {
+class StreamRangeBuilder(topic: String, partition: Int, start: StreamPosition) {
   private var StreamPosition(currentOffset, currentWatermark) = start
 
   /**
@@ -35,7 +35,7 @@ class RecordRangeBuilder(topic: String, partition: Int, start: StreamPosition) {
   /**
     * Builds and returns the range.
     */
-  def build(): RecordRange = RecordRange(
+  def build(): StreamRange = StreamRange(
     topic,
     partition,
     start,

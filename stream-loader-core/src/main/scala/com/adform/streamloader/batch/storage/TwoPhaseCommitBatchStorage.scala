@@ -8,7 +8,8 @@
 
 package com.adform.streamloader.batch.storage
 
-import com.adform.streamloader.model.{RecordBatch, StreamPosition, Timestamp}
+import com.adform.streamloader.batch.RecordBatch
+import com.adform.streamloader.model.{StreamPosition, Timestamp}
 import com.adform.streamloader.util.{JsonSerializer, Logging}
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition

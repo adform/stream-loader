@@ -8,7 +8,8 @@
 
 package com.adform.streamloader.file
 
-import com.adform.streamloader.model.{RecordBatch, RecordRange}
+import com.adform.streamloader.batch.RecordBatch
+import com.adform.streamloader.model.StreamRange
 
 /**
   * A record batch that is partitioned by some value, e.g. by date.
@@ -21,13 +22,13 @@ case class PartitionedFileRecordBatch[P, +B <: FileRecordBatch](partitionBatches
 
   def fileBatches: Seq[B] = partitionBatches.values.toSeq
 
-  final override def recordRanges: Seq[RecordRange] = {
+  final override def recordRanges: Seq[StreamRange] = {
     fileBatches
       .flatMap(_.recordRanges)
       .groupBy(r => (r.topic, r.partition))
       .map {
         case ((topic, partition), ranges) =>
-          RecordRange(topic, partition, ranges.map(_.start).min, ranges.map(_.end).max)
+          StreamRange(topic, partition, ranges.map(_.start).min, ranges.map(_.end).max)
       }
       .toSeq
   }

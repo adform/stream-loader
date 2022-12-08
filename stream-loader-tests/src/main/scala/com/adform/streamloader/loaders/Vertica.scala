@@ -15,7 +15,7 @@ import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
 import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, MaxLength}
 import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.file._
-import com.adform.streamloader.model.{ExampleMessage, Record, Timestamp}
+import com.adform.streamloader.model.{ExampleMessage, StreamRecord, Timestamp}
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.vertica._
 import com.adform.streamloader.vertica.file.native.NativeVerticaFileBuilder
@@ -106,7 +106,7 @@ case class TestExternalOffsetVerticaRecord(
 
 object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
 
-  private val recordFormatter = (fileId: Long, record: Record) => {
+  private val recordFormatter = (fileId: Long, record: StreamRecord) => {
     val msg = ExampleMessage.parseFrom(record.consumerRecord.value())
     Seq(
       TestExternalOffsetVerticaRecord(

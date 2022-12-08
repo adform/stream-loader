@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.file
 
-import com.adform.streamloader.model.RecordRange
+import com.adform.streamloader.model.StreamRange
 
 /**
   * Base trait used to construct file paths when storing files to persistent storages.
@@ -22,5 +22,5 @@ trait FilePathFormatter[-P] {
     * @param recordRanges Ranges of records in the file.
     * @return A relative path for the file.
     */
-  def formatPath(partition: P, recordRanges: Seq[RecordRange]): String
+  def formatPath(partition: P, recordRanges: Seq[StreamRange]): String
 }

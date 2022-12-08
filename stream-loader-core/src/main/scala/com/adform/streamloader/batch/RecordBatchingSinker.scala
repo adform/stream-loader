@@ -108,7 +108,7 @@ class RecordBatchingSinker[B <: RecordBatch](
     positions
   }
 
-  override def write(record: Record): Unit = if (isRunning.get()) {
+  override def write(record: StreamRecord): Unit = if (isRunning.get()) {
     if (!isInitialized)
       throw new IllegalStateException("Loader has to be initialized before starting writes")
 

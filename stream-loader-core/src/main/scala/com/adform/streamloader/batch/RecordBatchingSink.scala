@@ -9,7 +9,6 @@
 package com.adform.streamloader.batch
 
 import com.adform.streamloader.batch.storage.RecordBatchStorage
-import com.adform.streamloader.model.RecordBatch
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.{KafkaContext, PartitionGroupSinker, PartitionGroupingSink, Sink}
 import org.apache.kafka.common.TopicPartition

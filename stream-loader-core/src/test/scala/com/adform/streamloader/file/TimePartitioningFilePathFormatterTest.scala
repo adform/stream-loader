@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.file
 
-import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -19,7 +19,7 @@ import java.util.UUID
 
 class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers with ScalaCheckPropertyChecks {
 
-  val recordRangeGen: Gen[RecordRange] = for {
+  val recordRangeGen: Gen[StreamRange] = for {
     topicLength <- Gen.choose(1, 20)
     topic <- Gen.listOfN(topicLength, Gen.oneOf(Gen.alphaNumChar, Gen.oneOf('-', '_', '.')))
     partition <- Gen.chooseNum(0, 256)
@@ -28,17 +28,17 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
     startWatermark <- Gen.choose(1262304000000L, 1893456000000L) // 2010-01-01 - 2020-01-01
     endWatermark <- Gen.choose(0, 631152000000L).map(diff => startWatermark + diff) // 10 years
   } yield
-    RecordRange(
+    StreamRange(
       new String(topic.toArray),
       partition,
       StreamPosition(startOffset, Timestamp(startWatermark)),
       StreamPosition(endOffset, Timestamp(endWatermark))
     )
 
-  val recordRangeSeqGen: Gen[Seq[RecordRange]] = Gen.choose(1, 5).flatMap(i => Gen.listOfN(i, recordRangeGen))
+  val recordRangeSeqGen: Gen[Seq[StreamRange]] = Gen.choose(1, 5).flatMap(i => Gen.listOfN(i, recordRangeGen))
 
-  implicit val arbitraryRecordRange: Arbitrary[RecordRange] = Arbitrary(recordRangeGen)
-  implicit val arbitraryRecordRangeSeq: Arbitrary[Seq[RecordRange]] = Arbitrary(recordRangeSeqGen)
+  implicit val arbitraryRecordRange: Arbitrary[StreamRange] = Arbitrary(recordRangeGen)
+  implicit val arbitraryRecordRangeSeq: Arbitrary[Seq[StreamRange]] = Arbitrary(recordRangeSeqGen)
 
   implicit val arbitraryLocalDate: Arbitrary[LocalDate] = {
     Arbitrary {
@@ -52,7 +52,7 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
     val formatter =
       new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
     val ranges =
-      RecordRange(
+      StreamRange(
         "test-topic",
         0,
         StreamPosition(100, Timestamp(1554897174000L)),
@@ -70,12 +70,12 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
     val formatter =
       new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
     val ranges = Seq(
-      RecordRange(
+      StreamRange(
         "test-topic",
         0,
         StreamPosition(100, Timestamp(1554897174000L)),
         StreamPosition(200, Timestamp(1554897175000L))),
-      RecordRange(
+      StreamRange(
         "test-topic",
         1,
         StreamPosition(300, Timestamp(1554897174100L)),
@@ -93,7 +93,7 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
   it("should format filenames correctly for arbitrary ranges") {
     val formatter =
       new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
-    forAll { batches: Seq[RecordRange] =>
+    forAll { batches: Seq[StreamRange] =>
       val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), batches)
 
       formatted should startWith("dt=")
@@ -106,7 +106,7 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
 
   it("should format filenames reproducibly") {
     val formatter = new TimePartitioningFilePathFormatter[LocalDate](None, None)
-    forAll { (date: LocalDate, batches: Seq[RecordRange]) =>
+    forAll { (date: LocalDate, batches: Seq[StreamRange]) =>
       formatter.formatPath(date, batches) shouldEqual formatter.formatPath(date, batches)
     }
   }

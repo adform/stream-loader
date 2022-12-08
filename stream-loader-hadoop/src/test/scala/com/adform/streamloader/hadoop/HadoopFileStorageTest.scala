@@ -10,7 +10,7 @@ package com.adform.streamloader.hadoop
 
 import com.adform.streamloader.MockKafkaContext
 import com.adform.streamloader.file.{FilePathFormatter, SingleFileRecordBatch, PartitionedFileRecordBatch}
-import com.adform.streamloader.model.{RecordRange, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.RawLocalFileSystem
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
@@ -36,7 +36,7 @@ class HadoopFileStorageTest extends AnyFunSpec with Matchers {
     fs.initialize(new URI("file:///"), new Configuration())
 
     val formatter = new FilePathFormatter[Unit] {
-      override def formatPath(partition: Unit, ranges: Seq[RecordRange]): String = "filename"
+      override def formatPath(partition: Unit, ranges: Seq[StreamRange]): String = "filename"
     }
 
     val context = new MockKafkaContext()
@@ -55,7 +55,7 @@ class HadoopFileStorageTest extends AnyFunSpec with Matchers {
     storage.recover(Set(tp))
 
     val sourceFile = File.createTempFile("test", "txt")
-    val fileBatch = SingleFileRecordBatch(sourceFile, Seq(RecordRange(tp.topic(), tp.partition(), start, end)))
+    val fileBatch = SingleFileRecordBatch(sourceFile, Seq(StreamRange(tp.topic(), tp.partition(), start, end)))
     val batch = PartitionedFileRecordBatch[Unit, SingleFileRecordBatch](Map(() -> fileBatch))
     val destFile = new File(s"${baseDir.getAbsolutePath}/stored/filename")
 

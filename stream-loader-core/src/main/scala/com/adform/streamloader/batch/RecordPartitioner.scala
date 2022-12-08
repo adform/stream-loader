@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.batch
 
-import com.adform.streamloader.model.Record
+import com.adform.streamloader.model.StreamRecord
 
 /**
   * Base trait for defining a record partitioning strategy, e.g. by day or by country, etc.
@@ -25,5 +25,5 @@ trait RecordPartitioner[-R, +P] {
     * @param formatted The formatted record.
     * @return The partition the record should be routed to.
     */
-  def partition(raw: Record, formatted: R): P
+  def partition(raw: StreamRecord, formatted: R): P
 }

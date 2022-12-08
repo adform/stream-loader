@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.batch
 
-import com.adform.streamloader.model.Record
+import com.adform.streamloader.model.StreamRecord
 
 /**
   * A formatter for mapping source records to `R` typed records.
@@ -20,5 +20,5 @@ trait RecordFormatter[+R] {
   /**
     * Constructs a sequence of records of type `R` from a source record.
     */
-  def format(record: Record): Seq[R]
+  def format(record: StreamRecord): Seq[R]
 }
