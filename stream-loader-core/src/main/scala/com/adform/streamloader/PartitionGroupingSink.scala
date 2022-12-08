@@ -8,9 +8,8 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.model.StreamPosition
+import com.adform.streamloader.model.{Record, StreamPosition}
 import com.adform.streamloader.util.Logging
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.TopicPartition
 
 import scala.collection.concurrent.TrieMap
@@ -134,10 +133,10 @@ abstract class PartitionGroupingSink extends Sink with Logging {
   /**
     * Forwards a consumer record to the correct partition sinker.
     *
-    * @param record Kafka consumer record to write
+    * @param record Stream record to write.
     */
-  override def write(record: ConsumerRecord[Array[Byte], Array[Byte]]): Unit = {
-    partitionSinkers(new TopicPartition(record.topic(), record.partition())).write(record)
+  override def write(record: Record): Unit = {
+    partitionSinkers(record.topicPartition).write(record)
   }
 
   /**

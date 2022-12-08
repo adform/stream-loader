@@ -8,14 +8,13 @@
 
 package com.adform.streamloader.batch
 
-import java.time.Duration
-
 import com.adform.streamloader.batch.storage.RecordBatchStorage
 import com.adform.streamloader.model.RecordBatch
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.{KafkaContext, PartitionGroupSinker, PartitionGroupingSink, Sink}
 import org.apache.kafka.common.TopicPartition
 
+import java.time.Duration
 import scala.concurrent.duration._
 import scala.jdk.DurationConverters._
 
@@ -34,7 +33,6 @@ class RecordBatchingSink[+B <: RecordBatch](
     batchStorage: RecordBatchStorage[B],
     batchCommitQueueSize: Int,
     partitionGrouping: TopicPartition => String,
-    validWatermarkDiffMillis: Long,
     retryPolicy: Retry.Policy
 ) extends PartitionGroupingSink {
 
@@ -56,7 +54,6 @@ class RecordBatchingSink[+B <: RecordBatch](
       recordBatcher,
       batchStorage,
       batchCommitQueueSize,
-      validWatermarkDiffMillis,
       retryPolicy
     )
 }
@@ -68,7 +65,6 @@ object RecordBatchingSink {
       private val _batchStorage: RecordBatchStorage[B],
       private val _batchCommitQueueSize: Int,
       private val _partitionGrouping: TopicPartition => String,
-      private val _validWatermarkDiffMillis: Long,
       private val _retryPolicy: Retry.Policy
   ) extends Sink.Builder {
 
@@ -87,18 +83,6 @@ object RecordBatchingSink {
       * Consumption stops when the queue fills up.
       */
     def batchCommitQueueSize(size: Int): Builder[B] = copy(_batchCommitQueueSize = size)
-
-    /**
-      * Sets the upper limit for increasing the watermark by from the current value.
-      * Used to protect from malformed messages with timestamps from the future.
-      */
-    def validWatermarkDiff(millis: Long): Builder[B] = copy(_validWatermarkDiffMillis = millis)
-
-    /**
-      * Sets the upper limit for increasing the watermark by from the current value.
-      * Used to protect from malformed messages with timestamps from the future.
-      */
-    def validWatermarkDiff(duration: Duration): Builder[B] = copy(_validWatermarkDiffMillis = duration.toMillis)
 
     /**
       * Sets the retry policy for all retriable operations, i.e. recovery, batch commit and new batch creation.
@@ -120,7 +104,6 @@ object RecordBatchingSink {
         _batchStorage,
         _batchCommitQueueSize,
         _partitionGrouping,
-        _validWatermarkDiffMillis,
         _retryPolicy
       )
     }
@@ -131,7 +114,6 @@ object RecordBatchingSink {
     _batchStorage = null,
     _batchCommitQueueSize = 1,
     _partitionGrouping = _ => "root",
-    _validWatermarkDiffMillis = 3600000,
     _retryPolicy = Retry.Policy(retriesLeft = 5, initialDelay = 1.seconds, backoffFactor = 3)
   )
 }

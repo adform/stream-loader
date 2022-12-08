@@ -8,8 +8,7 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.model.StreamPosition
-import org.apache.kafka.clients.consumer.ConsumerRecord
+import com.adform.streamloader.model.{Record, StreamPosition}
 import org.apache.kafka.common.TopicPartition
 
 /**
@@ -42,12 +41,12 @@ trait PartitionGroupSinker {
   def initialize(kafkaContext: KafkaContext): Map[TopicPartition, Option[StreamPosition]]
 
   /**
-    * Writes a given Kafka record to storage.
+    * Writes a given stream record to storage.
     *
     * Calling this method does not ensure that the record will be flushed to storage,
     * e.g. the sinker might implement batching thus delaying the actual storage.
     */
-  def write(record: ConsumerRecord[Array[Byte], Array[Byte]]): Unit
+  def write(record: Record): Unit
 
   /**
     * Notifies the sinker that record consumption is still active.
