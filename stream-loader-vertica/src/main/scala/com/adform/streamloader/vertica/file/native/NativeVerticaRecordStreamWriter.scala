@@ -8,9 +8,9 @@
 
 package com.adform.streamloader.vertica.file.native
 
-import java.io.{ByteArrayOutputStream, OutputStream}
+import com.adform.streamloader.sink.batch.RecordStreamWriter
 
-import com.adform.streamloader.batch.RecordStreamWriter
+import java.io.{ByteArrayOutputStream, OutputStream}
 
 /**
   * Stream writer implementation that encodes records using an implicit [[NativeVerticaRecordEncoder]]

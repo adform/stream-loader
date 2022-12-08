@@ -8,13 +8,12 @@
 
 package com.adform.streamloader.storage
 
-import com.adform.streamloader.batch.RecordBatch
 import java.util.UUID
-
-import com.adform.streamloader.batch.storage.RecordBatchStorage
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork, SimpleContainer}
 import com.adform.streamloader.loaders.{TestExternalOffsetVerticaLoader, TestInRowOffsetVerticaLoader}
 import com.adform.streamloader.model.{ExampleMessage, StreamPosition, Timestamp}
+import com.adform.streamloader.sink.batch.RecordBatch
+import com.adform.streamloader.sink.batch.storage.RecordBatchStorage
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.vertica.{ExternalOffsetVerticaFileStorage, InRowOffsetVerticaFileStorage}
 import com.adform.streamloader.{BuildInfo, Loader}

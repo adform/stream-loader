@@ -9,9 +9,8 @@
 package com.adform.streamloader.vertica
 
 import java.sql.{Connection, SQLDataException, Timestamp => SqlTimestamp}
-
-import com.adform.streamloader.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
+import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
 import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition

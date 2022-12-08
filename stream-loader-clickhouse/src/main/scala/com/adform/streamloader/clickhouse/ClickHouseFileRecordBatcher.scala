@@ -8,9 +8,9 @@
 
 package com.adform.streamloader.clickhouse
 
-import com.adform.streamloader.batch.RecordFormatter
-import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatcher}
 import com.adform.streamloader.model.StreamRange
+import com.adform.streamloader.sink.batch.RecordFormatter
+import com.adform.streamloader.sink.file.{FileCommitStrategy, FileRecordBatcher}
 
 class ClickHouseFileRecordBatcher[R](
     recordFormatter: RecordFormatter[R],

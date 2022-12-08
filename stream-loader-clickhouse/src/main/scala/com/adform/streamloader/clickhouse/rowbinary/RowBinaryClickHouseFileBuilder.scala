@@ -9,7 +9,7 @@
 package com.adform.streamloader.clickhouse.rowbinary
 
 import com.adform.streamloader.clickhouse.ClickHouseFileBuilder
-import com.adform.streamloader.file.{Compression, StreamFileBuilder}
+import com.adform.streamloader.sink.file.{Compression, StreamFileBuilder}
 import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 /**

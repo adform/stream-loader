@@ -10,9 +10,9 @@ package com.adform.streamloader.s3
 
 import java.io.File
 import java.util.UUID
-import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.{FilePathFormatter, SingleFileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
+import com.adform.streamloader.sink.file.{FilePathFormatter, PartitionedFileRecordBatch, SingleFileRecordBatch}
+import com.adform.streamloader.source.MockKafkaContext
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.funspec.AnyFunSpec

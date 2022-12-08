@@ -15,8 +15,9 @@ import java.util.UUID
 import com.adform.streamloader.clickhouse.ClickHouseFileStorage
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork, SimpleContainer}
 import com.adform.streamloader.model.{ExampleMessage, StreamPosition, Timestamp}
+import com.adform.streamloader.source.KafkaContext
 import com.adform.streamloader.util.Retry
-import com.adform.streamloader.{BuildInfo, KafkaContext, Loader}
+import com.adform.streamloader.{BuildInfo, Loader}
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
 import com.zaxxer.hikari.HikariConfig

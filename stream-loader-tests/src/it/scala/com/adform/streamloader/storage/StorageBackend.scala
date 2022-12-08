@@ -9,10 +9,9 @@
 package com.adform.streamloader.storage
 
 import java.util.Properties
-
-import com.adform.streamloader.KafkaContext
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork}
 import com.adform.streamloader.model.{StorageMessage, StreamPosition}
+import com.adform.streamloader.source.KafkaContext
 import com.spotify.docker.client.DockerClient
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer, OffsetAndMetadata}
 import org.apache.kafka.common.TopicPartition

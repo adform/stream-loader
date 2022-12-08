@@ -11,9 +11,9 @@ package com.adform.streamloader.clickhouse.rowbinary
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
-import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, FixedLength, MaxLength}
-import com.adform.streamloader.encoding.macros.{DataTypeEncodingAnnotation, RecordFieldExtractor}
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, FixedLength, MaxLength}
 import com.adform.streamloader.model.Timestamp
+import com.adform.streamloader.sink.encoding.macros.{DataTypeEncodingAnnotation, RecordFieldExtractor}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox

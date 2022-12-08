@@ -9,9 +9,8 @@
 package com.adform.streamloader.clickhouse
 
 import java.io.File
-
-import com.adform.streamloader.file.FileRecordBatch
 import com.adform.streamloader.model.StreamRange
+import com.adform.streamloader.sink.file.FileRecordBatch
 import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 /**

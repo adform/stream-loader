@@ -9,9 +9,8 @@
 package com.adform.streamloader.vertica
 
 import java.io.File
-
-import com.adform.streamloader.encoding.csv.CsvFormat
-import com.adform.streamloader.file.Compression
+import com.adform.streamloader.sink.encoding.csv.CsvFormat
+import com.adform.streamloader.sink.file.Compression
 import com.adform.streamloader.vertica.file.CsvVerticaFileBuilder
 //import com.adform.streamloader.vertica.file.CsvVerticaFileBuilderFactory
 import org.scalatest.funspec.AnyFunSpec

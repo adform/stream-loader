@@ -10,10 +10,9 @@ package com.adform.streamloader.vertica
 
 import java.io.File
 import java.time.Duration
-
-import com.adform.streamloader.batch.{RecordBatchBuilder, RecordBatcher}
-import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatch}
 import com.adform.streamloader.model.{StreamRecord, StreamRange}
+import com.adform.streamloader.sink.batch.{RecordBatchBuilder, RecordBatcher}
+import com.adform.streamloader.sink.file.{FileCommitStrategy, FileRecordBatch}
 import com.adform.streamloader.util.{Logging, TimeProvider}
 import com.adform.streamloader.vertica.file.VerticaFileBuilderFactory
 import javax.sql.DataSource

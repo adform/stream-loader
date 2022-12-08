@@ -8,10 +8,10 @@
 
 package com.adform.streamloader.storage
 
-import com.adform.streamloader.file.{FilePathFormatter, TimePartitioningFilePathFormatter}
 import com.adform.streamloader.fixtures._
 import com.adform.streamloader.model.{StreamPosition, StringMessage, Timestamp}
 import com.adform.streamloader.s3.S3FileStorage
+import com.adform.streamloader.sink.file.{FilePathFormatter, TimePartitioningFilePathFormatter}
 import com.adform.streamloader.{BuildInfo, Loader}
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}

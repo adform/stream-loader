@@ -8,6 +8,12 @@
 
 package com.adform
 
+import com.adform.streamloader.sink.Sink
+import com.adform.streamloader.sink.batch.{RecordBatcher, RecordBatchingSink}
+import com.adform.streamloader.sink.batch.storage.RecordBatchStorage
+import com.adform.streamloader.sink.encoding.csv.CsvFileBuilder
+import com.adform.streamloader.source.KafkaSource
+
 /**
   * The entry point of the stream loader library is the [[StreamLoader]] class, which requires a [[KafkaSource]] and a [[Sink]]. Once started
   * it will subscribe to the provided topics and will start polling and sinking records.
@@ -26,9 +32,9 @@ package com.adform
   * For concrete storage implementations see the [[clickhouse]], [[hadoop]], [[s3]] and [[vertica]] packages.
   * They also contain more file builder implementations than just the $CsvFileBuilder included in the core library.
   *
-  * @define RecordBatchingSink [[com.adform.streamloader.batch.RecordBatchingSink RecordBatchingSink]]
-  * @define RecordBatcher [[com.adform.streamloader.batch.RecordBatcher RecordBatcher]]
-  * @define RecordBatchStorage [[com.adform.streamloader.batch.storage.RecordBatchStorage RecordBatchStorage]]
-  * @define CsvFileBuilder [[com.adform.streamloader.encoding.csv.CsvFileBuilder CsvFileBuilder]]
+  * @define RecordBatchingSink [[RecordBatchingSink RecordBatchingSink]]
+  * @define RecordBatcher [[RecordBatcher RecordBatcher]]
+  * @define RecordBatchStorage [[RecordBatchStorage RecordBatchStorage]]
+  * @define CsvFileBuilder [[CsvFileBuilder CsvFileBuilder]]
   */
 package object streamloader

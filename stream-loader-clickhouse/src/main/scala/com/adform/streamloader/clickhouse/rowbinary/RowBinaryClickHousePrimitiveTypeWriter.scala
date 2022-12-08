@@ -11,9 +11,8 @@ package com.adform.streamloader.clickhouse.rowbinary
 import java.nio.{ByteBuffer, ByteOrder}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
-
-import com.adform.streamloader.encoding.binary.LittleEndianByteWriter
 import com.adform.streamloader.model.Timestamp
+import com.adform.streamloader.sink.encoding.binary.LittleEndianByteWriter
 
 /**
   * Implementations for writing primitive data types in the ClickHouse native RowBinary encoding.

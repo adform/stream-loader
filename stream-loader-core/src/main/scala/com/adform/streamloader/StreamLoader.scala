@@ -8,8 +8,10 @@
 
 package com.adform.streamloader
 
-import java.util.concurrent.atomic.AtomicBoolean
+import com.adform.streamloader.sink.Sink
+import com.adform.streamloader.source.KafkaSource
 
+import java.util.concurrent.atomic.AtomicBoolean
 import com.adform.streamloader.util.{Logging, MetricTag, Metrics}
 import io.micrometer.core.instrument.MeterRegistry
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener

@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.clickhouse
 
-import com.adform.streamloader.file.{FileBuilder, FileBuilderFactory}
+import com.adform.streamloader.sink.file.{FileBuilder, FileBuilderFactory}
 import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 /**

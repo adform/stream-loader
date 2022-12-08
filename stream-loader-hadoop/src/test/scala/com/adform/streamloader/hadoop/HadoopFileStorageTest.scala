@@ -8,9 +8,9 @@
 
 package com.adform.streamloader.hadoop
 
-import com.adform.streamloader.MockKafkaContext
-import com.adform.streamloader.file.{FilePathFormatter, SingleFileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
+import com.adform.streamloader.sink.file.{FilePathFormatter, PartitionedFileRecordBatch, SingleFileRecordBatch}
+import com.adform.streamloader.source.MockKafkaContext
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.RawLocalFileSystem
 import org.apache.kafka.clients.consumer.OffsetAndMetadata

@@ -8,21 +8,21 @@
 
 package com.adform.streamloader.loaders
 
-import java.time.LocalDate
-
-import com.adform.streamloader.batch.RecordBatchingSink
-import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
-import com.adform.streamloader.file._
 import com.adform.streamloader.hadoop.HadoopFileStorage
 import com.adform.streamloader.hadoop.parquet.DerivedAvroParquetFileBuilder
 import com.adform.streamloader.model.{ExampleMessage, StreamRecord, Timestamp}
+import com.adform.streamloader.sink.batch.RecordBatchingSink
+import com.adform.streamloader.sink.file.FileCommitStrategy.ReachedAnyOf
+import com.adform.streamloader.sink.file._
+import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.ConfigExtensions._
-import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
+import com.adform.streamloader.{Loader, StreamLoader}
 import com.sksamuel.avro4s.ScalePrecision
 import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 
+import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 import scala.math.BigDecimal.RoundingMode.RoundingMode
 

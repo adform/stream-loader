@@ -9,10 +9,9 @@
 package com.adform.streamloader.vertica
 
 import java.io.File
-
-import com.adform.streamloader.batch.RecordFormatter
-import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatch, FileRecordBatcher}
 import com.adform.streamloader.model.StreamRange
+import com.adform.streamloader.sink.batch.RecordFormatter
+import com.adform.streamloader.sink.file.{FileCommitStrategy, FileRecordBatch, FileRecordBatcher}
 import com.adform.streamloader.vertica.file.{VerticaFileBuilder, VerticaFileBuilderFactory}
 
 case class InRowOffsetVerticaFileRecordBatch(
