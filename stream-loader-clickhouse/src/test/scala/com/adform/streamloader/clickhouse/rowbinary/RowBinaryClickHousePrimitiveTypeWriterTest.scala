@@ -28,8 +28,8 @@ class RowBinaryClickHousePrimitiveTypeWriterTest extends AnyFunSpec with Matcher
   }
 
   private def leb128ToLong(stream: ByteBuffer): Long =
-    LazyList(0, 7).zip(stream.array()).map {
-      case (shift, e) => (e & 0x7f).toLong << shift
+    LazyList(0, 7).zip(stream.array()).map { case (shift, e) =>
+      (e & 0x7f).toLong << shift
     } reduce { _ | _ }
 
   class BufferPrimitiveWriter extends RowBinaryClickHousePrimitiveTypeWriter {

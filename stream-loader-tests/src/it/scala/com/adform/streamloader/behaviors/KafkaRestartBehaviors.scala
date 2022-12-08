@@ -26,8 +26,9 @@ trait KafkaRestartBehaviors {
 
   private def genTestId: String = UUID.randomUUID().toString.take(6)
 
-  def restartKafka[M <: StorageMessage](testPrefix: String, storageBackendFactory: String => StorageBackend[M])(
-      implicit ec: ExecutionContext): Unit = {
+  def restartKafka[M <: StorageMessage](testPrefix: String, storageBackendFactory: String => StorageBackend[M])(implicit
+      ec: ExecutionContext
+  ): Unit = {
 
     it(s"$testPrefix should keep loading messages after Kafka restarts") {
 

@@ -15,8 +15,9 @@ import java.util.UUID
 import com.adform.streamloader.clickhouse.ClickHouseFileStorage
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork, SimpleContainer}
 import com.adform.streamloader.model.{ExampleMessage, StreamPosition, Timestamp}
+import com.adform.streamloader.source.KafkaContext
 import com.adform.streamloader.util.Retry
-import com.adform.streamloader.{BuildInfo, KafkaContext, Loader}
+import com.adform.streamloader.{BuildInfo, Loader}
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
 import com.zaxxer.hikari.HikariConfig
@@ -151,7 +152,8 @@ case class ClickHouseStorageBackend(
                   Option(rs.getObject("parent_id").asInstanceOf[java.lang.Long]).map(_.toLong),
                   rs.getObject("transaction_id", classOf[UUID]),
                   rs.getBigDecimal("money_spent")
-                ))
+                )
+              )
             }
             StorageContent(content.toList, positions.view.mapValues(sps => sps.maxBy(_.offset)).toMap)
           }
@@ -162,6 +164,7 @@ case class ClickHouseStorageBackend(
 
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] =
+      partitions: Set[TopicPartition]
+  ): Map[TopicPartition, Option[StreamPosition]] =
     batchStorage.committedPositions(partitions)
 }

@@ -8,10 +8,9 @@
 
 package com.adform.streamloader.hadoop.parquet
 
+import com.adform.streamloader.sink.file.BaseFileBuilder
 import java.io.File
 import java.util.UUID
-
-import com.adform.streamloader.file.BaseFileBuilder
 import com.sksamuel.avro4s._
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord

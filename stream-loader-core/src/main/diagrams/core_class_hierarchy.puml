@@ -8,14 +8,14 @@ class StreamLoader [[../com/adform/streamloader/StreamLoader.html{StreamLoader}]
  stop()
 }
 
-class KafkaSource [[../com/adform/streamloader/KafkaSource.html{KafkaSource}]] {
+class KafkaSource [[../com/adform/streamloader/source/KafkaSource.html{KafkaSource}]] {
   poll(): Kafka records
 }
 
 StreamLoader *-- KafkaSource
 StreamLoader *-- Sink
 
-interface Sink [[../com/adform/streamloader/Sink.html{Sink}]] {
+interface Sink [[../com/adform/streamloader/sink/Sink.html{Sink}]] {
   initialize(kafkaContext)
   assignPartitions(partitions): committed stream positions
   revokePartitions(partitions): committed stream positions
@@ -26,15 +26,15 @@ interface Sink [[../com/adform/streamloader/Sink.html{Sink}]] {
 
 Sink <|-- RecordBatchingSink
 
-class RecordBatchingSink [[../com/adform/streamloader/batch/RecordBatchingSink.html{RecordBatchingSink}]] {
+class RecordBatchingSink [[../com/adform/streamloader/sink/batch/RecordBatchingSink.html{RecordBatchingSink}]] {
   partitionGrouping: TopicPartition => String
 }
 
-interface RecordBatcher [[../com/adform/streamloader/batch/RecordBatcher.html{RecordBatcher}]] {
+interface RecordBatcher [[../com/adform/streamloader/sink/batch/RecordBatcher.html{RecordBatcher}]] {
   newBatchBuilder()
 }
 
-interface RecordBatchStorage [[../com/adform/streamloader/batch/storage/RecordBatchStorage.html{RecordBatchStorage}]] {
+interface RecordBatchStorage [[../com/adform/streamloader/sink/batch/storage/RecordBatchStorage.html{RecordBatchStorage}]] {
   initialize(kafkaContext)
   recover()
   commitBatch(batch, offsets)
@@ -47,33 +47,33 @@ RecordBatchingSink *-- RecordBatchStorage
 RecordBatchStorage <|-- InDataOffsetRecordBatchStorage
 RecordBatchStorage <|-- TwoPhaseCommitRecordBatchStorage
 
-abstract class InDataOffsetRecordBatchStorage [[../com/adform/streamloader/batch/storage/InDataOffsetRecordBatchStorage.html{InDataOffsetRecordBatchStorage}]] {
+abstract class InDataOffsetRecordBatchStorage [[../com/adform/streamloader/sink/batch/storage/InDataOffsetRecordBatchStorage.html{InDataOffsetRecordBatchStorage}]] {
   storeBatch(batch)
 }
 
-abstract class TwoPhaseCommitRecordBatchStorage [[../com/adform/streamloader/batch/storage/TwoPhaseCommitRecordBatchStorage.html{TwoPhaseCommitRecordBatchStorage}]] {
+abstract class TwoPhaseCommitRecordBatchStorage [[../com/adform/streamloader/sink/batch/storage/TwoPhaseCommitRecordBatchStorage.html{TwoPhaseCommitRecordBatchStorage}]] {
   stageBatch(batch): staging
   storeBatch(staging)
 }
 
-class FileRecordBatcher [[../com/adform/streamloader/file/FileRecordBatcher.html{FileRecordBatcher}]] {
+class FileRecordBatcher [[../com/adform/streamloader/sink/file/FileRecordBatcher.html{FileRecordBatcher}]] {
 }
 
 RecordBatcher <|-- FileRecordBatcher
 
-interface FileBuilder [[../com/adform/streamloader/file/FileBuilder.html{FileBuilder}]] {
+interface FileBuilder [[../com/adform/streamloader/sink/file/FileBuilder.html{FileBuilder}]] {
   write(record)
   build(): Option[File]
 }
 
-class CsvFileBuilder [[../com/adform/streamloader/encoding/csv/CsvFileBuilder.html{CsvFileBuilder}]]
+class CsvFileBuilder [[../com/adform/streamloader/sink/encoding/csv/CsvFileBuilder.html{CsvFileBuilder}]]
 
 FileBuilder <|-- CsvFileBuilder
 
 FileRecordBatcher *-- FileBuilder
 FileRecordBatcher *-- RecordFormatter
 
-class RecordFormatter [[../com/adform/streamloader/batch/RecordFormatter.html{RecordFormatter}]] {
+class RecordFormatter [[../com/adform/streamloader/sink/batch/RecordFormatter.html{RecordFormatter}]] {
   format(record): Seq[Record]
 }
 

@@ -9,10 +9,9 @@
 package com.adform.streamloader.storage
 
 import java.util.Properties
-
-import com.adform.streamloader.KafkaContext
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork}
 import com.adform.streamloader.model.{StorageMessage, StreamPosition}
+import com.adform.streamloader.source.KafkaContext
 import com.spotify.docker.client.DockerClient
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer, OffsetAndMetadata}
 import org.apache.kafka.common.TopicPartition
@@ -25,7 +24,8 @@ case class LoaderKafkaConfig(consumerGroup: String, topic: String)
 
 case class StorageContent[M <: StorageMessage](
     messages: Seq[M],
-    committedPositions: Map[TopicPartition, StreamPosition])
+    committedPositions: Map[TopicPartition, StreamPosition]
+)
 
 trait StorageBackend[M <: StorageMessage] {
 
@@ -39,7 +39,8 @@ trait StorageBackend[M <: StorageMessage] {
 
   def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]]
+      partitions: Set[TopicPartition]
+  ): Map[TopicPartition, Option[StreamPosition]]
 
   def arbMessage: Arbitrary[M]
 
@@ -60,10 +61,12 @@ trait StorageBackend[M <: StorageMessage] {
       put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       put(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-        classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName)
+        classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName
+      )
       put(
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-        classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName)
+        classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName
+      )
     }
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     new KafkaContext {

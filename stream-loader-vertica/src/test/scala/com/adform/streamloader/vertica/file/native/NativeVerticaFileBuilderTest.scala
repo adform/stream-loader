@@ -8,9 +8,8 @@
 
 package com.adform.streamloader.vertica.file.native
 
+import com.adform.streamloader.sink.file.Compression
 import java.io.File
-
-import com.adform.streamloader.file.Compression
 import com.adform.streamloader.vertica.VerticaLoadMethod
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers

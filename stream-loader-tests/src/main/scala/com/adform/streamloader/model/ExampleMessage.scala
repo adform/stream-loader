@@ -52,15 +52,15 @@ case class ExampleMessage(
   override def equals(obj: Any): Boolean = obj match {
     case that: ExampleMessage =>
       this.id == that.id &&
-        this.name == that.name &&
-        this.timestamp == that.timestamp &&
-        math.abs(this.height - that.height) / this.height < 1E-10 &&
-        math.abs(this.width - that.width) / this.width < 1E-10 &&
-        this.isEnabled == that.isEnabled &&
-        this.childIds.sameElements(that.childIds) &&
-        this.parentId == that.parentId &&
-        this.transactionId == that.transactionId &&
-        this.moneySpent == that.moneySpent
+      this.name == that.name &&
+      this.timestamp == that.timestamp &&
+      math.abs(this.height - that.height) / this.height < 1e-10 &&
+      math.abs(this.width - that.width) / this.width < 1e-10 &&
+      this.isEnabled == that.isEnabled &&
+      this.childIds.sameElements(that.childIds) &&
+      this.parentId == that.parentId &&
+      this.transactionId == that.transactionId &&
+      this.moneySpent == that.moneySpent
     case _ => false
   }
 }

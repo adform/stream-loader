@@ -25,10 +25,11 @@ trait Loaders { this: Docker =>
 
   type ProducedRecord = ProducerRecord[Array[Byte], Array[Byte]]
 
-  private def sendMessage(kafkaProducer: KafkaProducer[Array[Byte], Array[Byte]])(
-      tp: TopicPartition,
-      key: String,
-      value: Array[Byte])(implicit ec: ExecutionContext): Future[(ProducedRecord, RecordMetadata)] = {
+  private def sendMessage(
+      kafkaProducer: KafkaProducer[Array[Byte], Array[Byte]]
+  )(tp: TopicPartition, key: String, value: Array[Byte])(implicit
+      ec: ExecutionContext
+  ): Future[(ProducedRecord, RecordMetadata)] = {
 
     val record = new ProducerRecord[Array[Byte], Array[Byte]](
       tp.topic(),
@@ -40,8 +41,9 @@ trait Loaders { this: Docker =>
     toScalaFuture(kafkaProducer.send(record)).map(result => (record, result))
   }
 
-  def withLoader[T, A <: StorageMessage](backend: StorageBackend[A])(kafkaConfig: LoaderKafkaConfig, batchSize: Int)(
-      code: Container => T)(implicit ec: ExecutionContext): T = {
+  def withLoader[T, A <: StorageMessage](
+      backend: StorageBackend[A]
+  )(kafkaConfig: LoaderKafkaConfig, batchSize: Int)(code: Container => T)(implicit ec: ExecutionContext): T = {
     val loader = backend.createLoaderContainer(kafkaConfig, batchSize)
 
     withContainer(loader)(code(loader))
@@ -52,7 +54,8 @@ trait Loaders { this: Docker =>
       loaderKafkaConfig: LoaderKafkaConfig,
       tp: TopicPartition,
       messageBatch: Seq[A],
-      messageBatchCount: Int)(implicit ec: ExecutionContext): Boolean = {
+      messageBatchCount: Int
+  )(implicit ec: ExecutionContext): Boolean = {
 
     val messageSendResults = for {
       batch <- 0 until messageBatchCount

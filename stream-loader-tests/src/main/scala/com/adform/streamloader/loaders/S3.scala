@@ -8,22 +8,23 @@
 
 package com.adform.streamloader.loaders
 
-import java.net.URI
-import java.time.LocalDate
-
-import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
-import com.adform.streamloader.encoding.csv.CsvFileBuilder
-import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
-import com.adform.streamloader.file._
 import com.adform.streamloader.model.Timestamp
 import com.adform.streamloader.s3.S3FileStorage
+import com.adform.streamloader.sink.batch.{RecordBatchingSink, RecordFormatter}
+import com.adform.streamloader.sink.encoding.csv.CsvFileBuilder
+import com.adform.streamloader.sink.file.FileCommitStrategy.ReachedAnyOf
+import com.adform.streamloader.sink.file._
+import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.ConfigExtensions._
-import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
+import com.adform.streamloader.{Loader, StreamLoader}
 import com.typesafe.config.ConfigFactory
 import org.apache.kafka.common.TopicPartition
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+
+import java.net.URI
+import java.time.LocalDate
 
 class BaseS3Loader extends Loader {
 
@@ -37,12 +38,12 @@ class BaseS3Loader extends Loader {
       val builder = S3Client
         .builder()
         .region(cfg.getStringOpt("s3.region").map(Region.of).getOrElse(Region.EU_WEST_1))
-        .credentialsProvider(
-          () =>
-            AwsBasicCredentials.create(
-              cfg.getString("s3.access-key"),
-              cfg.getString("s3.secret-key")
-          ))
+        .credentialsProvider(() =>
+          AwsBasicCredentials.create(
+            cfg.getString("s3.access-key"),
+            cfg.getString("s3.secret-key")
+          )
+        )
       cfg.getStringOpt("s3.endpoint").foreach(endpoint => builder.endpointOverride(new URI(endpoint)))
       builder.build()
     }
@@ -71,9 +72,11 @@ class BaseS3Loader extends Loader {
             .recordFormatter(recordFormatter)
             .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)
             .fileBuilderFactory(_ => new CsvFileBuilder(Compression.NONE))
-            .fileCommitStrategy(MultiFileCommitStrategy.anyFile(
-              ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
-            ))
+            .fileCommitStrategy(
+              MultiFileCommitStrategy.anyFile(
+                ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
+              )
+            )
             .build()
         )
         .batchStorage(

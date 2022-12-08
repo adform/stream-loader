@@ -21,14 +21,15 @@ object S3MultiFileStaging {
     override def serialize(value: S3MultiFileStaging): JValue = {
       JArray(
         value.fileUploads
-          .map(
-            fs =>
-              JObject(
-                "id" -> JString(fs.uploadId),
-                "part_tag" -> JString(fs.uploadPartTag),
-                "key" -> JString(fs.destinationKey)
-            ))
-          .toList)
+          .map(fs =>
+            JObject(
+              "id" -> JString(fs.uploadId),
+              "part_tag" -> JString(fs.uploadPartTag),
+              "key" -> JString(fs.destinationKey)
+            )
+          )
+          .toList
+      )
     }
     override def deserialize(json: JValue): S3MultiFileStaging = json match {
       case JArray(items) =>

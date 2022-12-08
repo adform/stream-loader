@@ -9,10 +9,9 @@
 package com.adform.streamloader.hadoop
 
 import java.io.IOException
-
-import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
-import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
-import com.adform.streamloader.model.RecordRange
+import com.adform.streamloader.model.StreamRange
+import com.adform.streamloader.sink.batch.storage.TwoPhaseCommitBatchStorage
+import com.adform.streamloader.sink.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
 import org.apache.hadoop.fs.{FileSystem, Path}
 
 /**
@@ -33,8 +32,8 @@ class HadoopFileStorage[P](
   private val basePath = new Path(destinationDirectory)
 
   override protected def stageBatch(batch: PartitionedFileRecordBatch[P, FileRecordBatch]): MultiFileStaging = {
-    val stagings = batch.partitionBatches.map {
-      case (partition, fileBatch) => stageSingleBatch(partition, fileBatch)
+    val stagings = batch.partitionBatches.map { case (partition, fileBatch) =>
+      stageSingleBatch(partition, fileBatch)
     }
     log.debug(s"Successfully staged batch $batch")
     MultiFileStaging(stagings.toSeq)
@@ -74,7 +73,8 @@ class HadoopFileStorage[P](
     if (!hadoopFS.rename(stagingFilePath, targetFilePath)) {
       if (!isSingleBatchStored(staging)) {
         throw new IOException(
-          s"Failed renaming file from $stagingFilePath to $targetFilePath, because $stagingFilePath does not exist")
+          s"Failed renaming file from $stagingFilePath to $targetFilePath, because $stagingFilePath does not exist"
+        )
       } else {
         throw new IOException(s"Failed renaming file from $stagingFilePath to $targetFilePath")
       }
@@ -137,7 +137,7 @@ object HadoopFileStorage {
         _stagingFilePathFormatter
       } else {
         new FilePathFormatter[P] {
-          override def formatPath(partition: P, ranges: Seq[RecordRange]): String =
+          override def formatPath(partition: P, ranges: Seq[StreamRange]): String =
             _destinationFilePathFormatter.formatPath(partition, ranges) + ".tmp"
         }
       }
@@ -147,7 +147,8 @@ object HadoopFileStorage {
         _stagingBasePath,
         stagingFormatter,
         _destinationBasePath,
-        _destinationFilePathFormatter)
+        _destinationFilePathFormatter
+      )
     }
   }
 

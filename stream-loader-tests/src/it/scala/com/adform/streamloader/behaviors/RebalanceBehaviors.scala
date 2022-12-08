@@ -32,7 +32,8 @@ trait RebalanceBehaviors { this: AnyFunSpec with Matchers with Eventually with D
   private def genTestId: String = UUID.randomUUID().toString.take(6)
 
   def rebalancingLoader[M <: StorageMessage](testPrefix: String, storageBackendFactory: String => StorageBackend[M])(
-      implicit ec: ExecutionContext): Unit = {
+      implicit ec: ExecutionContext
+  ): Unit = {
 
     it(s"$testPrefix should load all messages from newly assigned partitions and continue loading old partitions") {
 
@@ -140,15 +141,15 @@ trait RebalanceBehaviors { this: AnyFunSpec with Matchers with Eventually with D
               batchSize = messages.length
             ) { _ =>
               // Send some messages
-              tps.map(
-                tp =>
-                  sendMessagesAndConfirm(backend)(
-                    producer,
-                    loaderKafkaConfig,
-                    tp,
-                    messages,
-                    messageBatchCount = 1
-                ))
+              tps.map(tp =>
+                sendMessagesAndConfirm(backend)(
+                  producer,
+                  loaderKafkaConfig,
+                  tp,
+                  messages,
+                  messageBatchCount = 1
+                )
+              )
 
               // Confirm messages loaded in the storage
               eventually {
@@ -175,22 +176,23 @@ trait RebalanceBehaviors { this: AnyFunSpec with Matchers with Eventually with D
                   // The two consumers in the group should have one partition each
                   memberAssignments.toList.map(_._2.asScala.toSet) should contain theSameElementsAs List(
                     Set(firstTp),
-                    Set(secondTp))
+                    Set(secondTp)
+                  )
                 }
 
                 // 4. Send more messages to both partitions
 
                 val newMessages = backend.generateRandomMessages(5, seed = 2)
 
-                List(firstTp, secondTp).map(
-                  tp =>
-                    sendMessagesAndConfirm(backend)(
-                      producer,
-                      loaderKafkaConfig,
-                      tp,
-                      newMessages,
-                      messageBatchCount = 1
-                  ))
+                List(firstTp, secondTp).map(tp =>
+                  sendMessagesAndConfirm(backend)(
+                    producer,
+                    loaderKafkaConfig,
+                    tp,
+                    newMessages,
+                    messageBatchCount = 1
+                  )
+                )
 
                 // 5. Confirm that everything gets loaded
                 eventually {

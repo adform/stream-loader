@@ -10,15 +10,15 @@ package com.adform.streamloader.loaders
 
 import java.time.LocalDateTime
 import java.util.UUID
-
-import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
 import com.adform.streamloader.clickhouse._
 import com.adform.streamloader.clickhouse.rowbinary.RowBinaryClickHouseFileBuilder
-import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.DecimalEncoding
-import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation.DecimalEncoding
+import com.adform.streamloader.sink.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.model.{ExampleMessage, Timestamp}
+import com.adform.streamloader.sink.batch.{RecordBatchingSink, RecordFormatter}
+import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.ConfigExtensions._
-import com.adform.streamloader.{KafkaSource, Loader, StreamLoader}
+import com.adform.streamloader.{Loader, StreamLoader}
 import com.typesafe.config.ConfigFactory
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 

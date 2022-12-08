@@ -10,10 +10,9 @@ package com.adform.streamloader.vertica
 
 import java.io.File
 import java.time.Duration
-
-import com.adform.streamloader.batch.RecordBatcher
-import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatch}
-import com.adform.streamloader.model.{Record, RecordBatchBuilder, RecordRange}
+import com.adform.streamloader.model.{StreamRecord, StreamRange}
+import com.adform.streamloader.sink.batch.{RecordBatchBuilder, RecordBatcher}
+import com.adform.streamloader.sink.file.{FileCommitStrategy, FileRecordBatch}
 import com.adform.streamloader.util.{Logging, TimeProvider}
 import com.adform.streamloader.vertica.file.VerticaFileBuilderFactory
 import javax.sql.DataSource
@@ -27,7 +26,7 @@ import scala.util.Using
 case class ExternalOffsetVerticaFileRecordBatch(
     file: File,
     fileId: Long,
-    recordRanges: Seq[RecordRange],
+    recordRanges: Seq[StreamRange],
     copyStatementTemplate: String
 ) extends FileRecordBatch
     with VerticaRecordBatch {
@@ -56,7 +55,7 @@ case class ExternalOffsetVerticaFileRecordBatch(
 class ExternalOffsetVerticaFileBatcher[R](
     dbDataSource: DataSource,
     fileIdSequence: String,
-    recordFormatter: (Long, Record) => Seq[R],
+    recordFormatter: (Long, StreamRecord) => Seq[R],
     fileBuilderFactory: VerticaFileBuilderFactory[R],
     fileCommitStrategy: FileCommitStrategy,
     verticaLoadMethod: VerticaLoadMethod
@@ -72,7 +71,7 @@ class ExternalOffsetVerticaFileBatcher[R](
 
     new RecordBatchBuilder[ExternalOffsetVerticaFileRecordBatch] {
 
-      override def add(record: Record): Unit = {
+      override def add(record: StreamRecord): Unit = {
         super.add(record)
         recordFormatter(fileId, record)
           .foreach(formatted => fileBuilder.write(formatted))
@@ -87,13 +86,14 @@ class ExternalOffsetVerticaFileBatcher[R](
       override def build(): Option[ExternalOffsetVerticaFileRecordBatch] =
         fileBuilder
           .build()
-          .map(
-            file =>
-              ExternalOffsetVerticaFileRecordBatch(
-                file,
-                fileId,
-                currentRecordRanges,
-                fileBuilder.copyStatement(file, "%s", verticaLoadMethod)))
+          .map(file =>
+            ExternalOffsetVerticaFileRecordBatch(
+              file,
+              fileId,
+              currentRecordRanges,
+              fileBuilder.copyStatement(file, "%s", verticaLoadMethod)
+            )
+          )
 
       override def discard(): Unit = fileBuilder.discard()
     }
@@ -119,7 +119,7 @@ object ExternalOffsetVerticaFileBatcher {
       private val _dbDataSource: DataSource,
       private val _fileIdSequence: String,
       private val _fileBuilderFactory: VerticaFileBuilderFactory[R],
-      private val _recordFormatter: (Long, Record) => Seq[R],
+      private val _recordFormatter: (Long, StreamRecord) => Seq[R],
       private val _fileCommitStrategy: FileCommitStrategy,
       private val _verticaLoadMethod: VerticaLoadMethod
   ) {
@@ -142,7 +142,7 @@ object ExternalOffsetVerticaFileBatcher {
     /**
       * Sets the record formatter that converts from consumer records to records written to the file.
       */
-    def recordFormatter(formatter: (Long, Record) => Seq[R]): Builder[R] = copy(_recordFormatter = formatter)
+    def recordFormatter(formatter: (Long, StreamRecord) => Seq[R]): Builder[R] = copy(_recordFormatter = formatter)
 
     /**
       * Sets the file builder factory, e.g. Native.

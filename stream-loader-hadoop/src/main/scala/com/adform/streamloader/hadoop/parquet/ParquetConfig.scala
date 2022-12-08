@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.hadoop.parquet
 
-import com.adform.streamloader.file.Compression
+import com.adform.streamloader.sink.file.Compression
 import org.apache.parquet.column.ParquetProperties.WriterVersion
 import org.apache.parquet.hadoop.ParquetWriter
 import org.apache.parquet.hadoop.metadata.CompressionCodecName

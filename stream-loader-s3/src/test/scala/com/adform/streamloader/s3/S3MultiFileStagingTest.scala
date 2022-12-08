@@ -21,13 +21,15 @@ class S3MultiFileStagingTest extends AnyFunSpec with Matchers with ScalaCheckPro
   private val serializer = implicitly[JsonSerializer[S3MultiFileStaging]]
 
   val testStaging: S3MultiFileStaging = S3MultiFileStaging(
-    Seq(S3FileStaging("upload1", "part1", "key1"), S3FileStaging("upload2", "part2", "key2")))
+    Seq(S3FileStaging("upload1", "part1", "key1"), S3FileStaging("upload2", "part2", "key2"))
+  )
 
   val testStagingJson: JValue = JArray(
     List(
       JObject("id" -> JString("upload1"), "part_tag" -> JString("part1"), "key" -> JString("key1")),
       JObject("id" -> JString("upload2"), "part_tag" -> JString("part2"), "key" -> JString("key2"))
-    ))
+    )
+  )
 
   val singleStagingGen: Gen[S3FileStaging] = for {
     uploadId <- Gen.asciiPrintableStr

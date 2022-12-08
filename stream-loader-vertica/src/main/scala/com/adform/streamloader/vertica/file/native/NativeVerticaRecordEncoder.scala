@@ -11,9 +11,9 @@ package com.adform.streamloader.vertica.file.native
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
-import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, FixedLength, MaxLength}
-import com.adform.streamloader.encoding.macros.{DataTypeEncodingAnnotation, RecordFieldExtractor}
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, FixedLength, MaxLength}
 import com.adform.streamloader.model.Timestamp
+import com.adform.streamloader.sink.encoding.macros.{DataTypeEncodingAnnotation, RecordFieldExtractor}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -99,7 +99,8 @@ object NativeVerticaRecordEncoder {
               Column(
                 q"false",
                 q"${fl.get.length}",
-                q"pw.writeFixedByteArray(r, ${fl.get.length}, ${fl.get.truncate}, 0)")
+                q"pw.writeFixedByteArray(r, ${fl.get.length}, ${fl.get.truncate}, 0)"
+              )
             } else {
               val ml = typeAnnotations.collectFirst { case m: MaxLength => m }.getOrElse(MAX_COLUMN_LENGTH)
               if (ml.length > MAX_COLUMN_BYTES)

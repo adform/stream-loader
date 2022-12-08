@@ -9,9 +9,8 @@
 package com.adform.streamloader.vertica.file
 
 import java.io.File
-
-import com.adform.streamloader.encoding.csv.{CsvFileBuilder, CsvFormat, CsvRecordEncoder}
-import com.adform.streamloader.file.Compression
+import com.adform.streamloader.sink.encoding.csv.{CsvFileBuilder, CsvFormat, CsvRecordEncoder}
+import com.adform.streamloader.sink.file.Compression
 import com.adform.streamloader.vertica.VerticaLoadMethod
 
 /**
