@@ -87,13 +87,14 @@ class ExternalOffsetVerticaFileBatcher[R](
       override def build(): Option[ExternalOffsetVerticaFileRecordBatch] =
         fileBuilder
           .build()
-          .map(
-            file =>
-              ExternalOffsetVerticaFileRecordBatch(
-                file,
-                fileId,
-                currentRecordRanges,
-                fileBuilder.copyStatement(file, "%s", verticaLoadMethod)))
+          .map(file =>
+            ExternalOffsetVerticaFileRecordBatch(
+              file,
+              fileId,
+              currentRecordRanges,
+              fileBuilder.copyStatement(file, "%s", verticaLoadMethod)
+            )
+          )
 
       override def discard(): Unit = fileBuilder.discard()
     }

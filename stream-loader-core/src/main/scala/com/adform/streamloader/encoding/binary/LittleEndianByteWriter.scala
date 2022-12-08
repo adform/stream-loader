@@ -16,26 +16,26 @@ import java.nio.{ByteBuffer, ByteOrder}
 trait LittleEndianByteWriter extends ByteWriter {
 
   def writeInt16(i: Short): Unit = {
-    writeByte((i >> 0) & 0xFF)
-    writeByte((i >> 8) & 0xFF)
+    writeByte((i >> 0) & 0xff)
+    writeByte((i >> 8) & 0xff)
   }
 
   def writeInt32(i: Int): Unit = {
-    writeByte(((i >> 0) & 0xFF))
-    writeByte(((i >> 8) & 0xFF))
-    writeByte(((i >> 16) & 0xFF))
-    writeByte(((i >> 24) & 0xFF))
+    writeByte(((i >> 0) & 0xff))
+    writeByte(((i >> 8) & 0xff))
+    writeByte(((i >> 16) & 0xff))
+    writeByte(((i >> 24) & 0xff))
   }
 
   def writeInt64(i: Long): Unit = {
-    writeByte(((i >> 0) & 0xFF).asInstanceOf[Int])
-    writeByte(((i >> 8) & 0xFF).asInstanceOf[Int])
-    writeByte(((i >> 16) & 0xFF).asInstanceOf[Int])
-    writeByte(((i >> 24) & 0xFF).asInstanceOf[Int])
-    writeByte(((i >> 32) & 0xFF).asInstanceOf[Int])
-    writeByte(((i >> 40) & 0xFF).asInstanceOf[Int])
-    writeByte(((i >> 48) & 0xFF).asInstanceOf[Int])
-    writeByte(((i >> 56) & 0xFF).asInstanceOf[Int])
+    writeByte(((i >> 0) & 0xff).asInstanceOf[Int])
+    writeByte(((i >> 8) & 0xff).asInstanceOf[Int])
+    writeByte(((i >> 16) & 0xff).asInstanceOf[Int])
+    writeByte(((i >> 24) & 0xff).asInstanceOf[Int])
+    writeByte(((i >> 32) & 0xff).asInstanceOf[Int])
+    writeByte(((i >> 40) & 0xff).asInstanceOf[Int])
+    writeByte(((i >> 48) & 0xff).asInstanceOf[Int])
+    writeByte(((i >> 56) & 0xff).asInstanceOf[Int])
   }
 
   def writeFloat32(d: Float): Unit = {

@@ -34,13 +34,14 @@ abstract class InDataOffsetBatchStorage[-B <: RecordBatch] extends RecordBatchSt
     commitBatchWithOffsets(batch)
     try {
       log.info(
-        s"Committing offsets to Kafka: ${batch.recordRanges.map(r => s"${r.topic}-${r.partition}: ${r.end.offset + 1}").mkString(", ")}")
+        s"Committing offsets to Kafka: ${batch.recordRanges.map(r => s"${r.topic}-${r.partition}: ${r.end.offset + 1}").mkString(", ")}"
+      )
       kafkaContext.commitSync(
         batch.recordRanges
-          .map(
-            r =>
-              new TopicPartition(r.topic, r.partition) ->
-                new OffsetAndMetadata(r.end.offset + 1, s"""{ "watermark": ${r.end.watermark.millis} }"""))
+          .map(r =>
+            new TopicPartition(r.topic, r.partition) ->
+              new OffsetAndMetadata(r.end.offset + 1, s"""{ "watermark": ${r.end.watermark.millis} }""")
+          )
           .toMap
       )
       log.debug("Committed offsets to Kafka successfully")

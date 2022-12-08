@@ -55,33 +55,32 @@ abstract class PartitionGroupingSink extends Sink with Logging {
   final override def assignPartitions(partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = {
     log.info(s"Assigned partitions ${partitions.mkString(", ")}, grouping them")
 
-    val groupPositions = partitions.groupBy(groupForPartition).map {
-      case (group, groupPartitions) =>
-        // Check if we already have a sinker for this group, if so, close it and collect the previously owned partitions
-        val oldGroupPartitions = partitionGroups
-          .get(group)
-          .map {
-            case (tps, currentGroupSinker) =>
-              log.info(s"Closing existing partition sinker for ${tps.mkString(", ")}")
-              currentGroupSinker.close()
-              partitionGroups.remove(group)
-              tps.foreach(partitionSinkers.remove)
-              tps
-          }
-          .getOrElse(Set.empty)
+    val groupPositions = partitions.groupBy(groupForPartition).map { case (group, groupPartitions) =>
+      // Check if we already have a sinker for this group, if so, close it and collect the previously owned partitions
+      val oldGroupPartitions = partitionGroups
+        .get(group)
+        .map { case (tps, currentGroupSinker) =>
+          log.info(s"Closing existing partition sinker for ${tps.mkString(", ")}")
+          currentGroupSinker.close()
+          partitionGroups.remove(group)
+          tps.foreach(partitionSinkers.remove)
+          tps
+        }
+        .getOrElse(Set.empty)
 
-        log.info(
-          s"Creating and initializing a new sinker for partition group '$group' containing " +
-            s"newly assigned partitions ${groupPartitions
-              .mkString(", ")} and previously owned partitions ${oldGroupPartitions.mkString(", ")}")
+      log.info(
+        s"Creating and initializing a new sinker for partition group '$group' containing " +
+          s"newly assigned partitions ${groupPartitions
+              .mkString(", ")} and previously owned partitions ${oldGroupPartitions.mkString(", ")}"
+      )
 
-        val newGroupPartitions = groupPartitions ++ oldGroupPartitions
-        val sinker = sinkerForPartitionGroup(group, newGroupPartitions)
-        val positions = sinker.initialize(kafkaContext)
+      val newGroupPartitions = groupPartitions ++ oldGroupPartitions
+      val sinker = sinkerForPartitionGroup(group, newGroupPartitions)
+      val positions = sinker.initialize(kafkaContext)
 
-        partitionGroups.put(group, newGroupPartitions -> sinker)
-        newGroupPartitions.foreach(tp => partitionSinkers.put(tp, sinker))
-        positions
+      partitionGroups.put(group, newGroupPartitions -> sinker)
+      newGroupPartitions.foreach(tp => partitionSinkers.put(tp, sinker))
+      positions
     }
 
     groupPositions.flatMap(_.toList).toMap
@@ -91,37 +90,35 @@ abstract class PartitionGroupingSink extends Sink with Logging {
     if (partitions.nonEmpty) {
       log.info(s"Revoked partitions ${partitions.mkString(", ")}")
 
-      val groupPositions = partitions.groupBy(groupForPartition).map {
-        case (group, _) =>
-          val remainingGroupPartitions = partitionGroups
-            .get(group)
-            .map {
-              case (currentGroupPartitions, currentGroupSinker) =>
-                log.info(
-                  s"Closing existing group '$group' partition sinker for ${currentGroupPartitions.mkString(", ")}")
-                currentGroupSinker.close()
-                partitionGroups.remove(group)
-                currentGroupPartitions.foreach(partitionSinkers.remove)
-                currentGroupPartitions -- partitions
-            }
-            .getOrElse(Set.empty)
-
-          // The group still contains partitions, re-create the sinker with the remaining set
-          if (remainingGroupPartitions.nonEmpty) {
-            log.info(
-              s"Creating and initializing a new sinker for partition group '$group' containing " +
-                s"remaining partitions ${remainingGroupPartitions.mkString(", ")}")
-
-            val sinker = sinkerForPartitionGroup(group, remainingGroupPartitions)
-            val positions = sinker.initialize(kafkaContext)
-
-            partitionGroups.put(group, remainingGroupPartitions -> sinker)
-            remainingGroupPartitions.foreach(tp => partitionSinkers.put(tp, sinker))
-
-            positions
-          } else {
-            Map.empty
+      val groupPositions = partitions.groupBy(groupForPartition).map { case (group, _) =>
+        val remainingGroupPartitions = partitionGroups
+          .get(group)
+          .map { case (currentGroupPartitions, currentGroupSinker) =>
+            log.info(s"Closing existing group '$group' partition sinker for ${currentGroupPartitions.mkString(", ")}")
+            currentGroupSinker.close()
+            partitionGroups.remove(group)
+            currentGroupPartitions.foreach(partitionSinkers.remove)
+            currentGroupPartitions -- partitions
           }
+          .getOrElse(Set.empty)
+
+        // The group still contains partitions, re-create the sinker with the remaining set
+        if (remainingGroupPartitions.nonEmpty) {
+          log.info(
+            s"Creating and initializing a new sinker for partition group '$group' containing " +
+              s"remaining partitions ${remainingGroupPartitions.mkString(", ")}"
+          )
+
+          val sinker = sinkerForPartitionGroup(group, remainingGroupPartitions)
+          val positions = sinker.initialize(kafkaContext)
+
+          partitionGroups.put(group, remainingGroupPartitions -> sinker)
+          remainingGroupPartitions.foreach(tp => partitionSinkers.put(tp, sinker))
+
+          positions
+        } else {
+          Map.empty
+        }
       }
 
       groupPositions.flatMap(_.toList).toMap
@@ -150,10 +147,9 @@ abstract class PartitionGroupingSink extends Sink with Logging {
     * Closes all active sinkers.
     */
   override def close(): Unit = {
-    partitionGroups.foreach {
-      case (group, (groupPartitions, sinker)) =>
-        log.info(s"Closing sinker for group '$group' containing partitions ${groupPartitions.mkString(",")}")
-        sinker.close()
+    partitionGroups.foreach { case (group, (groupPartitions, sinker)) =>
+      log.info(s"Closing sinker for group '$group' containing partitions ${groupPartitions.mkString(",")}")
+      sinker.close()
     }
   }
 }

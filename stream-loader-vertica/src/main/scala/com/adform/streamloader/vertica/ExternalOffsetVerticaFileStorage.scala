@@ -55,7 +55,7 @@ class ExternalOffsetVerticaFileStorage(
     startOffsetColumnName: String,
     startWatermarkColumnName: String,
     endOffsetColumnName: String,
-    endWatermarkColumnName: String,
+    endWatermarkColumnName: String
 ) extends InDataOffsetBatchStorage[ExternalOffsetVerticaFileRecordBatch]
     with Logging {
 
@@ -148,7 +148,7 @@ object ExternalOffsetVerticaFileStorage {
       private val _startOffsetColumnName: String = "_start_offset",
       private val _startWatermarkColumnName: String = "_start_watermark",
       private val _endOffsetColumnName: String = "_end_offset",
-      private val _endWatermarkColumnName: String = "_end_watermark",
+      private val _endWatermarkColumnName: String = "_end_watermark"
   ) {
 
     /**

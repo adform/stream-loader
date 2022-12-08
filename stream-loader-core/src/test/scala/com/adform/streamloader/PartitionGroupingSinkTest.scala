@@ -44,7 +44,9 @@ class PartitionGroupingSinkTest extends AnyFunSpec with Matchers with ScalaCheck
       write(
         StreamRecord(
           new ConsumerRecord[Array[Byte], Array[Byte]](topic, partition, 0, Array.empty[Byte], value.getBytes("UTF-8")),
-          Timestamp(0L)))
+          Timestamp(0L)
+        )
+      )
     }
   }
 

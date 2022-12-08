@@ -51,7 +51,8 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
       partition: Int,
       initialTimestamp: Long,
       initialOffset: Int,
-      recordCount: Int): Seq[StreamRecord] =
+      recordCount: Int
+  ): Seq[StreamRecord] =
     for (offset <- initialOffset until (initialOffset + recordCount))
       yield {
         val timestamp = initialTimestamp + offset * 1000
@@ -86,11 +87,12 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
             override def isBatchReady: Boolean = currentRecordCount >= recordsPerBatch
             override def build(): Option[TestBatch] = Some(batchProvider.newBatch(currentRecordRanges))
             override def discard(): Unit = {}
-        },
+          },
         new RecordBatchStorage[TestBatch] {
           override def recover(topicPartitions: Set[TopicPartition]): Unit = {}
           override def committedPositions(
-              topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = Map(tp -> None)
+              topicPartitions: Set[TopicPartition]
+          ): Map[TopicPartition, Option[StreamPosition]] = Map(tp -> None)
           override def commitBatch(batch: TestBatch): Unit = {}
         },
         batchCommitQueueSize = 1,

@@ -35,8 +35,8 @@ case class HdfsStorageBackend(
     datanodeContainer: Container,
     hdfs: FileSystem,
     baseDir: String,
-    loader: Loader)
-    extends StorageBackend[ExampleMessage] {
+    loader: Loader
+) extends StorageBackend[ExampleMessage] {
 
   override def arbMessage: Arbitrary[ExampleMessage] = ExampleMessage.arbMessage
 
@@ -95,7 +95,7 @@ case class HdfsStorageBackend(
 
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition],
+      partitions: Set[TopicPartition]
   ): Map[TopicPartition, Option[StreamPosition]] = {
 
     val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)

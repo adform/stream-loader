@@ -26,9 +26,8 @@ case class PartitionedFileRecordBatch[P, +B <: FileRecordBatch](partitionBatches
     fileBatches
       .flatMap(_.recordRanges)
       .groupBy(r => (r.topic, r.partition))
-      .map {
-        case ((topic, partition), ranges) =>
-          StreamRange(topic, partition, ranges.map(_.start).min, ranges.map(_.end).max)
+      .map { case ((topic, partition), ranges) =>
+        StreamRange(topic, partition, ranges.map(_.start).min, ranges.map(_.end).max)
       }
       .toSeq
   }

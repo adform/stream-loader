@@ -29,16 +29,16 @@ case class StagedOffsetCommit[S: JsonSerializer](staging: S, start: StreamPositi
   */
 case class TwoPhaseCommitMetadata[S: JsonSerializer](
     watermark: Timestamp,
-    stagedOffsetCommit: Option[StagedOffsetCommit[S]]) {
+    stagedOffsetCommit: Option[StagedOffsetCommit[S]]
+) {
 
   def toJson: String = {
-    val stagingJson = stagedOffsetCommit.map(
-      s =>
-        ("staging" -> implicitly[JsonSerializer[S]].serialize(s.staging))
-          ~ ("start_offset" -> s.start.offset)
-          ~ ("start_watermark" -> s.start.watermark.millis)
-          ~ ("end_offset" -> s.end.offset)
-          ~ ("end_watermark" -> s.end.watermark.millis)
+    val stagingJson = stagedOffsetCommit.map(s =>
+      ("staging" -> implicitly[JsonSerializer[S]].serialize(s.staging))
+        ~ ("start_offset" -> s.start.offset)
+        ~ ("start_watermark" -> s.start.watermark.millis)
+        ~ ("end_offset" -> s.end.offset)
+        ~ ("end_watermark" -> s.end.watermark.millis)
     )
     val watermarkJson: JObject = "watermark" -> watermark.millis
     val json = if (stagingJson.isDefined) watermarkJson ~ ("staged" -> stagingJson.get) else watermarkJson

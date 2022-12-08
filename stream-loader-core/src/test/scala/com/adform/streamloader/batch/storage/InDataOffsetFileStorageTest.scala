@@ -29,12 +29,14 @@ class InDataOffsetFileStorageTest extends AnyFunSpec with Matchers {
         "topic",
         0,
         StreamPosition(0, Timestamp(1570109555000L)),
-        StreamPosition(100, Timestamp(1570109655000L))),
+        StreamPosition(100, Timestamp(1570109655000L))
+      ),
       StreamRange(
         "topic",
         1,
         StreamPosition(50, Timestamp(1570109565000L)),
-        StreamPosition(150, Timestamp(1570109685000L)))
+        StreamPosition(150, Timestamp(1570109685000L))
+      )
     )
   )
 
@@ -54,10 +56,11 @@ class InDataOffsetFileStorageTest extends AnyFunSpec with Matchers {
     storage.initialize(context)
     storage.commitBatch(exampleFile)
 
-    val expectedOffsets = exampleFile.recordRanges.map(
-      r =>
-        new TopicPartition(r.topic, r.partition) -> Some(
-          new OffsetAndMetadata(r.end.offset + 1, s"""{ "watermark": ${r.end.watermark.millis} }""")))
+    val expectedOffsets = exampleFile.recordRanges.map(r =>
+      new TopicPartition(r.topic, r.partition) -> Some(
+        new OffsetAndMetadata(r.end.offset + 1, s"""{ "watermark": ${r.end.watermark.millis} }""")
+      )
+    )
 
     storage.storedFiles should contain theSameElementsAs Seq(exampleFile.file)
     context.committed(topicPartitions) should contain theSameElementsAs expectedOffsets

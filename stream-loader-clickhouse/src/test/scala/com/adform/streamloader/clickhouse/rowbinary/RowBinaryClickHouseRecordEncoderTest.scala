@@ -138,7 +138,8 @@ class RowBinaryClickHouseRecordEncoderTest extends AnyFunSpec with Matchers {
         BigDecimal(12345.67890123),
         BigDecimal(123456789.123456789)
       ),
-      testWriter)
+      testWriter
+    )
 
     expectedWriter.writeInt64(123456789012300L)
 

@@ -71,13 +71,12 @@ class PartitioningFileRecordBatcher[P, R](
       }
 
       override def isBatchReady: Boolean = fileCommitStrategy.shouldCommit(
-        partitionBuilders.map {
-          case (_, partitionBuilder) =>
-            FileStats(
-              Duration.ofMillis(timeProvider.currentMillis - partitionBuilder.startTimeMs),
-              partitionBuilder.fileBuilder.getDataSize,
-              partitionBuilder.fileBuilder.getRecordCount
-            )
+        partitionBuilders.map { case (_, partitionBuilder) =>
+          FileStats(
+            Duration.ofMillis(timeProvider.currentMillis - partitionBuilder.startTimeMs),
+            partitionBuilder.fileBuilder.getDataSize,
+            partitionBuilder.fileBuilder.getRecordCount
+          )
         }.toSeq
       )
 
@@ -135,7 +134,7 @@ object PartitioningFileRecordBatcher {
         _recordFormatter,
         _recordPartitioner,
         _fileBuilderFactory,
-        _fileCommitStrategy,
+        _fileCommitStrategy
       )
     }
   }

@@ -103,7 +103,8 @@ object InRowOffsetVerticaFileStorage {
       private val _topicColumnName: String,
       private val _partitionColumnName: String,
       private val _offsetColumnName: String,
-      private val _watermarkColumnName: String) {
+      private val _watermarkColumnName: String
+  ) {
 
     /**
       * Sets a data source for Vertica JDBC connections.
@@ -142,7 +143,8 @@ object InRowOffsetVerticaFileStorage {
         _topicColumnName,
         _partitionColumnName,
         _offsetColumnName,
-        _watermarkColumnName)
+        _watermarkColumnName
+      )
     }
   }
 

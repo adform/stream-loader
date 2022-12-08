@@ -99,7 +99,8 @@ object NativeVerticaRecordEncoder {
               Column(
                 q"false",
                 q"${fl.get.length}",
-                q"pw.writeFixedByteArray(r, ${fl.get.length}, ${fl.get.truncate}, 0)")
+                q"pw.writeFixedByteArray(r, ${fl.get.length}, ${fl.get.truncate}, 0)"
+              )
             } else {
               val ml = typeAnnotations.collectFirst { case m: MaxLength => m }.getOrElse(MAX_COLUMN_LENGTH)
               if (ml.length > MAX_COLUMN_BYTES)

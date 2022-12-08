@@ -27,12 +27,14 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
         "topic",
         0,
         StreamPosition(0, Timestamp(1570109555000L)),
-        StreamPosition(100, Timestamp(1570109655000L))),
+        StreamPosition(100, Timestamp(1570109655000L))
+      ),
       StreamRange(
         "topic",
         1,
         StreamPosition(50, Timestamp(1570109565000L)),
-        StreamPosition(150, Timestamp(1570109685000L)))
+        StreamPosition(150, Timestamp(1570109685000L))
+      )
     )
   )
 
@@ -43,12 +45,14 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
         "topic",
         0,
         StreamPosition(101, Timestamp(1570109655001L)),
-        StreamPosition(200, Timestamp(1570109655100L))),
+        StreamPosition(200, Timestamp(1570109655100L))
+      ),
       StreamRange(
         "topic",
         1,
         StreamPosition(51, Timestamp(1570109685001L)),
-        StreamPosition(300, Timestamp(1570109686000L)))
+        StreamPosition(300, Timestamp(1570109686000L))
+      )
     )
   )
 
@@ -57,14 +61,15 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
   private def fileStoredPath(batch: SingleFileRecordBatch): String = batch.file.getAbsolutePath
   private def fileOffsets(batch: SingleFileRecordBatch): Map[TopicPartition, Some[OffsetAndMetadata]] =
     batch.recordRanges
-      .map(
-        range =>
-          (
-            new TopicPartition(range.topic, range.partition),
-            Some(
-              new OffsetAndMetadata(
-                range.end.offset + 1,
-                TwoPhaseCommitMetadata[FileStaging](range.end.watermark, None).toJson))
+      .map(range =>
+        (
+          new TopicPartition(range.topic, range.partition),
+          Some(
+            new OffsetAndMetadata(
+              range.end.offset + 1,
+              TwoPhaseCommitMetadata[FileStaging](range.end.watermark, None).toJson
+            )
+          )
         )
       )
       .toMap

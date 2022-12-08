@@ -42,7 +42,8 @@ trait RowBinaryClickHousePrimitiveTypeWriter extends LittleEndianByteWriter {
 
     if (bytes.length > maxBytes && !truncate)
       throw new IllegalArgumentException(
-        s"String '$s' occupies ${bytes.length} bytes and does not fit into $maxBytes bytes")
+        s"String '$s' occupies ${bytes.length} bytes and does not fit into $maxBytes bytes"
+      )
 
     writeLeb128(truncatedLength)
     writeByteArray(bytes, truncatedLength)

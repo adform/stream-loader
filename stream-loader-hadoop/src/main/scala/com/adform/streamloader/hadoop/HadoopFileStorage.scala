@@ -33,8 +33,8 @@ class HadoopFileStorage[P](
   private val basePath = new Path(destinationDirectory)
 
   override protected def stageBatch(batch: PartitionedFileRecordBatch[P, FileRecordBatch]): MultiFileStaging = {
-    val stagings = batch.partitionBatches.map {
-      case (partition, fileBatch) => stageSingleBatch(partition, fileBatch)
+    val stagings = batch.partitionBatches.map { case (partition, fileBatch) =>
+      stageSingleBatch(partition, fileBatch)
     }
     log.debug(s"Successfully staged batch $batch")
     MultiFileStaging(stagings.toSeq)
@@ -74,7 +74,8 @@ class HadoopFileStorage[P](
     if (!hadoopFS.rename(stagingFilePath, targetFilePath)) {
       if (!isSingleBatchStored(staging)) {
         throw new IOException(
-          s"Failed renaming file from $stagingFilePath to $targetFilePath, because $stagingFilePath does not exist")
+          s"Failed renaming file from $stagingFilePath to $targetFilePath, because $stagingFilePath does not exist"
+        )
       } else {
         throw new IOException(s"Failed renaming file from $stagingFilePath to $targetFilePath")
       }
@@ -147,7 +148,8 @@ object HadoopFileStorage {
         _stagingBasePath,
         stagingFormatter,
         _destinationBasePath,
-        _destinationFilePathFormatter)
+        _destinationFilePathFormatter
+      )
     }
   }
 

@@ -38,16 +38,19 @@ class InRowOffsetVerticaFileRecordBatcher[R](
 ) extends FileRecordBatcher[R, InRowOffsetVerticaFileRecordBatch, VerticaFileBuilder[R]](
       recordFormatter,
       fileBuilderFactory,
-      fileCommitStrategy) {
+      fileCommitStrategy
+    ) {
 
   override def constructBatch(
       fileBuilder: VerticaFileBuilder[R],
       recordRanges: Seq[StreamRange],
-      recordCount: Long): Option[InRowOffsetVerticaFileRecordBatch] = {
+      recordCount: Long
+  ): Option[InRowOffsetVerticaFileRecordBatch] = {
     fileBuilder
       .build()
       .map(file =>
-        InRowOffsetVerticaFileRecordBatch(file, recordRanges, fileBuilder.copyStatement(file, "%s", verticaLoadMethod)))
+        InRowOffsetVerticaFileRecordBatch(file, recordRanges, fileBuilder.copyStatement(file, "%s", verticaLoadMethod))
+      )
   }
 }
 

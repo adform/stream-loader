@@ -121,7 +121,8 @@ object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
         msg.parentId,
         msg.transactionId,
         msg.moneySpent
-      ))
+      )
+    )
   }
 
   override def sink(cfg: Config, verticaDataSource: HikariDataSource): Sink =

@@ -68,7 +68,8 @@ class RecordBatchingSinker[B <: RecordBatch](
         Metrics.commitDuration.recordCallable(() =>
           retryOnFailureIf(retryPolicy)(!batchCommittedAfterFailure(batch)) {
             batchStorage.commitBatch(batch)
-        })
+          }
+        )
         if (!batch.discard()) {
           log.warn("Failed discarding batch")
         }

@@ -16,5 +16,6 @@ case class StringMessage(content: String) extends StorageMessage {
 
 object StringMessage {
   val arbMessage: Arbitrary[StringMessage] = Arbitrary(
-    Gen.alphaNumStr.suchThat(_.length < 500).map(StringMessage.apply))
+    Gen.alphaNumStr.suchThat(_.length < 500).map(StringMessage.apply)
+  )
 }

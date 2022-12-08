@@ -74,7 +74,7 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
       idx match {
         case 0 => col1Null = true
         case 1 => col2Null = true
-    }
+      }
 
     encoderFor[OptionalRecord].setNullBits(OptionalRecord(Some(1), None), nullSetter)
 
@@ -142,7 +142,8 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
         BigDecimal(12345.67890123),
         BigDecimal(123456789.123456789)
       ),
-      testWriter)
+      testWriter
+    )
 
     expectedWriter.writeInt64(123456789012300L)
 

@@ -151,7 +151,8 @@ case class ClickHouseStorageBackend(
                   Option(rs.getObject("parent_id").asInstanceOf[java.lang.Long]).map(_.toLong),
                   rs.getObject("transaction_id", classOf[UUID]),
                   rs.getBigDecimal("money_spent")
-                ))
+                )
+              )
             }
             StorageContent(content.toList, positions.view.mapValues(sps => sps.maxBy(_.offset)).toMap)
           }
@@ -162,6 +163,7 @@ case class ClickHouseStorageBackend(
 
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] =
+      partitions: Set[TopicPartition]
+  ): Map[TopicPartition, Option[StreamPosition]] =
     batchStorage.committedPositions(partitions)
 }

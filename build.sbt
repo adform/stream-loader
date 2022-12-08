@@ -32,26 +32,25 @@ lazy val `stream-loader-core` = project
     buildInfoPackage := s"${organization.value}.streamloader",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, git.gitHeadCommit),
     libraryDependencies ++= Seq(
-      "org.scala-lang"    % "scala-reflect"     % scalaVersion.value,
-      "org.apache.kafka"  % "kafka-clients"     % "3.3.1",
-      "org.log4s"         %% "log4s"            % "1.10.0",
-      "org.anarres.lzo"   % "lzo-commons"       % "1.0.6",
-      "org.xerial.snappy" % "snappy-java"       % "1.1.8.4",
-      "org.lz4"           % "lz4-java"          % "1.8.0",
-      "com.github.luben"  % "zstd-jni"          % "1.5.2-5",
-      "com.univocity"     % "univocity-parsers" % "2.9.1",
-      "org.json4s"        %% "json4s-native"    % "4.0.6",
-      "io.micrometer"     % "micrometer-core"   % "1.10.2",
-      "org.scalatest"     %% "scalatest"        % scalaTestVersion % "test",
-      "org.scalatestplus" %% "scalacheck-1-17"  % scalaCheckTestVersion % "test",
-      "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion % "test",
-      "ch.qos.logback"    % "logback-classic"   % "1.4.5" % "test"
+      "org.scala-lang"     % "scala-reflect"     % scalaVersion.value,
+      "org.apache.kafka"   % "kafka-clients"     % "3.3.1",
+      "org.log4s"         %% "log4s"             % "1.10.0",
+      "org.anarres.lzo"    % "lzo-commons"       % "1.0.6",
+      "org.xerial.snappy"  % "snappy-java"       % "1.1.8.4",
+      "org.lz4"            % "lz4-java"          % "1.8.0",
+      "com.github.luben"   % "zstd-jni"          % "1.5.2-5",
+      "com.univocity"      % "univocity-parsers" % "2.9.1",
+      "org.json4s"        %% "json4s-native"     % "4.0.6",
+      "io.micrometer"      % "micrometer-core"   % "1.10.2",
+      "org.scalatest"     %% "scalatest"         % scalaTestVersion      % "test",
+      "org.scalatestplus" %% "scalacheck-1-17"   % scalaCheckTestVersion % "test",
+      "org.scalacheck"    %% "scalacheck"        % scalaCheckVersion     % "test",
+      "ch.qos.logback"     % "logback-classic"   % "1.4.5"               % "test"
     ),
-    testOptions += sbt.Tests.Setup(
-      cl =>
-        cl.loadClass("org.slf4j.LoggerFactory")
-          .getMethod("getLogger", cl.loadClass("java.lang.String"))
-          .invoke(null, "ROOT") // Prevents slf4j replay warnings during tests
+    testOptions += sbt.Tests.Setup(cl =>
+      cl.loadClass("org.slf4j.LoggerFactory")
+        .getMethod("getLogger", cl.loadClass("java.lang.String"))
+        .invoke(null, "ROOT") // Prevents slf4j replay warnings during tests
     )
   )
 
@@ -62,10 +61,10 @@ lazy val `stream-loader-clickhouse` = project
   .settings(
     resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
-      "ru.yandex.clickhouse" % "clickhouse-jdbc"  % "0.3.1",
-      "org.scalatest"        %% "scalatest"       % scalaTestVersion % "test",
-      "org.scalatestplus"    %% "scalacheck-1-17" % scalaCheckTestVersion % "test",
-      "org.scalacheck"       %% "scalacheck"      % scalaCheckVersion % "test"
+      "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.1",
+      "org.scalatest"       %% "scalatest"       % scalaTestVersion      % "test",
+      "org.scalatestplus"   %% "scalacheck-1-17" % scalaCheckTestVersion % "test",
+      "org.scalacheck"      %% "scalacheck"      % scalaCheckVersion     % "test"
     )
   )
 
@@ -77,11 +76,11 @@ lazy val `stream-loader-hadoop` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.sksamuel.avro4s" %% "avro4s-core"     % "4.1.0",
-      "org.apache.parquet"  % "parquet-avro"     % parquetVersion,
-      "org.apache.parquet"  % "parquet-protobuf" % parquetVersion,
-      "org.apache.hadoop"   % "hadoop-client"    % "3.3.4" exclude ("log4j", "log4j"),
-      "org.scalatest"       %% "scalatest"       % scalaTestVersion % "test"
+      "com.sksamuel.avro4s" %% "avro4s-core"      % "4.1.0",
+      "org.apache.parquet"   % "parquet-avro"     % parquetVersion,
+      "org.apache.parquet"   % "parquet-protobuf" % parquetVersion,
+      "org.apache.hadoop"    % "hadoop-client"    % "3.3.4" exclude ("log4j", "log4j"),
+      "org.scalatest"       %% "scalatest"        % scalaTestVersion % "test"
     )
   )
 
@@ -92,9 +91,9 @@ lazy val `stream-loader-s3` = project
   .settings(
     libraryDependencies ++= Seq(
       "software.amazon.awssdk" % "s3"              % "2.17.192",
-      "org.scalatest"          %% "scalatest"      % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.357" % "test",
-      "org.gaul"               % "s3proxy"         % "2.0.0" % "test",
+      "org.scalatest"         %% "scalatest"       % scalaTestVersion % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.357"       % "test",
+      "org.gaul"               % "s3proxy"         % "2.0.0"          % "test"
     )
   )
 
@@ -107,7 +106,7 @@ lazy val `stream-loader-vertica` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      (("com.vertica"     % "vertica-jdbc"     % verticaVersion) from verticaJarUrl) % "provided",
+      (("com.vertica"      % "vertica-jdbc"    % verticaVersion) from verticaJarUrl) % "provided",
       "org.scalatest"     %% "scalatest"       % scalaTestVersion                    % "test",
       "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion               % "test",
       "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion                   % "test"
@@ -133,14 +132,14 @@ lazy val `stream-loader-tests` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe"      % "config"           % "1.4.2",
-      "ch.qos.logback"    % "logback-classic"  % "1.4.5",
-      "com.zaxxer"        % "HikariCP"         % "5.0.1",
-      "com.vertica"       % "vertica-jdbc"     % verticaVersion from verticaJarUrl,
+      "com.typesafe"       % "config"          % "1.4.2",
+      "ch.qos.logback"     % "logback-classic" % "1.4.5",
+      "com.zaxxer"         % "HikariCP"        % "5.0.1",
+      "com.vertica"        % "vertica-jdbc"    % verticaVersion from verticaJarUrl,
       "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion,
-      "org.scalatest"     %% "scalatest"       % scalaTestVersion % "test,it",
-      "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion % "test,it",
-      ("com.spotify"      % "docker-client"    % "8.16.0" classifier "shaded") % "it"
+      "org.scalatest"     %% "scalatest"       % scalaTestVersion              % "test,it",
+      "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion         % "test,it",
+      ("com.spotify"       % "docker-client"   % "8.16.0" classifier "shaded") % "it"
     ),
     test := {}, // only integration tests present
     publish := {},
@@ -179,7 +178,8 @@ lazy val `stream-loader-tests` = project
         runRaw(
           "apt-get update && " +
             "apt-get install -y --no-install-recommends zstd liblzo2-dev && " +
-            "apt-get clean && rm -rf /var/lib/apt/lists/*")
+            "apt-get clean && rm -rf /var/lib/apt/lists/*"
+        )
 
         copy(depLib, lib) // add dependencies first to maximize docker cache usage
         copy(appLib, lib)
@@ -208,11 +208,10 @@ lazy val `stream-loader-tests` = project
     IntegrationTest / testOnly := (IntegrationTest / testOnly).dependsOn(docker).evaluated,
     // Prevents slf4j replay warnings during tests
     IntegrationTest / testOptions ++= Seq(
-      sbt.Tests.Setup(
-        cl =>
-          cl.loadClass("org.slf4j.LoggerFactory")
-            .getMethod("getLogger", cl.loadClass("java.lang.String"))
-            .invoke(null, "ROOT")
+      sbt.Tests.Setup(cl =>
+        cl.loadClass("org.slf4j.LoggerFactory")
+          .getMethod("getLogger", cl.loadClass("java.lang.String"))
+          .invoke(null, "ROOT")
       ),
       Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "3", "-minSuccessfulTests", "10")
     ),

@@ -37,12 +37,12 @@ class BaseS3Loader extends Loader {
       val builder = S3Client
         .builder()
         .region(cfg.getStringOpt("s3.region").map(Region.of).getOrElse(Region.EU_WEST_1))
-        .credentialsProvider(
-          () =>
-            AwsBasicCredentials.create(
-              cfg.getString("s3.access-key"),
-              cfg.getString("s3.secret-key")
-          ))
+        .credentialsProvider(() =>
+          AwsBasicCredentials.create(
+            cfg.getString("s3.access-key"),
+            cfg.getString("s3.secret-key")
+          )
+        )
       cfg.getStringOpt("s3.endpoint").foreach(endpoint => builder.endpointOverride(new URI(endpoint)))
       builder.build()
     }
@@ -71,9 +71,11 @@ class BaseS3Loader extends Loader {
             .recordFormatter(recordFormatter)
             .recordPartitioner((r, _) => Timestamp(r.consumerRecord.timestamp()).toDate)
             .fileBuilderFactory(_ => new CsvFileBuilder(Compression.NONE))
-            .fileCommitStrategy(MultiFileCommitStrategy.anyFile(
-              ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
-            ))
+            .fileCommitStrategy(
+              MultiFileCommitStrategy.anyFile(
+                ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records")))
+              )
+            )
             .build()
         )
         .batchStorage(

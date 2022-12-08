@@ -36,8 +36,8 @@ class KafkaSource(
     consumerProperties: Properties,
     topics: Either[Seq[String], Pattern],
     pollTimeout: Duration,
-    watermarkProviderFactory: () => WatermarkProvider)
-    extends Metrics {
+    watermarkProviderFactory: () => WatermarkProvider
+) extends Metrics {
 
   override protected def metricsRoot: String = "stream_loader.source"
 
@@ -157,7 +157,8 @@ class KafkaSource(
         "watermark.ms",
         watermarkProvider,
         (p: WatermarkProvider) => p.currentWatermark.millis.toDouble,
-        commonTags ++ partitionTags(partition))
+        commonTags ++ partitionTags(partition)
+      )
   }
 }
 
@@ -166,7 +167,8 @@ object KafkaSource {
       private val _consumerProperties: Properties,
       private val _topics: Either[Seq[String], Pattern],
       private val _pollTimeout: Duration,
-      private val _watermarkProviderFactory: () => WatermarkProvider) {
+      private val _watermarkProviderFactory: () => WatermarkProvider
+  ) {
 
     def consumerProperties(props: Properties): Builder = copy(_consumerProperties = props)
     def topics(topics: Seq[String]): Builder = copy(_topics = Left(topics))
@@ -184,5 +186,6 @@ object KafkaSource {
       new Properties(),
       Left(Seq.empty),
       Duration.ofSeconds(1),
-      () => new MaxWatermarkProvider(Duration.ofHours(1)))
+      () => new MaxWatermarkProvider(Duration.ofHours(1))
+    )
 }

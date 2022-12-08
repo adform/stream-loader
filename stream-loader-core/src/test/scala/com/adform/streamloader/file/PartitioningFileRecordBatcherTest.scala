@@ -71,9 +71,8 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
       }
 
       it("should produce correctly partitioned batches") {
-        partitionedBatch.partitionBatches.foreach {
-          case (partition, batch) =>
-            readAllLines(batch.file).forall(line => line.toInt % 10 == partition) shouldBe true
+        partitionedBatch.partitionBatches.foreach { case (partition, batch) =>
+          readAllLines(batch.file).forall(line => line.toInt % 10 == partition) shouldBe true
         }
       }
 
@@ -124,7 +123,8 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
       timestamp: Timestamp,
       offset: Long,
       key: String,
-      value: String): StreamRecord = {
+      value: String
+  ): StreamRecord = {
     val cr = new ConsumerRecord[Array[Byte], Array[Byte]](
       topic,
       partition,

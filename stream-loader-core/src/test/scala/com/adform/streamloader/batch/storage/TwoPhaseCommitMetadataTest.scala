@@ -37,9 +37,11 @@ class TwoPhaseCommitMetadataTest extends AnyFunSpec with Matchers with ScalaChec
   implicit val arbitraryPosition: Arbitrary[StreamPosition] = Arbitrary(Gen.resultOf(StreamPosition.apply _))
   implicit val arbitraryStaging: Arbitrary[TestStaging] = Arbitrary(Gen.resultOf(TestStaging.apply _))
   implicit val arbitraryStaged: Arbitrary[StagedOffsetCommit[TestStaging]] = Arbitrary(
-    Gen.resultOf(StagedOffsetCommit.apply[TestStaging] _))
+    Gen.resultOf(StagedOffsetCommit.apply[TestStaging] _)
+  )
   implicit val arbitraryMetadata: Arbitrary[TwoPhaseCommitMetadata[TestStaging]] = Arbitrary(
-    Gen.resultOf(TwoPhaseCommitMetadata.apply[TestStaging] _))
+    Gen.resultOf(TwoPhaseCommitMetadata.apply[TestStaging] _)
+  )
 
   it("should deserialize commit metadata with staged data") {
     val json = """{

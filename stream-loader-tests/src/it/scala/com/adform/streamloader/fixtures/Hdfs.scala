@@ -93,10 +93,9 @@ trait Hdfs { this: Docker =>
   def datanodeContainer: Container = datanode
   def hadoopFs: FileSystem = hdfs
 
-  private def startDataNode(network: DockerNetwork)(
-      containerName: String,
-      envVars: List[String] = List(),
-      links: List[String] = List()): Container = {
+  private def startDataNode(
+      network: DockerNetwork
+  )(containerName: String, envVars: List[String] = List(), links: List[String] = List()): Container = {
     val config = ContainerConfig
       .builder()
       .image(hdfsConfig.datanodeImage)
@@ -121,7 +120,8 @@ trait Hdfs { this: Docker =>
   }
 
   private def startNameNode(
-      network: DockerNetwork)(containerName: String, envVars: List[String] = List()): ContainerWithEndpoint = {
+      network: DockerNetwork
+  )(containerName: String, envVars: List[String] = List()): ContainerWithEndpoint = {
     val config = ContainerConfig
       .builder()
       .image(hdfsConfig.namenodeImage)

@@ -19,12 +19,14 @@ class ClickHouseFileRecordBatcher[R](
 ) extends FileRecordBatcher[R, ClickHouseFileRecordBatch, ClickHouseFileBuilder[R]](
       recordFormatter,
       fileBuilderFactory,
-      fileCommitStrategy) {
+      fileCommitStrategy
+    ) {
 
   override def constructBatch(
       fileBuilder: ClickHouseFileBuilder[R],
       recordRanges: Seq[StreamRange],
-      recordCount: Long): Option[ClickHouseFileRecordBatch] = {
+      recordCount: Long
+  ): Option[ClickHouseFileRecordBatch] = {
     fileBuilder
       .build()
       .map(f => ClickHouseFileRecordBatch(f, fileBuilder.format, recordRanges, fileBuilder.getRecordCount))
@@ -61,7 +63,7 @@ object ClickHouseFileRecordBatcher {
       new ClickHouseFileRecordBatcher(
         _recordFormatter,
         _fileBuilderFactory,
-        _fileCommitStrategy,
+        _fileCommitStrategy
       )
     }
   }

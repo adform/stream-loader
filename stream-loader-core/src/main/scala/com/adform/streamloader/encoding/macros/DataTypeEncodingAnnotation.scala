@@ -41,7 +41,10 @@ object DataTypeEncodingAnnotation {
     */
   case class MaxLength(length: Int, truncate: Boolean) extends DataTypeEncodingAnnotation {
     def this(length: Int) =
-      this(length, TRUNCATE_BY_DEFAULT) // default parameter values don't play well with macros, so define an extra constructor
+      this(
+        length,
+        TRUNCATE_BY_DEFAULT
+      ) // default parameter values don't play well with macros, so define an extra constructor
   }
 
   /**
@@ -49,7 +52,10 @@ object DataTypeEncodingAnnotation {
     */
   case class FixedLength(length: Int, truncate: Boolean) extends DataTypeEncodingAnnotation {
     def this(length: Int) =
-      this(length, TRUNCATE_BY_DEFAULT) // default parameter values don't play well with macros, so define an extra constructor
+      this(
+        length,
+        TRUNCATE_BY_DEFAULT
+      ) // default parameter values don't play well with macros, so define an extra constructor
   }
 
   /**

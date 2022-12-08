@@ -63,8 +63,8 @@ abstract class TwoPhaseCommitBatchStorage[-B <: RecordBatch, S: JsonSerializer]
   protected def isBatchStored(staging: S): Boolean
 
   final override def recover(topicPartitions: Set[TopicPartition]): Unit = {
-    val staged = committedOffsets(topicPartitions).collect {
-      case (tp, Some((_, Some(stagedOffsetCommit)))) => (tp, stagedOffsetCommit)
+    val staged = committedOffsets(topicPartitions).collect { case (tp, Some((_, Some(stagedOffsetCommit)))) =>
+      (tp, stagedOffsetCommit)
     }
     val recovered = staged.map(kv => (kv._1, recoverPartition(kv._1, kv._2)))
     kafkaContext.commitSync(recovered)
@@ -104,8 +104,9 @@ abstract class TwoPhaseCommitBatchStorage[-B <: RecordBatch, S: JsonSerializer]
     committedOffsets(topicPartitions).map(kv => (kv._1, kv._2.map(_._1)))
   }
 
-  private def committedOffsets(topicPartitions: Set[TopicPartition])
-    : Map[TopicPartition, Option[(StreamPosition, Option[StagedOffsetCommit[S]])]] = {
+  private def committedOffsets(
+      topicPartitions: Set[TopicPartition]
+  ): Map[TopicPartition, Option[(StreamPosition, Option[StagedOffsetCommit[S]])]] = {
     val kafkaOffsets = kafkaContext.committed(topicPartitions)
     topicPartitions.map(tp => (tp, kafkaOffsets.get(tp).flatten.map(parseOffsetAndMetadata))).toMap
   }
@@ -114,35 +115,34 @@ abstract class TwoPhaseCommitBatchStorage[-B <: RecordBatch, S: JsonSerializer]
     val metadata = Option(om.metadata()).flatMap(TwoPhaseCommitMetadata.tryParseJson[S])
     (
       StreamPosition(om.offset(), metadata.map(_.watermark).getOrElse(Timestamp(0L))),
-      metadata.flatMap(_.stagedOffsetCommit))
+      metadata.flatMap(_.stagedOffsetCommit)
+    )
   }
 
   private def stageKafkaCommit(batch: B, staging: S): Unit = {
-    val offsets = batch.recordRanges.map(
-      recordRange =>
-        (
-          new TopicPartition(recordRange.topic, recordRange.partition),
-          new OffsetAndMetadata(
-            recordRange.start.offset,
-            TwoPhaseCommitMetadata(
-              recordRange.start.watermark,
-              Some(StagedOffsetCommit(staging, recordRange.start, recordRange.end))
-            ).toJson
-          )
+    val offsets = batch.recordRanges.map(recordRange =>
+      (
+        new TopicPartition(recordRange.topic, recordRange.partition),
+        new OffsetAndMetadata(
+          recordRange.start.offset,
+          TwoPhaseCommitMetadata(
+            recordRange.start.watermark,
+            Some(StagedOffsetCommit(staging, recordRange.start, recordRange.end))
+          ).toJson
+        )
       )
     )
     kafkaContext.commitSync(offsets.toMap)
   }
 
   private def finalizeKafkaCommit(batch: B, staging: S): Unit = {
-    val offsets = batch.recordRanges.map(
-      recordRange =>
-        (
-          new TopicPartition(recordRange.topic, recordRange.partition),
-          new OffsetAndMetadata(
-            recordRange.end.offset + 1,
-            TwoPhaseCommitMetadata(recordRange.end.watermark, None).toJson
-          )
+    val offsets = batch.recordRanges.map(recordRange =>
+      (
+        new TopicPartition(recordRange.topic, recordRange.partition),
+        new OffsetAndMetadata(
+          recordRange.end.offset + 1,
+          TwoPhaseCommitMetadata(recordRange.end.watermark, None).toJson
+        )
       )
     )
     kafkaContext.commitSync(offsets.toMap)

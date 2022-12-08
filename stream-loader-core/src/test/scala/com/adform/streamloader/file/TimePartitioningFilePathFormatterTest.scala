@@ -27,13 +27,12 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
     endOffset <- Gen.posNum[Int].map(diff => startOffset + diff)
     startWatermark <- Gen.choose(1262304000000L, 1893456000000L) // 2010-01-01 - 2020-01-01
     endWatermark <- Gen.choose(0, 631152000000L).map(diff => startWatermark + diff) // 10 years
-  } yield
-    StreamRange(
-      new String(topic.toArray),
-      partition,
-      StreamPosition(startOffset, Timestamp(startWatermark)),
-      StreamPosition(endOffset, Timestamp(endWatermark))
-    )
+  } yield StreamRange(
+    new String(topic.toArray),
+    partition,
+    StreamPosition(startOffset, Timestamp(startWatermark)),
+    StreamPosition(endOffset, Timestamp(endWatermark))
+  )
 
   val recordRangeSeqGen: Gen[Seq[StreamRange]] = Gen.choose(1, 5).flatMap(i => Gen.listOfN(i, recordRangeGen))
 
@@ -56,7 +55,8 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
         "test-topic",
         0,
         StreamPosition(100, Timestamp(1554897174000L)),
-        StreamPosition(200, Timestamp(1554897175000L)))
+        StreamPosition(200, Timestamp(1554897175000L))
+      )
 
     val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), Seq(ranges))
 
@@ -74,12 +74,14 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
         "test-topic",
         0,
         StreamPosition(100, Timestamp(1554897174000L)),
-        StreamPosition(200, Timestamp(1554897175000L))),
+        StreamPosition(200, Timestamp(1554897175000L))
+      ),
       StreamRange(
         "test-topic",
         1,
         StreamPosition(300, Timestamp(1554897174100L)),
-        StreamPosition(400, Timestamp(1554897175200L)))
+        StreamPosition(400, Timestamp(1554897175200L))
+      )
     )
 
     val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), ranges)

@@ -73,7 +73,8 @@ class VerticaTests
         verticaContainer,
         hikariConf,
         dataSource,
-        table)
+        table
+      )
     backend.initialize()
     backend
   }
@@ -88,7 +89,8 @@ class VerticaTests
         verticaContainer,
         hikariConf,
         dataSource,
-        table)
+        table
+      )
     backend.initialize()
     backend
   }

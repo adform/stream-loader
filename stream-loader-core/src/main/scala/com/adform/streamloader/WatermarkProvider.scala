@@ -67,7 +67,8 @@ class MaxWatermarkProvider(validWatermarkDiff: Duration)(implicit timeProvider: 
       log.warn(
         s"Received a message with an out of bounds timestamp $timestamp (" + timestamp
           .format("yyyy/MM/dd HH:mm:ss")
-          .get + "), ignoring and not advancing the watermark")
+          .get + "), ignoring and not advancing the watermark"
+      )
     }
     watermark
   }

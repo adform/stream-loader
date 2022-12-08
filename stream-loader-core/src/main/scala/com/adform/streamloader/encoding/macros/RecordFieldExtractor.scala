@@ -49,10 +49,14 @@ object RecordFieldExtractor {
     val fieldTypeAnnotations = recordType.decls
       .filter(m => !m.isMethod)
       .map(m =>
-        (m.name.toString.trim, m.typeSignature.resultType match {
-          case t: AnnotatedType => t.annotations.map(a => DataTypeEncodingAnnotation.fromTree(c)(a))
-          case _ => Seq.empty
-        }))
+        (
+          m.name.toString.trim,
+          m.typeSignature.resultType match {
+            case t: AnnotatedType => t.annotations.map(a => DataTypeEncodingAnnotation.fromTree(c)(a))
+            case _ => Seq.empty
+          }
+        )
+      )
       .toMap
 
     getters.map(g => RecordField(g, fieldTypeAnnotations(g.name.toString)))

@@ -44,7 +44,8 @@ object FileCommitStrategy {
 
     require(
       fileOpenDuration.isDefined || fileSize.isDefined || recordsWritten.isDefined,
-      "At least one upper limit for the file commit strategy has to be defined")
+      "At least one upper limit for the file commit strategy has to be defined"
+    )
 
     override def shouldCommit(currFileOpenDuration: Duration, currFileSize: Long, currRecordsWritten: Long): Boolean = {
       fileOpenDuration.exists(d => currFileOpenDuration.toMillis >= d.toMillis) ||
@@ -60,7 +61,7 @@ object FileCommitStrategy {
   case class FuzzyReachedAnyOf(
       fileOpenDurationDistribution: Option[GaussianDistribution[Duration]] = None,
       fileSizeDistribution: Option[GaussianDistribution[Long]] = None,
-      recordsWrittenDistribution: Option[GaussianDistribution[Long]] = None,
+      recordsWrittenDistribution: Option[GaussianDistribution[Long]] = None
   )(randomSeed: Option[Int] = None)
       extends FileCommitStrategy {
 

@@ -19,7 +19,6 @@ import com.adform.streamloader.file.{Compression, StreamFileBuilder}
   *
   * @tparam R Type of the records written to files being built.
   *           An implicit [[CsvRecordEncoder]] for the type must be available.
-  *
   */
 class CsvFileBuilder[-R: CsvRecordEncoder](
     compression: Compression,

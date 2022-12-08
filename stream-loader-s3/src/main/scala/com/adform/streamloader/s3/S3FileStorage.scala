@@ -29,8 +29,8 @@ class S3FileStorage[P](
     with Logging {
 
   override protected def stageBatch(batch: PartitionedFileRecordBatch[P, FileRecordBatch]): S3MultiFileStaging = {
-    val stagings = batch.partitionBatches.map {
-      case (partition, partitionBatch) => stageSingleBatch(partition, partitionBatch)
+    val stagings = batch.partitionBatches.map { case (partition, partitionBatch) =>
+      stageSingleBatch(partition, partitionBatch)
     }
     log.debug(s"Successfully staged batch $batch")
     S3MultiFileStaging(stagings.toSeq)

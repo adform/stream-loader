@@ -111,7 +111,8 @@ abstract class VerticaStorageBackend(
 
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = {
+      partitions: Set[TopicPartition]
+  ): Map[TopicPartition, Option[StreamPosition]] = {
     val batchStorage = getBatchStorage
     val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)
     batchStorage.initialize(kafkaContext)
@@ -142,7 +143,8 @@ abstract class VerticaStorageBackend(
                   Option(rs.getObject("parent_id").asInstanceOf[java.lang.Long]).map(_.toLong),
                   rs.getObject("transaction_id").asInstanceOf[UUID],
                   rs.getBigDecimal("money_spent")
-                ))
+                )
+              )
 
               val topicPartition = new TopicPartition(rs.getString(TOPIC_COLUMN), rs.getInt(PARTITION_COLUMN))
               val position =
@@ -167,15 +169,16 @@ case class ExternalOffsetVerticaStorageBackend(
     verticaContainer: ContainerWithEndpoint,
     verticaConf: HikariConfig,
     dataSource: DataSource,
-    table: String)
-    extends VerticaStorageBackend(
+    table: String
+) extends VerticaStorageBackend(
       docker,
       dockerNetwork,
       kafkaContainer,
       verticaContainer,
       verticaConf,
       dataSource,
-      table) {
+      table
+    ) {
 
   override def getBatchStorage: RecordBatchStorage[RecordBatch] =
     ExternalOffsetVerticaFileStorage
@@ -191,7 +194,8 @@ case class ExternalOffsetVerticaStorageBackend(
         START_OFFSET_COLUMN,
         START_WATERMARK_COLUMN,
         END_OFFSET_COLUMN,
-        END_WATERMARK_COLUMN)
+        END_WATERMARK_COLUMN
+      )
       .build()
       .asInstanceOf[RecordBatchStorage[RecordBatch]]
 
@@ -239,15 +243,16 @@ case class InRowOffsetVerticaStorageBackend(
     verticaContainer: ContainerWithEndpoint,
     verticaConf: HikariConfig,
     dataSource: DataSource,
-    table: String)
-    extends VerticaStorageBackend(
+    table: String
+) extends VerticaStorageBackend(
       docker,
       dockerNetwork,
       kafkaContainer,
       verticaContainer,
       verticaConf,
       dataSource,
-      table) {
+      table
+    ) {
 
   override def getBatchStorage: RecordBatchStorage[RecordBatch] =
     InRowOffsetVerticaFileStorage

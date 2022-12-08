@@ -26,7 +26,8 @@ trait ByteWriter {
   def writeByteArray(bytes: Array[Byte], maxLength: Int, truncate: Boolean = true): Unit = {
     if (bytes.length > maxLength && !truncate)
       throw new IllegalArgumentException(
-        s"Byte array '${bytes.mkString(" ")}' occupies ${bytes.length} bytes and does not fit into $maxLength bytes")
+        s"Byte array '${bytes.mkString(" ")}' occupies ${bytes.length} bytes and does not fit into $maxLength bytes"
+      )
 
     var i = 0
     val len = Math.min(maxLength, bytes.length)
@@ -46,7 +47,8 @@ trait ByteWriter {
   def writeFixedByteArray(bytes: Array[Byte], length: Int, truncate: Boolean, padWith: Byte): Unit = {
     if (bytes.length > length && !truncate)
       throw new IllegalArgumentException(
-        s"Byte array '${bytes.mkString(" ")}' occupies ${bytes.length} bytes and does not fit into $length bytes")
+        s"Byte array '${bytes.mkString(" ")}' occupies ${bytes.length} bytes and does not fit into $length bytes"
+      )
 
     writeByteArray(bytes, length)
     for (_ <- 0 until (length - bytes.length)) { // right pad
@@ -65,7 +67,8 @@ trait ByteWriter {
 
     if (bytes.length > lengthBytes && !truncate)
       throw new IllegalArgumentException(
-        s"String '$s' occupies ${bytes.length} bytes and does not fit into $lengthBytes bytes")
+        s"String '$s' occupies ${bytes.length} bytes and does not fit into $lengthBytes bytes"
+      )
 
     writeByteArray(bytes, truncatedLength)
     for (_ <- 0 until (lengthBytes - truncatedLength)) { // right pad
@@ -89,13 +92,13 @@ trait ByteWriter {
       var idx = maxBytes // check the next byte after the limit
       if ((bytes(idx) & 0x80) == 0) { // is the high bit 0?
         maxBytes // if so, it's a single byte char, so it's safe to cut it off
-      } else if ((bytes(idx) & 0xC0) == 0xC0) { // are the two high bits 1?
+      } else if ((bytes(idx) & 0xc0) == 0xc0) { // are the two high bits 1?
         maxBytes // if so, it's the start of a multi-byte char, so it's safe to cut
       } else {
         // the high bit is 1, but the next one is 0, so we're inside a multi-byte char,
         // we have to go back and find the start of the sequence, i.e. the byte with
         // two high bits, which is the start of this sequence and cut there
-        do idx -= 1 while ((bytes(idx) & 0xC0) != 0xC0)
+        do idx -= 1 while ((bytes(idx) & 0xc0) != 0xc0)
         idx
       }
     }

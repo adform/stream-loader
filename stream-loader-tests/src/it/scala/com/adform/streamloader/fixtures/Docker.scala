@@ -132,7 +132,8 @@ trait Docker {
       docker
         .inspectContainer(container.id)
         .state()
-        .health()).map(_.status() == "healthy")
+        .health()
+    ).map(_.status() == "healthy")
 
   private def createNetwork(): DockerNetwork = {
     val networkName = s"${dockerSandboxId}_network"
