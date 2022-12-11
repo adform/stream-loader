@@ -60,3 +60,23 @@ trait PartitionGroupSinker {
     */
   def close(): Unit
 }
+
+/**
+  * A [[PartitionGroupSinker]] that wraps another sinker instance and by default forwards all actions to it.
+  * Used for implementing other wrapper sinks in order to avoid boilerplate.
+  *
+  * @param basesSinker The base sinker to forward to.
+  */
+abstract class WrappedPartitionGroupSinker(basesSinker: PartitionGroupSinker) extends PartitionGroupSinker {
+
+  override val groupName: String = basesSinker.groupName
+  override val groupPartitions: Set[TopicPartition] = basesSinker.groupPartitions
+
+  override def initialize(kafkaContext: KafkaContext): Map[TopicPartition, Option[StreamPosition]] =
+    basesSinker.initialize(kafkaContext)
+
+  override def write(record: StreamRecord): Unit = basesSinker.write(record)
+  override def heartbeat(): Unit = basesSinker.heartbeat()
+
+  override def close(): Unit = basesSinker.close()
+}

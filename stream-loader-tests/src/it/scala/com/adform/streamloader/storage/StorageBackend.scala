@@ -11,13 +11,14 @@ package com.adform.streamloader.storage
 import java.util.Properties
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork}
 import com.adform.streamloader.model.{StorageMessage, StreamPosition}
-import com.adform.streamloader.source.KafkaContext
+import com.adform.streamloader.source.{KafkaContext, LockingKafkaContext}
 import com.spotify.docker.client.DockerClient
-import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer, OffsetAndMetadata}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer, OffsetAndMetadata, OffsetAndTimestamp}
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.rng.Seed
 import org.scalacheck.{Arbitrary, Gen}
 
+import java.util.concurrent.locks.ReentrantLock
 import scala.jdk.CollectionConverters._
 
 case class LoaderKafkaConfig(consumerGroup: String, topic: String)
@@ -69,12 +70,6 @@ trait StorageBackend[M <: StorageMessage] {
       )
     }
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
-    new KafkaContext {
-      override val consumerGroup: String = consumerGroupId
-      override def commitSync(offsets: Map[TopicPartition, OffsetAndMetadata]): Unit = {}
-      override def committed(tps: Set[TopicPartition]): Map[TopicPartition, Option[OffsetAndMetadata]] = {
-        consumer.committed(tps.asJava).asScala.map(kv => (kv._1, Option(kv._2))).toMap
-      }
-    }
+    new LockingKafkaContext(consumer, consumerGroupId, new ReentrantLock())
   }
 }

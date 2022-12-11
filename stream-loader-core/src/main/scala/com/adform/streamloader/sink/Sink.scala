@@ -77,3 +77,24 @@ object Sink {
     def build(): Sink
   }
 }
+
+/**
+  * A [[Sink]] that wraps another sink instance and by default forwards all operations to it.
+  * Used for implementing concrete wrapping sinks in order to avoid boilerplate.
+  *
+  * @param baseSink The base sink to wrap.
+  * @tparam S Type of sink being wrapped.
+  */
+abstract class WrappedSink[S <: Sink](baseSink: S) extends Sink {
+  override def initialize(kafkaContext: KafkaContext): Unit = baseSink.initialize(kafkaContext)
+
+  override def assignPartitions(partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] =
+    baseSink.assignPartitions(partitions)
+  override def revokePartitions(partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] =
+    baseSink.revokePartitions(partitions)
+
+  override def write(record: StreamRecord): Unit = baseSink.write(record)
+  override def heartbeat(): Unit = baseSink.heartbeat()
+
+  override def close(): Unit = baseSink.close()
+}

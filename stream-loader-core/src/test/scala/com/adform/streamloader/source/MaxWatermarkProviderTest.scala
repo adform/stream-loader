@@ -9,7 +9,7 @@
 package com.adform.streamloader.source
 
 import com.adform.streamloader.model.Timestamp
-import com.adform.streamloader.util.TimeProvider
+import com.adform.streamloader.util.{MockTimeProvider, TimeProvider}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -17,10 +17,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import java.time.Duration
 
 class MaxWatermarkProviderTest extends AnyFunSpec with Matchers with ScalaCheckPropertyChecks {
-
-  class MockTimeProvider(var time: Long) extends TimeProvider {
-    override def currentMillis: Long = time
-  }
 
   it("should advance the watermark when time advances") {
     val wp = new MaxWatermarkProvider(Duration.ofHours(1))(new MockTimeProvider(0L))
