@@ -9,10 +9,10 @@
 package com.adform.streamloader.clickhouse
 
 import java.sql.Connection
-
-import com.adform.streamloader.batch.storage._
 import com.adform.streamloader.model._
+import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
+
 import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 import ru.yandex.clickhouse.ClickHouseConnection

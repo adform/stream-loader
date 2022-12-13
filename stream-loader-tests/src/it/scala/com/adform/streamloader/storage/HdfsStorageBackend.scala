@@ -9,10 +9,10 @@
 package com.adform.streamloader.storage
 
 import java.util.UUID
-import com.adform.streamloader.file.{FilePathFormatter, TimePartitioningFilePathFormatter}
 import com.adform.streamloader.fixtures._
 import com.adform.streamloader.hadoop.HadoopFileStorage
 import com.adform.streamloader.model.{ExampleMessage, StreamPosition}
+import com.adform.streamloader.sink.file.{FilePathFormatter, TimePartitioningFilePathFormatter}
 import com.adform.streamloader.{BuildInfo, Loader}
 import com.sksamuel.avro4s.{RecordFormat, ScalePrecision}
 import com.spotify.docker.client.DockerClient
@@ -35,8 +35,8 @@ case class HdfsStorageBackend(
     datanodeContainer: Container,
     hdfs: FileSystem,
     baseDir: String,
-    loader: Loader)
-    extends StorageBackend[ExampleMessage] {
+    loader: Loader
+) extends StorageBackend[ExampleMessage] {
 
   override def arbMessage: Arbitrary[ExampleMessage] = ExampleMessage.arbMessage
 
@@ -95,7 +95,7 @@ case class HdfsStorageBackend(
 
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition],
+      partitions: Set[TopicPartition]
   ): Map[TopicPartition, Option[StreamPosition]] = {
 
     val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)

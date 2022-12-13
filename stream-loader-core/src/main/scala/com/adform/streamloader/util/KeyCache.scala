@@ -63,7 +63,6 @@ class PerPartitionKeyCache[A] private (cacheSize: Int, val cacheForPartition: mu
   /**
     * Called on `ConsumerRebalanceListener.onPartitionsRevoked`
     *
-    *
     * @see {@link org.apache.kafka.clients.consumer.ConsumerRebalanceListener#onPartitionsRevoked(Collection<TopicPartition> partitions) }
     * @param partition - partition revoked from consumer
     */

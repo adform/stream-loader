@@ -11,9 +11,8 @@ package com.adform.streamloader.clickhouse.rowbinary
 import java.nio.{ByteBuffer, ByteOrder}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
-
-import com.adform.streamloader.encoding.binary.LittleEndianByteWriter
 import com.adform.streamloader.model.Timestamp
+import com.adform.streamloader.sink.encoding.binary.LittleEndianByteWriter
 
 /**
   * Implementations for writing primitive data types in the ClickHouse native RowBinary encoding.
@@ -42,7 +41,8 @@ trait RowBinaryClickHousePrimitiveTypeWriter extends LittleEndianByteWriter {
 
     if (bytes.length > maxBytes && !truncate)
       throw new IllegalArgumentException(
-        s"String '$s' occupies ${bytes.length} bytes and does not fit into $maxBytes bytes")
+        s"String '$s' occupies ${bytes.length} bytes and does not fit into $maxBytes bytes"
+      )
 
     writeLeb128(truncatedLength)
     writeByteArray(bytes, truncatedLength)

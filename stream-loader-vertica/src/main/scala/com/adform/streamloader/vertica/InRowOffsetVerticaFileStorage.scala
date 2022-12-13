@@ -9,9 +9,8 @@
 package com.adform.streamloader.vertica
 
 import java.sql.{Connection, SQLDataException}
-
-import com.adform.streamloader.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
+import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
 import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
@@ -103,7 +102,8 @@ object InRowOffsetVerticaFileStorage {
       private val _topicColumnName: String,
       private val _partitionColumnName: String,
       private val _offsetColumnName: String,
-      private val _watermarkColumnName: String) {
+      private val _watermarkColumnName: String
+  ) {
 
     /**
       * Sets a data source for Vertica JDBC connections.
@@ -142,7 +142,8 @@ object InRowOffsetVerticaFileStorage {
         _topicColumnName,
         _partitionColumnName,
         _offsetColumnName,
-        _watermarkColumnName)
+        _watermarkColumnName
+      )
     }
   }
 

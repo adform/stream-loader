@@ -9,7 +9,7 @@
 package com.adform.streamloader.clickhouse.rowbinary
 
 import com.adform.streamloader.clickhouse.ClickHouseFileBuilder
-import com.adform.streamloader.file.{Compression, StreamFileBuilder}
+import com.adform.streamloader.sink.file.{Compression, StreamFileBuilder}
 import ru.yandex.clickhouse.domain.ClickHouseFormat
 
 /**
@@ -21,7 +21,7 @@ import ru.yandex.clickhouse.domain.ClickHouseFormat
   * @tparam R type of the records written to files being built.
   */
 class RowBinaryClickHouseFileBuilder[-R: RowBinaryClickHouseRecordEncoder](
-    bufferSizeBytes: Int = 8192,
+    bufferSizeBytes: Int = 8192
 ) extends StreamFileBuilder[R](
       os => new RowBinaryClickHouseRecordStreamWriter[R](os),
       Compression.NONE,

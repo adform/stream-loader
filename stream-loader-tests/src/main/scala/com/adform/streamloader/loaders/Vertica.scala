@@ -8,20 +8,22 @@
 
 package com.adform.streamloader.loaders
 
-import java.time.LocalDateTime
-import java.util.UUID
-
-import com.adform.streamloader.batch.{RecordBatchingSink, RecordFormatter}
-import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, MaxLength}
-import com.adform.streamloader.file.FileCommitStrategy.ReachedAnyOf
-import com.adform.streamloader.file._
-import com.adform.streamloader.model.{ExampleMessage, Record, Timestamp}
+import com.adform.streamloader.model.{ExampleMessage, StreamRecord, Timestamp}
+import com.adform.streamloader.sink.Sink
+import com.adform.streamloader.sink.batch.{RecordBatchingSink, RecordFormatter}
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation.{DecimalEncoding, MaxLength}
+import com.adform.streamloader.sink.file.Compression
+import com.adform.streamloader.sink.file.FileCommitStrategy.ReachedAnyOf
+import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.vertica._
 import com.adform.streamloader.vertica.file.native.NativeVerticaFileBuilder
-import com.adform.streamloader.{KafkaSource, Loader, Sink, StreamLoader}
+import com.adform.streamloader.{Loader, StreamLoader}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+
+import java.time.LocalDateTime
+import java.util.UUID
 
 abstract class BaseVerticaLoader extends Loader {
 
@@ -106,7 +108,7 @@ case class TestExternalOffsetVerticaRecord(
 
 object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
 
-  private val recordFormatter = (fileId: Long, record: Record) => {
+  private val recordFormatter = (fileId: Long, record: StreamRecord) => {
     val msg = ExampleMessage.parseFrom(record.consumerRecord.value())
     Seq(
       TestExternalOffsetVerticaRecord(
@@ -121,7 +123,8 @@ object TestExternalOffsetVerticaLoader extends BaseVerticaLoader {
         msg.parentId,
         msg.transactionId,
         msg.moneySpent
-      ))
+      )
+    )
   }
 
   override def sink(cfg: Config, verticaDataSource: HikariDataSource): Sink =

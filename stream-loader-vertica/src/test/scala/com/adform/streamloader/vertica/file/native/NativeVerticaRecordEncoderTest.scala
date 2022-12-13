@@ -10,7 +10,7 @@ package com.adform.streamloader.vertica.file.native
 
 import java.io.ByteArrayOutputStream
 
-import com.adform.streamloader.encoding.macros.DataTypeEncodingAnnotation._
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation._
 import com.adform.streamloader.model.Timestamp
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -74,7 +74,7 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
       idx match {
         case 0 => col1Null = true
         case 1 => col2Null = true
-    }
+      }
 
     encoderFor[OptionalRecord].setNullBits(OptionalRecord(Some(1), None), nullSetter)
 
@@ -142,7 +142,8 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
         BigDecimal(12345.67890123),
         BigDecimal(123456789.123456789)
       ),
-      testWriter)
+      testWriter
+    )
 
     expectedWriter.writeInt64(123456789012300L)
 

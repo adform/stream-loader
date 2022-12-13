@@ -8,9 +8,9 @@
 
 package com.adform.streamloader.clickhouse.rowbinary
 
-import java.io.OutputStream
+import com.adform.streamloader.sink.batch.RecordStreamWriter
 
-import com.adform.streamloader.batch.RecordStreamWriter
+import java.io.OutputStream
 
 /**
   * Stream writer implementation that encodes records using an implicit [[RowBinaryClickHouseRecordEncoder]]

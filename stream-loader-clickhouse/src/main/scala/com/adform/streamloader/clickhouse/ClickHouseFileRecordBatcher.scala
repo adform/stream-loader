@@ -8,9 +8,9 @@
 
 package com.adform.streamloader.clickhouse
 
-import com.adform.streamloader.batch.RecordFormatter
-import com.adform.streamloader.file.{FileCommitStrategy, FileRecordBatcher}
-import com.adform.streamloader.model.RecordRange
+import com.adform.streamloader.model.StreamRange
+import com.adform.streamloader.sink.batch.RecordFormatter
+import com.adform.streamloader.sink.file.{FileCommitStrategy, FileRecordBatcher}
 
 class ClickHouseFileRecordBatcher[R](
     recordFormatter: RecordFormatter[R],
@@ -19,12 +19,14 @@ class ClickHouseFileRecordBatcher[R](
 ) extends FileRecordBatcher[R, ClickHouseFileRecordBatch, ClickHouseFileBuilder[R]](
       recordFormatter,
       fileBuilderFactory,
-      fileCommitStrategy) {
+      fileCommitStrategy
+    ) {
 
   override def constructBatch(
       fileBuilder: ClickHouseFileBuilder[R],
-      recordRanges: Seq[RecordRange],
-      recordCount: Long): Option[ClickHouseFileRecordBatch] = {
+      recordRanges: Seq[StreamRange],
+      recordCount: Long
+  ): Option[ClickHouseFileRecordBatch] = {
     fileBuilder
       .build()
       .map(f => ClickHouseFileRecordBatch(f, fileBuilder.format, recordRanges, fileBuilder.getRecordCount))
@@ -61,7 +63,7 @@ object ClickHouseFileRecordBatcher {
       new ClickHouseFileRecordBatcher(
         _recordFormatter,
         _fileBuilderFactory,
-        _fileCommitStrategy,
+        _fileCommitStrategy
       )
     }
   }

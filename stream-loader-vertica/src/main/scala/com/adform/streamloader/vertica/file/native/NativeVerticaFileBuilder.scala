@@ -9,8 +9,7 @@
 package com.adform.streamloader.vertica.file.native
 
 import java.io.File
-
-import com.adform.streamloader.file.{Compression, StreamFileBuilder}
+import com.adform.streamloader.sink.file.{Compression, StreamFileBuilder}
 import com.adform.streamloader.vertica.VerticaLoadMethod
 import com.adform.streamloader.vertica.file.VerticaFileBuilder
 

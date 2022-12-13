@@ -8,6 +8,11 @@
 
 package com.adform.streamloader
 
+import com.adform.streamloader.sink.Sink
+import com.adform.streamloader.source.KafkaSource
+
+import java.util.concurrent.atomic.AtomicBoolean
+import com.adform.streamloader.util.{KeyCache, Logging, MetricTag, Metrics}
 import com.adform.streamloader.util.{KeyCache, Logging, MetricTag, Metrics}
 import io.micrometer.core.instrument.MeterRegistry
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener
@@ -30,8 +35,8 @@ trait StreamLoader {
 class DefaultStreamLoader private (
     source: KafkaSource,
     sink: Sink,
-    consumerRebalanceListener: ConsumerRebalanceListener)
-    extends Logging
+    consumerRebalanceListener: ConsumerRebalanceListener
+) extends Logging
     with Metrics {
   override protected def metricsRoot: String = "stream_loader"
 
@@ -98,8 +103,8 @@ class DeduplicatingStreamLoader private (
     source: KafkaSource,
     sink: Sink,
     consumerRebalanceListener: ConsumerRebalanceListener,
-    cache: KeyCache[Array[Byte]])
-    extends Logging
+    cache: KeyCache[Array[Byte]]
+) extends Logging
     with Metrics {
 
   override protected def metricsRoot: String = "stream_loader"
@@ -127,9 +132,10 @@ class DeduplicatingStreamLoader private (
         var recordsPolled = 0
 
         for (record <- source.poll()) {
-          val key = record.key()
-          val partition = record.partition()
-          if (cache.verifyAndSwitchIfReady(partition, record.offset()) && !cache.contains(partition, key)) {
+          val consumerRecord = record.consumerRecord
+          val key = consumerRecord.key()
+          val partition = consumerRecord.partition()
+          if (cache.verifyAndSwitchIfReady(partition, consumerRecord.offset()) && !cache.contains(partition, key)) {
             sink.write(record)
           }
           cache.add(partition, key)

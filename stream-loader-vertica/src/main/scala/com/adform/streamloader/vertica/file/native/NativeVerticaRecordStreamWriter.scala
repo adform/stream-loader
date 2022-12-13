@@ -8,9 +8,9 @@
 
 package com.adform.streamloader.vertica.file.native
 
-import java.io.{ByteArrayOutputStream, OutputStream}
+import com.adform.streamloader.sink.batch.RecordStreamWriter
 
-import com.adform.streamloader.batch.RecordStreamWriter
+import java.io.{ByteArrayOutputStream, OutputStream}
 
 /**
   * Stream writer implementation that encodes records using an implicit [[NativeVerticaRecordEncoder]]
@@ -39,8 +39,10 @@ class NativeVerticaRecordStreamWriter[R: NativeVerticaRecordEncoder](os: OutputS
   }
 
   override def writeHeader(): Unit = {
-    pw.writeBytes(0x4E, 0x41, 0x54, 0x49, 0x56, 0x45, 0x0A, 0xFF, 0x0D, 0x0A, 0x00) // magic bytes
-    pw.writeInt32(2 + 1 + 2 + 4 * columnCount) // size of header = version + filler + column count (short) + column sizes (ints)
+    pw.writeBytes(0x4e, 0x41, 0x54, 0x49, 0x56, 0x45, 0x0a, 0xff, 0x0d, 0x0a, 0x00) // magic bytes
+    pw.writeInt32(
+      2 + 1 + 2 + 4 * columnCount
+    ) // size of header = version + filler + column count (short) + column sizes (ints)
     pw.writeBytes(0x01, 0x00) // version
     pw.writeByte(0x00) // filler
     pw.writeInt16(columnCount.asInstanceOf[Short]) // column count

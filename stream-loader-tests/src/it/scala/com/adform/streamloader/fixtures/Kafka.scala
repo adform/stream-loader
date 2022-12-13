@@ -79,10 +79,12 @@ trait Kafka { this: Docker =>
     val consumptionThread = new Thread(() =>
       withKafkaConsumer() { consumer =>
         consumer.assign(tps.asJava)
-        while (running.get()) consumer
-          .poll(Duration.ofMillis(100))
-          .forEach(buffer.append(_))
-    })
+        while (running.get())
+          consumer
+            .poll(Duration.ofMillis(100))
+            .forEach(buffer.append(_))
+      }
+    )
 
     try {
       consumptionThread.start()
@@ -97,7 +99,8 @@ trait Kafka { this: Docker =>
     Using(createKafkaAdminClient())(code).get
 
   def withKafkaConsumer[T](groupId: String = UUID.randomUUID().toString)(
-      code: KafkaConsumer[Array[Byte], Array[Byte]] => T): T =
+      code: KafkaConsumer[Array[Byte], Array[Byte]] => T
+  ): T =
     Using(createKafkaConsumer(groupId))(code).get
 
   def withKafkaProducer[T](code: KafkaProducer[Array[Byte], Array[Byte]] => T): T =
@@ -176,10 +179,12 @@ trait Kafka { this: Docker =>
     producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.endpoint)
     producerProps.put(
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-      classOf[org.apache.kafka.common.serialization.ByteArraySerializer].getName)
+      classOf[org.apache.kafka.common.serialization.ByteArraySerializer].getName
+    )
     producerProps.put(
       ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-      classOf[org.apache.kafka.common.serialization.ByteArraySerializer].getName)
+      classOf[org.apache.kafka.common.serialization.ByteArraySerializer].getName
+    )
     producerProps.put(ProducerConfig.RETRIES_CONFIG, "10")
     new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
   }
@@ -191,10 +196,12 @@ trait Kafka { this: Docker =>
     consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
     consumerProps.put(
       ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-      classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName)
+      classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName
+    )
     consumerProps.put(
       ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-      classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName)
+      classOf[org.apache.kafka.common.serialization.ByteArrayDeserializer].getName
+    )
     new KafkaConsumer[Array[Byte], Array[Byte]](consumerProps)
   }
 }

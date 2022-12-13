@@ -25,8 +25,9 @@ trait BasicLoaderBehaviors {
 
   private def genTestId: String = UUID.randomUUID().toString.take(6)
 
-  def basicLoader[M <: StorageMessage](testPrefix: String, storageBackendFactory: String => StorageBackend[M])(
-      implicit ec: ExecutionContext): Unit = {
+  def basicLoader[M <: StorageMessage](testPrefix: String, storageBackendFactory: String => StorageBackend[M])(implicit
+      ec: ExecutionContext
+  ): Unit = {
 
     it(s"$testPrefix should load messages from Kafka") {
       val testName = s"simple_test_$genTestId"

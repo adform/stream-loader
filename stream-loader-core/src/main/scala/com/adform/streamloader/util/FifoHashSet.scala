@@ -17,7 +17,6 @@ import java.util
   *
   *   FIFO Hash set storing keys, removes last element while adding new element.
   *   Adds key to beginning, if key already exists it will be moved to beginning of the set
-  *
   */
 class FifoHashSet[A] private (maxEntries: Int, set: ObjectLinkedOpenHashSet[A]) extends util.AbstractSet[A] {
 

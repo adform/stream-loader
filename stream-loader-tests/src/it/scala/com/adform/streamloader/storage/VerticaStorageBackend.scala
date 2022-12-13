@@ -9,11 +9,11 @@
 package com.adform.streamloader.storage
 
 import java.util.UUID
-
-import com.adform.streamloader.batch.storage.RecordBatchStorage
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork, SimpleContainer}
 import com.adform.streamloader.loaders.{TestExternalOffsetVerticaLoader, TestInRowOffsetVerticaLoader}
-import com.adform.streamloader.model.{ExampleMessage, RecordBatch, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{ExampleMessage, StreamPosition, Timestamp}
+import com.adform.streamloader.sink.batch.RecordBatch
+import com.adform.streamloader.sink.batch.storage.RecordBatchStorage
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.vertica.{ExternalOffsetVerticaFileStorage, InRowOffsetVerticaFileStorage}
 import com.adform.streamloader.{BuildInfo, Loader}
@@ -110,7 +110,8 @@ abstract class VerticaStorageBackend(
 
   override def committedPositions(
       loaderKafkaConfig: LoaderKafkaConfig,
-      partitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = {
+      partitions: Set[TopicPartition]
+  ): Map[TopicPartition, Option[StreamPosition]] = {
     val batchStorage = getBatchStorage
     val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)
     batchStorage.initialize(kafkaContext)
@@ -141,7 +142,8 @@ abstract class VerticaStorageBackend(
                   Option(rs.getObject("parent_id").asInstanceOf[java.lang.Long]).map(_.toLong),
                   rs.getObject("transaction_id").asInstanceOf[UUID],
                   rs.getBigDecimal("money_spent")
-                ))
+                )
+              )
 
               val topicPartition = new TopicPartition(rs.getString(TOPIC_COLUMN), rs.getInt(PARTITION_COLUMN))
               val position =
@@ -166,15 +168,16 @@ case class ExternalOffsetVerticaStorageBackend(
     verticaContainer: ContainerWithEndpoint,
     verticaConf: HikariConfig,
     dataSource: DataSource,
-    table: String)
-    extends VerticaStorageBackend(
+    table: String
+) extends VerticaStorageBackend(
       docker,
       dockerNetwork,
       kafkaContainer,
       verticaContainer,
       verticaConf,
       dataSource,
-      table) {
+      table
+    ) {
 
   override def getBatchStorage: RecordBatchStorage[RecordBatch] =
     ExternalOffsetVerticaFileStorage
@@ -190,7 +193,8 @@ case class ExternalOffsetVerticaStorageBackend(
         START_OFFSET_COLUMN,
         START_WATERMARK_COLUMN,
         END_OFFSET_COLUMN,
-        END_WATERMARK_COLUMN)
+        END_WATERMARK_COLUMN
+      )
       .build()
       .asInstanceOf[RecordBatchStorage[RecordBatch]]
 
@@ -238,15 +242,16 @@ case class InRowOffsetVerticaStorageBackend(
     verticaContainer: ContainerWithEndpoint,
     verticaConf: HikariConfig,
     dataSource: DataSource,
-    table: String)
-    extends VerticaStorageBackend(
+    table: String
+) extends VerticaStorageBackend(
       docker,
       dockerNetwork,
       kafkaContainer,
       verticaContainer,
       verticaConf,
       dataSource,
-      table) {
+      table
+    ) {
 
   override def getBatchStorage: RecordBatchStorage[RecordBatch] =
     InRowOffsetVerticaFileStorage

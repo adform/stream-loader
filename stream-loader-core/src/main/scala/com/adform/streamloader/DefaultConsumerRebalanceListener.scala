@@ -8,6 +8,8 @@
 
 package com.adform.streamloader
 
+import com.adform.streamloader.sink.Sink
+import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.{KeyCache, Logging}
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener
 import org.apache.kafka.common.TopicPartition

@@ -51,7 +51,8 @@ trait Metrics {
       name: String,
       metric: T,
       tdf: ToDoubleFunction[T],
-      tags: Seq[MetricTag] = Seq()): Gauge = {
+      tags: Seq[MetricTag] = Seq()
+  ): Gauge = {
     val uniqueMetricName = s"$name:${tags.toList.sortBy(_.name).map(t => s"${t.name}=${t.value}").mkString(":")}"
     Metrics.gauges.put(uniqueMetricName, metric)
     Gauge

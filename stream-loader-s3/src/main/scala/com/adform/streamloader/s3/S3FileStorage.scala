@@ -8,8 +8,8 @@
 
 package com.adform.streamloader.s3
 
-import com.adform.streamloader.batch.storage.TwoPhaseCommitBatchStorage
-import com.adform.streamloader.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
+import com.adform.streamloader.sink.batch.storage.TwoPhaseCommitBatchStorage
+import com.adform.streamloader.sink.file.{FilePathFormatter, FileRecordBatch, PartitionedFileRecordBatch}
 import com.adform.streamloader.util.Logging
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
@@ -29,8 +29,8 @@ class S3FileStorage[P](
     with Logging {
 
   override protected def stageBatch(batch: PartitionedFileRecordBatch[P, FileRecordBatch]): S3MultiFileStaging = {
-    val stagings = batch.partitionBatches.map {
-      case (partition, partitionBatch) => stageSingleBatch(partition, partitionBatch)
+    val stagings = batch.partitionBatches.map { case (partition, partitionBatch) =>
+      stageSingleBatch(partition, partitionBatch)
     }
     log.debug(s"Successfully staged batch $batch")
     S3MultiFileStaging(stagings.toSeq)

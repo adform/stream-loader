@@ -11,9 +11,8 @@ package com.adform.streamloader.vertica.file.native
 import java.nio.{ByteBuffer, ByteOrder}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
-
-import com.adform.streamloader.encoding.binary.LittleEndianByteWriter
 import com.adform.streamloader.model.Timestamp
+import com.adform.streamloader.sink.encoding.binary.LittleEndianByteWriter
 
 /**
   * Implementations for writing primitive data types in the Vertica native file encoding.
@@ -41,7 +40,8 @@ trait NativeVerticaPrimitiveTypeWriter extends LittleEndianByteWriter {
 
     if (bytes.length > maxBytes && !truncate)
       throw new IllegalArgumentException(
-        s"String '$s' occupies ${bytes.length} bytes and does not fit into $maxBytes bytes")
+        s"String '$s' occupies ${bytes.length} bytes and does not fit into $maxBytes bytes"
+      )
 
     writeInt32(truncatedLength)
     writeByteArray(bytes, truncatedLength)
@@ -53,7 +53,8 @@ trait NativeVerticaPrimitiveTypeWriter extends LittleEndianByteWriter {
   def writeVarByteArray(bytes: Array[Byte], maxLength: Int, truncate: Boolean): Unit = {
     if (bytes.length > maxLength && !truncate)
       throw new IllegalArgumentException(
-        s"Byte array '${bytes.mkString(" ")}' occupies ${bytes.length} bytes and does not fit into $maxLength bytes")
+        s"Byte array '${bytes.mkString(" ")}' occupies ${bytes.length} bytes and does not fit into $maxLength bytes"
+      )
 
     val len = Math.min(bytes.length, maxLength)
     writeInt32(len)

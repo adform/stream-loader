@@ -24,13 +24,15 @@ class MultiFileStagingTest extends AnyFunSpec with Matchers with ScalaCheckPrope
     Seq(
       FileStaging("staged1", "destination1"),
       FileStaging("staged2", "destination2")
-    ))
+    )
+  )
 
   val testStagingJson: JValue = JArray(
     List(
       JObject("staged_file_path" -> JString("staged1"), "destination_file_path" -> JString("destination1")),
       JObject("staged_file_path" -> JString("staged2"), "destination_file_path" -> JString("destination2"))
-    ))
+    )
+  )
 
   val singleStagingGen: Gen[FileStaging] = for {
     staged <- Gen.asciiPrintableStr
