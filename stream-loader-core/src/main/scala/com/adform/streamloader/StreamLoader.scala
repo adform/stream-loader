@@ -120,6 +120,8 @@ class DeduplicatingStreamLoader private (
       val recordsPolledDistribution =
         createDistribution("kafka.records.polled", Seq(MetricTag("loader-thread", Thread.currentThread().getName)))
 
+      val duplicates = createCounter("duplicates", Seq(MetricTag("loader-thread", Thread.currentThread().getName)))
+
       log.debug("Initializing source and sink")
       val kafkaContext = source.initialize()
       sink.initialize(kafkaContext)
@@ -137,6 +139,8 @@ class DeduplicatingStreamLoader private (
           val partition = consumerRecord.partition()
           if (cache.verifyAndSwitchIfReady(partition, consumerRecord.offset()) && !cache.contains(partition, key)) {
             sink.write(record)
+          } else {
+            duplicates.increment()
           }
           cache.add(partition, key)
           recordsPolled += 1

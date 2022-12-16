@@ -8,6 +8,8 @@
 
 package com.adform.streamloader.util
 
+import io.micrometer.core.instrument.Gauge
+
 import scala.collection.mutable
 
 /**
@@ -80,9 +82,9 @@ class PerPartitionKeyCache[A] private (cacheSize: Int, val cacheForPartition: mu
     val partitionData = cacheForPartition(partition)
     if (partitionData.isReady) {
       true
-    } else if (partitionData.startOffset <= offset) {
+    } else if (partitionData.startOffset < offset) {
       partitionData.isReady = true
-      log.info(s"Cache for partition $partition ready")
+      log.info(s"Cache for partition $partition ready: ${partitionData.keySize()} ")
       partitionData.isReady
     } else {
       false
@@ -125,6 +127,6 @@ case class PartitionData[A](var isReady: Boolean, startOffset: Long, keys: FifoH
   def addKey(a: A): Unit = {
     keys.add(a)
   }
-  def containsKey(a: A): Boolean = keys.add(a)
+  def containsKey(a: A): Boolean = keys.contains(a)
   def keySize(): Int = keys.size()
 }
