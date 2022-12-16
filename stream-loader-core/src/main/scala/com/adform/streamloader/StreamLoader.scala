@@ -137,11 +137,14 @@ class DeduplicatingStreamLoader private (
           val consumerRecord = record.consumerRecord
           val key = consumerRecord.key()
           val partition = consumerRecord.partition()
-          if (cache.verifyAndSwitchIfReady(partition, consumerRecord.offset()) && !cache.contains(partition, key)) {
+          val canBeWritten = !cache.contains(partition, key)
+          if (cache.verifyAndSwitchIfReady(partition, consumerRecord.offset()) && canBeWritten) {
             sink.write(record)
-          } else {
+          }
+          if (!canBeWritten) {
             duplicates.increment()
           }
+
           cache.add(partition, key)
           recordsPolled += 1
         }
