@@ -25,7 +25,7 @@ import scala.collection.concurrent.TrieMap
   * separate groups for smaller and larger topics, each group receiving a separate [[PartitionGroupSinker]].
   * E.g., if the sinker writes all data to a file, you would end up with separate files for smaller and larger topics.
   */
-abstract class PartitionGroupingSink extends Sink with Logging {
+trait PartitionGroupingSink extends Sink with Logging {
 
   private val partitionGroups = TrieMap[String, (Set[TopicPartition], PartitionGroupSinker)]()
   private val partitionSinkers = TrieMap[TopicPartition, PartitionGroupSinker]()

@@ -8,7 +8,7 @@
 
 package com.adform.streamloader.source
 
-import org.apache.kafka.clients.consumer.{KafkaConsumer, OffsetAndMetadata}
+import org.apache.kafka.clients.consumer.{KafkaConsumer, OffsetAndMetadata, OffsetAndTimestamp}
 import org.apache.kafka.common.TopicPartition
 
 import java.util.concurrent.locks.ReentrantLock
@@ -28,6 +28,11 @@ trait KafkaContext {
     * Retrieves the committed offsets for the given topic partitions from Kafka.
     */
   def committed(topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[OffsetAndMetadata]]
+
+  /**
+    * Look up the offsets for the given partitions by timestamp.
+    */
+  def offsetsForTimes(timestamps: Map[TopicPartition, Long]): Map[TopicPartition, Option[OffsetAndTimestamp]]
 
   /**
     * Commits offsets to Kafka synchronously.
@@ -52,6 +57,17 @@ class LockingKafkaContext(
   def committed(topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[OffsetAndMetadata]] = withLock {
     consumer.committed(topicPartitions.asJava).asScala.map(kv => (kv._1, Option(kv._2))).toMap
   }
+
+  def offsetsForTimes(timestamps: Map[TopicPartition, Long]): Map[TopicPartition, Option[OffsetAndTimestamp]] =
+    withLock {
+      consumer
+        .offsetsForTimes(
+          timestamps.map(kv => (kv._1, java.lang.Long.valueOf(kv._2))).asJava
+        )
+        .asScala
+        .map(kv => (kv._1, Option(kv._2)))
+        .toMap
+    }
 
   def commitSync(offsets: Map[TopicPartition, OffsetAndMetadata]): Unit = withLock {
     consumer.commitSync(offsets.asJava)

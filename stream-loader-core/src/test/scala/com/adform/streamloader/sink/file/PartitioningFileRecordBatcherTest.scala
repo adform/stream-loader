@@ -8,18 +8,14 @@
 
 package com.adform.streamloader.sink.file
 
-import java.io.File
-import java.nio.file.Files
-import java.util.Optional
+import com.adform.streamloader.model.Generators._
 import com.adform.streamloader.model.{StreamPosition, StreamRange, StreamRecord, Timestamp}
 import com.adform.streamloader.sink.encoding.csv.CsvFileBuilder
-import com.adform.streamloader.sink.file.{Compression, PartitioningFileRecordBatcher}
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.header.internals.RecordHeaders
-import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.io.File
+import java.nio.file.Files
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -47,7 +43,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
 
       val builder = batcher.newBatchBuilder()
       for (i <- 0 until 100) {
-        builder.add(newRecord("topic", 0, Timestamp(i), i, "key", i.toString))
+        builder.add(newStreamRecord("topic", 0, i, Timestamp(i), "key", i.toString))
       }
 
       it("should not be ready yet") {
@@ -86,7 +82,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
 
       val builder = batcher.newBatchBuilder()
       for (i <- 0 until 1000) {
-        builder.add(newRecord("topic", 0, Timestamp(i), i, "key", "1"))
+        builder.add(newStreamRecord("topic", 0, i, Timestamp(i), "key", "1"))
       }
 
       it("should be ready by now") {
@@ -104,7 +100,7 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
 
       val builder = batcher.newBatchBuilder()
       for (i <- 0 until 100) {
-        builder.add(newRecord("topic", 0, Timestamp(i), i, "key", "1"))
+        builder.add(newStreamRecord("topic", 0, i, Timestamp(i), "key", "1"))
       }
       val batch = builder.build().get
       val files = batch.fileBatches.map(_.file)
@@ -115,30 +111,6 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
         files.exists(_.exists()) shouldBe false
       }
     }
-  }
-
-  def newRecord(
-      topic: String,
-      partition: Int,
-      timestamp: Timestamp,
-      offset: Long,
-      key: String,
-      value: String
-  ): StreamRecord = {
-    val cr = new ConsumerRecord[Array[Byte], Array[Byte]](
-      topic,
-      partition,
-      offset,
-      timestamp.millis,
-      TimestampType.CREATE_TIME,
-      -1,
-      -1,
-      key.getBytes("UTF-8"),
-      value.getBytes("UTF-8"),
-      new RecordHeaders,
-      Optional.empty[Integer]
-    )
-    StreamRecord(cr, timestamp)
   }
 
   def readAllLines(file: File): Seq[String] = Using.resource(Files.lines(file.toPath))(_.iterator().asScala.toSeq)
