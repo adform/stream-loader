@@ -16,6 +16,7 @@ import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation.D
 import com.adform.streamloader.sink.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.model.{ExampleMessage, Timestamp}
 import com.adform.streamloader.sink.batch.{RecordBatchingSink, RecordFormatter}
+import com.adform.streamloader.sink.file.Compression
 import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{Loader, StreamLoader}
@@ -117,7 +118,7 @@ object TestClickHouseLoader extends Loader {
         ClickHouseFileRecordBatcher
           .builder()
           .recordFormatter(recordFormatter)
-          .fileBuilderFactory(() => new RowBinaryClickHouseFileBuilder())
+          .fileBuilderFactory(() => new RowBinaryClickHouseFileBuilder(Compression.ZSTD))
           .fileCommitStrategy(ReachedAnyOf(recordsWritten = Some(cfg.getLong("file.max.records"))))
           .build()
       )

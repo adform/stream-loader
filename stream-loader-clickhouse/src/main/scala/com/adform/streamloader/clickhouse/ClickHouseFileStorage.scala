@@ -8,19 +8,17 @@
 
 package com.adform.streamloader.clickhouse
 
-import java.sql.Connection
 import com.adform.streamloader.model._
 import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
-import com.clickhouse.client.{ClickHouseCompression, ClickHouseFile, ClickHouseFormat, ClickHouseValue}
+import com.clickhouse.client.ClickHouseFile
 import com.clickhouse.jdbc.ClickHouseConnection
-
-import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 
-import scala.jdk.CollectionConverters._
-
+import java.sql.Connection
+import javax.sql.DataSource
 import scala.collection.concurrent.TrieMap
+import scala.jdk.CollectionConverters._
 import scala.util.Using
 
 /**
@@ -83,7 +81,7 @@ class ClickHouseFileStorage(
       Using.resource(connection.unwrap(classOf[ClickHouseConnection]).createStatement) { statement =>
         statement
           .write()
-          .data(ClickHouseFile.of(batch.file, ClickHouseCompression.NONE, 0, batch.format))
+          .data(ClickHouseFile.of(batch.file, batch.compression, 1, batch.format))
           .table(table)
           .params(Map("max_insert_block_size" -> batch.rowCount.toString).asJava) // atomic insert
           .executeAndWait()

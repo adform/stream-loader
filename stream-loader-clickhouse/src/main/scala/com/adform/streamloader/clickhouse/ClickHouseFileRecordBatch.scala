@@ -11,7 +11,7 @@ package com.adform.streamloader.clickhouse
 import java.io.File
 import com.adform.streamloader.model.StreamRange
 import com.adform.streamloader.sink.file.FileRecordBatch
-import com.clickhouse.client.ClickHouseFormat
+import com.clickhouse.client.{ClickHouseCompression, ClickHouseFormat}
 
 /**
   * A file containing a batch of records in some ClickHouse supported format that can be loaded to ClickHouse.
@@ -19,6 +19,7 @@ import com.clickhouse.client.ClickHouseFormat
 case class ClickHouseFileRecordBatch(
     file: File,
     format: ClickHouseFormat,
+    compression: ClickHouseCompression,
     recordRanges: Seq[StreamRange],
     rowCount: Long
 ) extends FileRecordBatch

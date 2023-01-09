@@ -29,7 +29,15 @@ class ClickHouseFileRecordBatcher[R](
   ): Option[ClickHouseFileRecordBatch] = {
     fileBuilder
       .build()
-      .map(f => ClickHouseFileRecordBatch(f, fileBuilder.format, recordRanges, fileBuilder.getRecordCount))
+      .map(f =>
+        ClickHouseFileRecordBatch(
+          f,
+          fileBuilder.format,
+          fileBuilder.compression,
+          recordRanges,
+          fileBuilder.getRecordCount
+        )
+      )
   }
 }
 
