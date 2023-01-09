@@ -8,14 +8,14 @@
 
 package com.adform.streamloader.vertica
 
-import java.sql.{Connection, SQLDataException, Timestamp => SqlTimestamp}
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
 import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
-import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 
-import scala.collection.concurrent.TrieMap
+import java.sql.{Connection, SQLDataException, Timestamp => SqlTimestamp}
+import javax.sql.DataSource
+import scala.collection.mutable
 import scala.util.Using
 
 /**
@@ -58,7 +58,7 @@ class ExternalOffsetVerticaFileStorage(
 ) extends InDataOffsetBatchStorage[ExternalOffsetVerticaFileRecordBatch]
     with Logging {
 
-  def committedPositions(connection: Connection): TrieMap[TopicPartition, StreamPosition] = {
+  def committedPositions(connection: Connection): Map[TopicPartition, StreamPosition] = {
     val query =
       s"SELECT $topicColumnName, $partitionColumnName, MAX($endOffsetColumnName) + 1, MAX($endWatermarkColumnName) " +
         s"FROM $offsetTable " +
@@ -68,7 +68,7 @@ class ExternalOffsetVerticaFileStorage(
     Using.resource(connection.prepareStatement(query)) { statement =>
       statement.setString(1, kafkaContext.consumerGroup)
       Using.resource(statement.executeQuery()) { result =>
-        val positions: TrieMap[TopicPartition, StreamPosition] = TrieMap.empty
+        val positions: mutable.HashMap[TopicPartition, StreamPosition] = mutable.HashMap.empty
         while (result.next()) {
           if (!result.wasNull()) {
             val topicPartition = new TopicPartition(result.getString(1), result.getInt(2))
@@ -76,7 +76,7 @@ class ExternalOffsetVerticaFileStorage(
             positions.put(topicPartition, position)
           }
         }
-        positions
+        positions.toMap
       }
     }
   }

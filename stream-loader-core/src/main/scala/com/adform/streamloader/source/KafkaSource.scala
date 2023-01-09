@@ -19,7 +19,7 @@ import java.util
 import java.util.Properties
 import java.util.concurrent.locks.ReentrantLock
 import java.util.regex.Pattern
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 /**
@@ -51,8 +51,8 @@ class KafkaSource(
   private var consumerLock: ReentrantLock = _
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
 
-  private val watermarkProviders: TrieMap[TopicPartition, WatermarkProvider] = TrieMap.empty
-  private val watermarkMetricGauges: TrieMap[TopicPartition, Gauge] = TrieMap.empty
+  private val watermarkProviders: mutable.HashMap[TopicPartition, WatermarkProvider] = mutable.HashMap.empty
+  private val watermarkMetricGauges: mutable.HashMap[TopicPartition, Gauge] = mutable.HashMap.empty
 
   private def withLock[T](code: => T): T = {
     consumerLock.lockInterruptibly()

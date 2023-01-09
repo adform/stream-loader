@@ -13,7 +13,7 @@ import com.adform.streamloader.source.KafkaContext
 import com.adform.streamloader.util.Logging
 import org.apache.kafka.common.TopicPartition
 
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
 /**
   * An abstract sink that implements partition assignment/revocation by grouping partitions to sets
@@ -27,8 +27,8 @@ import scala.collection.concurrent.TrieMap
   */
 trait PartitionGroupingSink extends Sink with Logging {
 
-  private val partitionGroups = TrieMap[String, (Set[TopicPartition], PartitionGroupSinker)]()
-  private val partitionSinkers = TrieMap[TopicPartition, PartitionGroupSinker]()
+  private val partitionGroups = mutable.HashMap.empty[String, (Set[TopicPartition], PartitionGroupSinker)]
+  private val partitionSinkers = mutable.HashMap.empty[TopicPartition, PartitionGroupSinker]
 
   protected var kafkaContext: KafkaContext = _
 

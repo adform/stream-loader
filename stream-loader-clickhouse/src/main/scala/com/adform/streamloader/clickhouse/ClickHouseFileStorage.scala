@@ -17,7 +17,7 @@ import org.apache.kafka.common.TopicPartition
 
 import java.sql.Connection
 import javax.sql.DataSource
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -35,7 +35,7 @@ class ClickHouseFileStorage(
 ) extends InDataOffsetBatchStorage[ClickHouseFileRecordBatch]
     with Logging {
 
-  def committedPositions(connection: Connection): TrieMap[TopicPartition, StreamPosition] = {
+  def committedPositions(connection: Connection): Map[TopicPartition, StreamPosition] = {
     val positionQuery =
       s"""SELECT
          |  $topicColumnName,
@@ -51,7 +51,7 @@ class ClickHouseFileStorage(
       {
         log.info(s"Running stream position query: $positionQuery")
         Using.resource(statement.executeQuery()) { result =>
-          val positions: TrieMap[TopicPartition, StreamPosition] = TrieMap.empty
+          val positions: mutable.HashMap[TopicPartition, StreamPosition] = mutable.HashMap.empty
           while (result.next()) {
             val topic = result.getString(1)
             val partition = result.getInt(2)
@@ -63,7 +63,7 @@ class ClickHouseFileStorage(
               positions.put(topicPartition, position)
             }
           }
-          positions
+          positions.toMap
         }
       }
     }

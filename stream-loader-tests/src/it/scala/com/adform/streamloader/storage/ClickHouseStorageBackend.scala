@@ -24,7 +24,7 @@ import org.scalacheck.Arbitrary
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.sql.DataSource
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
 import scala.util.Using
@@ -127,7 +127,7 @@ case class ClickHouseStorageBackend(
           ps.setQueryTimeout(5)
           Using.resource(ps.executeQuery()) { rs =>
             val content: ListBuffer[ExampleMessage] = collection.mutable.ListBuffer[ExampleMessage]()
-            val positions: TrieMap[TopicPartition, ListBuffer[StreamPosition]] = TrieMap.empty
+            val positions: mutable.HashMap[TopicPartition, ListBuffer[StreamPosition]] = mutable.HashMap.empty
             while (rs.next()) {
 
               val topicPartition = new TopicPartition(rs.getString(TOPIC_COLUMN), rs.getInt(PARTITION_COLUMN))
