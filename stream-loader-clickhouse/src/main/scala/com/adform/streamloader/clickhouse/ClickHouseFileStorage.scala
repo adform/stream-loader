@@ -12,11 +12,13 @@ import java.sql.Connection
 import com.adform.streamloader.model._
 import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
+import com.clickhouse.client.{ClickHouseCompression, ClickHouseFile, ClickHouseFormat, ClickHouseValue}
+import com.clickhouse.jdbc.ClickHouseConnection
 
 import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
-import ru.yandex.clickhouse.ClickHouseConnection
-import ru.yandex.clickhouse.settings.ClickHouseQueryParam
+
+import scala.jdk.CollectionConverters._
 
 import scala.collection.concurrent.TrieMap
 import scala.util.Using
@@ -81,10 +83,10 @@ class ClickHouseFileStorage(
       Using.resource(connection.unwrap(classOf[ClickHouseConnection]).createStatement) { statement =>
         statement
           .write()
+          .data(ClickHouseFile.of(batch.file, ClickHouseCompression.NONE, 0, batch.format))
           .table(table)
-          .data(batch.file, batch.format)
-          .addDbParam(ClickHouseQueryParam.MAX_INSERT_BLOCK_SIZE, batch.rowCount.toString) // atomic insert
-          .send()
+          .params(Map("max_insert_block_size" -> batch.rowCount.toString).asJava) // atomic insert
+          .executeAndWait()
       }
     }
   }

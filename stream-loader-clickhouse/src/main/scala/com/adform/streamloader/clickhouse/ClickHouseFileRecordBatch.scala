@@ -11,7 +11,7 @@ package com.adform.streamloader.clickhouse
 import java.io.File
 import com.adform.streamloader.model.StreamRange
 import com.adform.streamloader.sink.file.FileRecordBatch
-import ru.yandex.clickhouse.domain.ClickHouseFormat
+import com.clickhouse.client.ClickHouseFormat
 
 /**
   * A file containing a batch of records in some ClickHouse supported format that can be loaded to ClickHouse.

@@ -8,12 +8,6 @@
 
 package com.adform.streamloader.s3
 
-import java.net.{ServerSocket, URI}
-import java.nio.file.Files
-import java.util.Properties
-import java.util.concurrent.locks.ReentrantLock
-
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import org.eclipse.jetty.util.component.AbstractLifeCycle
 import org.gaul.s3proxy.{AuthenticationType, S3Proxy}
 import org.jclouds.ContextBuilder
@@ -23,6 +17,12 @@ import org.scalatest.funspec.AnyFunSpec
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.endpoints.{S3EndpointParams, S3EndpointProvider}
+
+import java.net.ServerSocket
+import java.nio.file.Files
+import java.util.Properties
+import java.util.concurrent.locks.ReentrantLock
 
 trait MockS3 extends BeforeAndAfterAll { this: AnyFunSpec =>
 
@@ -32,7 +32,14 @@ trait MockS3 extends BeforeAndAfterAll { this: AnyFunSpec =>
     socket.close()
     port
   }
-  private lazy val endpoint = new EndpointConfiguration(s"http://localhost:$randomPort", "test")
+
+  private lazy val endpoint = S3EndpointProvider
+    .defaultProvider()
+    .resolveEndpoint(
+      S3EndpointParams.builder().endpoint(s"http://localhost:$randomPort").region(Region.EU_WEST_1).build()
+    )
+    .get()
+
   private val (accessKey, secretKey) = ("access", "secret")
 
   private val blobStoreConfig = new Properties() {
@@ -41,12 +48,13 @@ trait MockS3 extends BeforeAndAfterAll { this: AnyFunSpec =>
 
   private val blobStoreContext = ContextBuilder
     .newBuilder("filesystem")
+    .credentials(accessKey, secretKey)
     .overrides(blobStoreConfig)
     .build(classOf[BlobStoreContext])
 
   private lazy val s3Mock: S3Proxy = S3Proxy
     .builder()
-    .endpoint(new URI(endpoint.getServiceEndpoint))
+    .endpoint(endpoint.url())
     .awsAuthentication(AuthenticationType.AWS_V2_OR_V4, accessKey, secretKey)
     .blobStore(blobStoreContext.getBlobStore)
     .build()
@@ -55,7 +63,8 @@ trait MockS3 extends BeforeAndAfterAll { this: AnyFunSpec =>
     .builder()
     .region(Region.US_EAST_1)
     .credentialsProvider(() => AwsBasicCredentials.create(accessKey, secretKey))
-    .endpointOverride(new URI(endpoint.getServiceEndpoint))
+    .forcePathStyle(true)
+    .endpointOverride(endpoint.url())
     .build()
 
   override def beforeAll(): Unit = {

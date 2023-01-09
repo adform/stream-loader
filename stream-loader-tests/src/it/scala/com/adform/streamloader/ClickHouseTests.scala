@@ -43,6 +43,7 @@ class ClickHouseTests
   override def beforeAll(): Unit = {
     super.beforeAll()
     hikariConf = new HikariConfig()
+    hikariConf.setDriverClassName(classOf[com.clickhouse.jdbc.ClickHouseDriver].getName)
     hikariConf.setJdbcUrl(s"jdbc:clickhouse://${clickHouseContainer.endpoint}/${clickHouseConfig.dbName}")
     hikariConf.addDataSourceProperty("host", clickHouseContainer.ip)
     hikariConf.addDataSourceProperty("port", jdbcPort)

@@ -17,7 +17,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 
 import scala.jdk.CollectionConverters._
 
-case class ClickHouseConfig(dbName: String = "default", image: String = "clickhouse/clickhouse-server:22.4.5.9")
+case class ClickHouseConfig(dbName: String = "default", image: String = "clickhouse/clickhouse-server:22.12.2.25")
 
 trait ClickHouseTestFixture extends ClickHouse with BeforeAndAfterAll { this: Suite with DockerTestFixture =>
   override def beforeAll(): Unit = {
@@ -45,7 +45,6 @@ trait ClickHouse { this: Docker =>
   def clickHouseContainer: ContainerWithEndpoint = clickHouse
 
   def clickHouseInit(): Unit = {
-    Class.forName(classOf[ru.yandex.clickhouse.ClickHouseDriver].getName)
     clickHouse = startClickHouseContainer()
   }
 

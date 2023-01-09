@@ -8,24 +8,22 @@
 
 package com.adform.streamloader.storage
 
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
-import java.util.UUID
-
 import com.adform.streamloader.clickhouse.ClickHouseFileStorage
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork, SimpleContainer}
 import com.adform.streamloader.model.{ExampleMessage, StreamPosition, Timestamp}
 import com.adform.streamloader.source.KafkaContext
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.{BuildInfo, Loader}
+import com.clickhouse.jdbc.ClickHouseArray
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
 import com.zaxxer.hikari.HikariConfig
-import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Arbitrary
-import ru.yandex.clickhouse.ClickHouseArray
 
+import java.time.temporal.ChronoUnit
+import java.util.UUID
+import javax.sql.DataSource
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
@@ -120,7 +118,6 @@ case class ClickHouseStorageBackend(
 
     val containerCreation = docker.createContainer(config, loaderName)
     SimpleContainer(containerCreation.id, loaderName)
-
   }
 
   override def getContent: StorageContent[ExampleMessage] =
@@ -144,7 +141,7 @@ case class ClickHouseStorageBackend(
                 ExampleMessage(
                   rs.getInt("id"),
                   rs.getString("name"),
-                  rs.getTimestamp("timestamp").toInstant.atZone(ZoneId.of("UTC")).toLocalDateTime,
+                  rs.getTimestamp("timestamp").toLocalDateTime,
                   rs.getDouble("height"),
                   rs.getFloat("width"),
                   rs.getBoolean("is_enabled"),

@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-case class KafkaConfig(image: String = "johnnypark/kafka-zookeeper:2.6.0")
+case class KafkaConfig(image: String = "bitnami/kafka:3.3.1")
 
 trait KafkaTestFixture extends Kafka with BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite with DockerTestFixture =>
@@ -51,7 +51,7 @@ trait Kafka { this: Docker =>
   private[this] val log = getLogger
 
   private val kafkaPort = 9092
-  private val zookeeperPort = 2181
+  private val kafkaControllerPort = 9093
 
   private val timeout = 30
   private val timeoutUnit = TimeUnit.SECONDS
@@ -135,26 +135,35 @@ trait Kafka { this: Docker =>
         HostConfig
           .builder()
           .networkMode(dockerNetwork.id)
-          .portBindings(makePortBindings(zookeeperPort, kafkaPort))
+          .portBindings(makePortBindings(kafkaPort))
           .build()
       )
       .healthcheck(
         Healthcheck
           .builder()
-          .test(List("CMD-SHELL", s"nc -z localhost $kafkaPort").asJava)
+          .test(
+            List(
+              "CMD-SHELL",
+              s"/opt/bitnami/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:$kafkaPort"
+            ).asJava
+          )
           .retries(6)
-          .interval(1000000000L)
-          .timeout(1000000000L)
+          .interval(1_000_000_000L)
+          .timeout(5_000_000_000L)
           .build()
       )
-      .exposedPorts(
-        zookeeperPort.toString,
-        kafkaPort.toString
-      )
+      .exposedPorts(kafkaPort.toString)
       .env(
-        s"ADVERTISED_HOST=${dockerNetwork.ip}",
-        s"ADVERTISED_PORT=$kafkaPort",
-        s"LOG_RETENTION_HOURS=${Int.MaxValue}"
+        "KAFKA_BROKER_ID=1",
+        "KAFKA_ENABLE_KRAFT=yes",
+        "KAFKA_CFG_PROCESS_ROLES=broker,controller",
+        "KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER",
+        s"KAFKA_CFG_LISTENERS=PLAINTEXT://:$kafkaPort,CONTROLLER://:$kafkaControllerPort",
+        "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
+        s"KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${dockerNetwork.ip}:$kafkaPort",
+        s"KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:$kafkaControllerPort",
+        "ALLOW_PLAINTEXT_LISTENER=yes",
+        s"KAFKA_CFG_LOG_RETENTION_HOURS=${Int.MaxValue}"
       )
       .build()
 

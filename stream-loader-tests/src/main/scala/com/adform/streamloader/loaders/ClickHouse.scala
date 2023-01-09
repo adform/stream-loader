@@ -71,6 +71,7 @@ object TestClickHouseLoader extends Loader {
     val port = cfg.getInt("clickhouse.port")
     val db = cfg.getString("clickhouse.db")
 
+    hikariConf.setDriverClassName(classOf[com.clickhouse.jdbc.ClickHouseDriver].getName)
     hikariConf.setJdbcUrl(s"jdbc:clickhouse://$host:$port/$db")
 
     hikariConf.addDataSourceProperty("host", host)

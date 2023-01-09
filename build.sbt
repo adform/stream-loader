@@ -3,7 +3,7 @@ name := "stream-loader"
 ThisBuild / organization := "com.adform"
 ThisBuild / organizationName := "Adform"
 ThisBuild / scalaVersion := "2.13.10"
-ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-release", "8")
+ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-release", "11")
 
 ThisBuild / startYear := Some(2020)
 ThisBuild / licenses += ("MPL-2.0", new URL("http://mozilla.org/MPL/2.0/"))
@@ -15,14 +15,12 @@ ThisBuild / developers := List(
 enablePlugins(GitVersioning)
 ThisBuild / git.useGitDescribe := true
 
-ThisBuild / useCoursier := false
-
 val gitRepo = "git@github.com:adform/stream-loader.git"
 val gitRepoUrl = "https://github.com/adform/stream-loader"
 
-val scalaTestVersion = "3.2.14"
+val scalaTestVersion = "3.2.15"
 val scalaCheckVersion = "1.17.0"
-val scalaCheckTestVersion = "3.2.14.0"
+val scalaCheckTestVersion = "3.2.15.0"
 
 lazy val `stream-loader-core` = project
   .in(file("stream-loader-core"))
@@ -41,7 +39,7 @@ lazy val `stream-loader-core` = project
       "com.github.luben"   % "zstd-jni"          % "1.5.2-5",
       "com.univocity"      % "univocity-parsers" % "2.9.1",
       "org.json4s"        %% "json4s-native"     % "4.0.6",
-      "io.micrometer"      % "micrometer-core"   % "1.10.2",
+      "io.micrometer"      % "micrometer-core"   % "1.10.3",
       "org.scalatest"     %% "scalatest"         % scalaTestVersion      % "test",
       "org.scalatestplus" %% "scalacheck-1-17"   % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"        % scalaCheckVersion     % "test",
@@ -61,10 +59,10 @@ lazy val `stream-loader-clickhouse` = project
   .settings(
     resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
-      "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.1",
-      "org.scalatest"       %% "scalatest"       % scalaTestVersion      % "test",
-      "org.scalatestplus"   %% "scalacheck-1-17" % scalaCheckTestVersion % "test",
-      "org.scalacheck"      %% "scalacheck"      % scalaCheckVersion     % "test"
+      "com.clickhouse"     % "clickhouse-jdbc" % "0.3.2-patch11",
+      "org.scalatest"     %% "scalatest"       % scalaTestVersion      % "test",
+      "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion % "test",
+      "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion     % "test"
     )
   )
 
@@ -90,15 +88,14 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.17.192",
+      "software.amazon.awssdk" % "s3"              % "2.19.15",
       "org.scalatest"         %% "scalatest"       % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.357"       % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.383"       % "test",
       "org.gaul"               % "s3proxy"         % "2.0.0"          % "test"
     )
   )
 
-val verticaVersion = "9.2.1-0"
-val verticaJarUrl = s"https://www.vertica.com/client_drivers/9.2.x/$verticaVersion/vertica-jdbc-$verticaVersion.jar"
+val verticaVersion = "12.0.3-0"
 
 lazy val `stream-loader-vertica` = project
   .in(file("stream-loader-vertica"))
@@ -106,10 +103,10 @@ lazy val `stream-loader-vertica` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      (("com.vertica"      % "vertica-jdbc"    % verticaVersion) from verticaJarUrl) % "provided",
-      "org.scalatest"     %% "scalatest"       % scalaTestVersion                    % "test",
-      "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion               % "test",
-      "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion                   % "test"
+      "com.vertica.jdbc"   % "vertica-jdbc"    % verticaVersion        % "provided",
+      "org.scalatest"     %% "scalatest"       % scalaTestVersion      % "test",
+      "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion % "test",
+      "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion     % "test"
     )
   )
 
@@ -132,14 +129,15 @@ lazy val `stream-loader-tests` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe"       % "config"          % "1.4.2",
-      "ch.qos.logback"     % "logback-classic" % "1.4.5",
-      "com.zaxxer"         % "HikariCP"        % "5.0.1",
-      "com.vertica"        % "vertica-jdbc"    % verticaVersion from verticaJarUrl,
-      "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion,
-      "org.scalatest"     %% "scalatest"       % scalaTestVersion              % "test,it",
-      "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion         % "test,it",
-      ("com.spotify"       % "docker-client"   % "8.16.0" classifier "shaded") % "it"
+      "com.typesafe"       % "config"           % "1.4.2",
+      "ch.qos.logback"     % "logback-classic"  % "1.4.5",
+      "com.zaxxer"         % "HikariCP"         % "5.0.1",
+      "com.vertica.jdbc"   % "vertica-jdbc"     % verticaVersion,
+      "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion,
+      "org.scalatest"     %% "scalatest"        % scalaTestVersion              % "test,it",
+      "org.scalatestplus" %% "scalacheck-1-17"  % scalaCheckTestVersion         % "test,it",
+      ("com.spotify"       % "docker-client"    % "8.16.0" classifier "shaded") % "it",
+      "org.slf4j"          % "log4j-over-slf4j" % "2.0.6"                       % "it"
     ),
     test := {}, // only integration tests present
     publish := {},
