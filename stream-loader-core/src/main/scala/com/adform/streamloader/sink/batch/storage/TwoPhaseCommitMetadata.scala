@@ -10,11 +10,14 @@ package com.adform.streamloader.sink.batch.storage
 
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
 import com.adform.streamloader.util.{JsonSerializer, Logging}
+import com.github.luben.zstd.Zstd
 import org.json4s.JsonDSL._
 import org.json4s._
 import org.json4s.native.JsonMethods._
 
+import java.util.Base64
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 /**
   * Two-phase commit staging information, part of the kafka offset commit metadata.
@@ -44,11 +47,40 @@ case class TwoPhaseCommitMetadata[S: JsonSerializer](
     val json = if (stagingJson.isDefined) watermarkJson ~ ("staged" -> stagingJson.get) else watermarkJson
     compact(render(json))
   }
+
+  /**
+    * Serializes the metadata by converting it to JSON, compressing and base64 encoding.
+    */
+  def serialize: String = new String(Base64.getEncoder.encode(Zstd.compress(toJson.getBytes("UTF-8"))), "UTF-8")
 }
 
 object TwoPhaseCommitMetadata extends Logging {
 
   implicit val formats: Formats = DefaultFormats
+
+  /**
+    * Deserializes a given metadata string read from Kafka.
+    * Attempts base64 decoding, if it fails tries fall-backing to parsing JSON directly for backwards compatibility.
+    * If decoding succeeds the bytes are decompressed before parsing JSON.
+    */
+  def deserialize[S: JsonSerializer](metadata: String): Option[TwoPhaseCommitMetadata[S]] = {
+    val (bytes, isCompressed) = Try(Base64.getDecoder.decode(metadata)) match {
+      case Success(d) => (d, true)
+      case Failure(e) =>
+        log.warn(e)(s"Base64 decoding of metadata string failed, using original string '$metadata'")
+        (metadata.getBytes("UTF-8"), false)
+    }
+    if (isCompressed) {
+      Try(new String(Zstd.decompress(bytes, Zstd.decompressedSize(bytes).toInt), "UTF-8")) match {
+        case Success(decompressed) => TwoPhaseCommitMetadata.tryParseJson[S](decompressed)
+        case Failure(ex) =>
+          log.error(ex)(s"Failed decompressing base64 encoded metadata '$metadata'")
+          null
+      }
+    } else {
+      TwoPhaseCommitMetadata.tryParseJson[S](new String(bytes, "UTF-8"))
+    }
+  }
 
   def tryParseJson[S: JsonSerializer](metadata: String): Option[TwoPhaseCommitMetadata[S]] =
     try {

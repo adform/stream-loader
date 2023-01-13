@@ -44,7 +44,7 @@ class TwoPhaseCommitMetadataTest extends AnyFunSpec with Matchers with ScalaChec
     Gen.resultOf(TwoPhaseCommitMetadata.apply[TestStaging] _)
   )
 
-  it("should deserialize commit metadata with staged data") {
+  it("should deserialize json commit metadata with staged data") {
     val json = """{
                  |  "watermark": 1570097839000,
                  |  "staged": {
@@ -72,7 +72,7 @@ class TwoPhaseCommitMetadataTest extends AnyFunSpec with Matchers with ScalaChec
     parsedMetadata shouldEqual Some(expectedMetadata)
   }
 
-  it("should deserialize commit metadata without staged data") {
+  it("should deserialize json commit metadata without staged data") {
     val json = """{ "watermark": 1570097839000 }"""
     val parsedMetadata = TwoPhaseCommitMetadata.tryParseJson[TestStaging](json)
 
@@ -81,9 +81,24 @@ class TwoPhaseCommitMetadataTest extends AnyFunSpec with Matchers with ScalaChec
     parsedMetadata shouldEqual Some(expectedMetadata)
   }
 
-  it("should be idempotent when serializing and de-serializing") {
+  it("should be idempotent when serializing and de-serializing json") {
     forAll { (metadata: TwoPhaseCommitMetadata[TestStaging]) =>
       TwoPhaseCommitMetadata.tryParseJson[TestStaging](metadata.toJson) shouldEqual Some(metadata)
     }
+  }
+
+  it("should be idempotent when serializing and de-serializing") {
+    forAll { (metadata: TwoPhaseCommitMetadata[TestStaging]) =>
+      TwoPhaseCommitMetadata.deserialize[TestStaging](metadata.serialize) shouldEqual Some(metadata)
+    }
+  }
+
+  it("should fall back to deserializing non-base64 serialized json") {
+    val json = """{ "watermark": 1570097839000 }"""
+    val deserialized = TwoPhaseCommitMetadata.deserialize[TestStaging](json)
+
+    val expectedMetadata = TwoPhaseCommitMetadata[TestStaging](Timestamp(1570097839000L), None)
+
+    deserialized shouldEqual Some(expectedMetadata)
   }
 }

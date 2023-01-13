@@ -68,7 +68,7 @@ class TwoPhaseCommitFileStorageTest extends AnyFunSpec with Matchers {
           Some(
             new OffsetAndMetadata(
               range.end.offset + 1,
-              TwoPhaseCommitMetadata[FileStaging](range.end.watermark, None).toJson
+              TwoPhaseCommitMetadata[FileStaging](range.end.watermark, None).serialize
             )
           )
         )
