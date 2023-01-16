@@ -9,7 +9,7 @@
 package com.adform.streamloader.clickhouse
 
 import com.adform.streamloader.sink.file.{FileBuilder, FileBuilderFactory}
-import ru.yandex.clickhouse.domain.ClickHouseFormat
+import com.clickhouse.client.{ClickHouseCompression, ClickHouseFormat}
 
 /**
   * A FileBuilder able to build files that can be loaded to ClickHouse.
@@ -22,6 +22,11 @@ trait ClickHouseFileBuilder[-R] extends FileBuilder[R] {
     * The ClickHouse file format for the files being built.
     */
   def format: ClickHouseFormat
+
+  /**
+    * Compression to use for the files being constructed.
+    */
+  def compression: ClickHouseCompression
 }
 
 trait ClickHouseFileBuilderFactory[R] extends FileBuilderFactory[R, ClickHouseFileBuilder[R]] {

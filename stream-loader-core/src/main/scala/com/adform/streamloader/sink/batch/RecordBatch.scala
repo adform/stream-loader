@@ -11,7 +11,7 @@ package com.adform.streamloader.sink.batch
 import com.adform.streamloader.model.{StreamPosition, StreamRange, StreamRangeBuilder, StreamRecord}
 import org.apache.kafka.common.TopicPartition
 
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
 /**
   * A base trait representing a batch of records.
@@ -38,7 +38,7 @@ trait RecordBatch {
   * @tparam B Type of the batches being built.
   */
 abstract class RecordBatchBuilder[+B <: RecordBatch] {
-  private val recordRangeBuilders: TrieMap[TopicPartition, StreamRangeBuilder] = TrieMap.empty
+  private val recordRangeBuilders: mutable.HashMap[TopicPartition, StreamRangeBuilder] = mutable.HashMap.empty
   private var recordCount = 0L
 
   def currentRecordRanges: Seq[StreamRange] = recordRangeBuilders.values.map(_.build()).toSeq

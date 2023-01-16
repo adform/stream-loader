@@ -10,7 +10,7 @@ package com.adform.streamloader.clickhouse.rowbinary
 
 import com.adform.streamloader.clickhouse.ClickHouseFileBuilder
 import com.adform.streamloader.sink.file.{Compression, StreamFileBuilder}
-import ru.yandex.clickhouse.domain.ClickHouseFormat
+import com.clickhouse.client.{ClickHouseCompression, ClickHouseFormat}
 
 /**
   * File builder for the ClickHouse native RowBinary file format, requires
@@ -21,13 +21,23 @@ import ru.yandex.clickhouse.domain.ClickHouseFormat
   * @tparam R type of the records written to files being built.
   */
 class RowBinaryClickHouseFileBuilder[-R: RowBinaryClickHouseRecordEncoder](
+    fileCompression: Compression = Compression.NONE,
     bufferSizeBytes: Int = 8192
 ) extends StreamFileBuilder[R](
       os => new RowBinaryClickHouseRecordStreamWriter[R](os),
-      Compression.NONE,
+      fileCompression,
       bufferSizeBytes
     )
     with ClickHouseFileBuilder[R] {
 
   override val format: ClickHouseFormat = ClickHouseFormat.RowBinary
+
+  override def compression: ClickHouseCompression = fileCompression match {
+    case Compression.NONE => ClickHouseCompression.NONE
+    case Compression.ZSTD => ClickHouseCompression.ZSTD
+    case Compression.GZIP => ClickHouseCompression.GZIP
+    case Compression.BZIP => ClickHouseCompression.BZ2
+    case Compression.LZ4 => ClickHouseCompression.LZ4
+    case _ => throw new UnsupportedOperationException(s"Compression $fileCompression is not supported by ClickHouse")
+  }
 }

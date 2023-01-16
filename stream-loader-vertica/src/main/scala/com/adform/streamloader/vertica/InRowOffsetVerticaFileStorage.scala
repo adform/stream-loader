@@ -12,10 +12,11 @@ import java.sql.{Connection, SQLDataException}
 import com.adform.streamloader.model.{StreamPosition, Timestamp}
 import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
+
 import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 import scala.util.Using
 
 /**
@@ -36,7 +37,7 @@ class InRowOffsetVerticaFileStorage(
 ) extends InDataOffsetBatchStorage[InRowOffsetVerticaFileRecordBatch]
     with Logging {
 
-  def committedPositions(connection: Connection): TrieMap[TopicPartition, StreamPosition] = {
+  def committedPositions(connection: Connection): Map[TopicPartition, StreamPosition] = {
     val positionQuery =
       s"""SELECT
          |  $topicColumnName,
@@ -52,7 +53,7 @@ class InRowOffsetVerticaFileStorage(
       {
         log.debug(s"Running stream position query: $positionQuery")
         Using.resource(statement.executeQuery()) { result =>
-          val positions: TrieMap[TopicPartition, StreamPosition] = TrieMap.empty
+          val positions: mutable.HashMap[TopicPartition, StreamPosition] = mutable.HashMap.empty
           while (result.next()) {
             if (!result.wasNull()) {
               val topicPartition = new TopicPartition(result.getString(1), result.getInt(2))
@@ -60,7 +61,7 @@ class InRowOffsetVerticaFileStorage(
               positions.put(topicPartition, position)
             }
           }
-          positions
+          positions.toMap
         }
       }
     }

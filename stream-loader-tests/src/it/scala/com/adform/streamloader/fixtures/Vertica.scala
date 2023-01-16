@@ -20,10 +20,10 @@ import scala.jdk.CollectionConverters._
 import scala.util.Using
 
 case class VerticaConfig(
-    dbName: String = "docker",
+    dbName: String = "",
     user: String = "dbadmin",
     password: String = "",
-    image: String = "jbfavre/vertica:9.2.0-7_centos-7"
+    image: String = "vertica/vertica-ce:12.0.2-0"
 )
 
 trait VerticaTestFixture extends Vertica with BeforeAndAfterAll { this: Suite with DockerTestFixture =>

@@ -9,7 +9,7 @@
 package com.adform.streamloader.source
 
 import com.adform.streamloader.model.{StreamPosition, StreamRecord, Timestamp}
-import com.adform.streamloader.util.{MetricTag, Metrics}
+import com.adform.streamloader.util.{MetricTag, Metrics, TimeProvider}
 import io.micrometer.core.instrument.Gauge
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRebalanceListener, KafkaConsumer}
 import org.apache.kafka.common.TopicPartition
@@ -19,7 +19,7 @@ import java.util
 import java.util.Properties
 import java.util.concurrent.locks.ReentrantLock
 import java.util.regex.Pattern
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 /**
@@ -37,7 +37,8 @@ class KafkaSource(
     topics: Either[Seq[String], Pattern],
     pollTimeout: Duration,
     watermarkProviderFactory: () => WatermarkProvider
-) extends Metrics {
+)(implicit timeProvider: TimeProvider = TimeProvider.system)
+    extends Metrics {
 
   override protected def metricsRoot: String = "stream_loader.source"
 
@@ -51,8 +52,8 @@ class KafkaSource(
   private var consumerLock: ReentrantLock = _
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
 
-  private val watermarkProviders: TrieMap[TopicPartition, WatermarkProvider] = TrieMap.empty
-  private val watermarkMetricGauges: TrieMap[TopicPartition, Gauge] = TrieMap.empty
+  private val watermarkProviders: mutable.HashMap[TopicPartition, WatermarkProvider] = mutable.HashMap.empty
+  private val watermarkMetricGauges: mutable.HashMap[TopicPartition, Gauge] = mutable.HashMap.empty
 
   private def withLock[T](code: => T): T = {
     consumerLock.lockInterruptibly()
@@ -154,9 +155,9 @@ class KafkaSource(
 
     def watermarkGauge(partition: TopicPartition, watermarkProvider: WatermarkProvider): Gauge =
       createGauge(
-        "watermark.ms",
+        "watermark.delay.ms",
         watermarkProvider,
-        (p: WatermarkProvider) => p.currentWatermark.millis.toDouble,
+        (p: WatermarkProvider) => (timeProvider.currentMillis - p.currentWatermark.millis).toDouble,
         commonTags ++ partitionTags(partition)
       )
   }

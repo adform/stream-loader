@@ -20,11 +20,12 @@ import com.adform.streamloader.{BuildInfo, Loader}
 import com.spotify.docker.client.DockerClient
 import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
 import com.zaxxer.hikari.HikariConfig
+
 import javax.sql.DataSource
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Arbitrary
 
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
 import scala.util.Using
@@ -127,7 +128,7 @@ abstract class VerticaStorageBackend(
           ps.setQueryTimeout(5)
           Using.resource(ps.executeQuery()) { rs =>
             val content: ListBuffer[ExampleMessage] = collection.mutable.ListBuffer[ExampleMessage]()
-            val positions: TrieMap[TopicPartition, ListBuffer[StreamPosition]] = TrieMap.empty
+            val positions: mutable.HashMap[TopicPartition, ListBuffer[StreamPosition]] = mutable.HashMap.empty
             while (rs.next()) {
 
               content.addOne(

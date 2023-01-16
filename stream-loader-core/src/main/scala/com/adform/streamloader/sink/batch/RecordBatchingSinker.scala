@@ -160,7 +160,7 @@ class RecordBatchingSinker[B <: RecordBatch](
     })
   }
 
-  object Metrics {
+  private object Metrics {
 
     private val commonTags = Seq(
       MetricTag("partition-group", groupName),

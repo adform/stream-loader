@@ -14,7 +14,7 @@ import com.adform.streamloader.model.StreamRecord
 import com.adform.streamloader.sink.batch.{RecordBatchBuilder, RecordBatcher, RecordFormatter, RecordPartitioner}
 import com.adform.streamloader.util.TimeProvider
 
-import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
 /**
   * A record batcher that distributes records into user defined partitions using a given partitioner
@@ -53,7 +53,7 @@ class PartitioningFileRecordBatcher[P, R](
   override def newBatchBuilder(): RecordBatchBuilder[PartitionedFileRecordBatch[P, SingleFileRecordBatch]] =
     new RecordBatchBuilder[PartitionedFileRecordBatch[P, SingleFileRecordBatch]] {
 
-      private val partitionBuilders: TrieMap[P, FileRecordBatchBuilder] = TrieMap.empty
+      private val partitionBuilders: mutable.HashMap[P, FileRecordBatchBuilder] = mutable.HashMap.empty
 
       override def add(record: StreamRecord): Unit = {
         super.add(record)

@@ -8,17 +8,17 @@
 
 package com.adform.streamloader.clickhouse
 
-import java.sql.Connection
 import com.adform.streamloader.model._
 import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
-
-import javax.sql.DataSource
+import com.clickhouse.client.ClickHouseFile
+import com.clickhouse.jdbc.ClickHouseConnection
 import org.apache.kafka.common.TopicPartition
-import ru.yandex.clickhouse.ClickHouseConnection
-import ru.yandex.clickhouse.settings.ClickHouseQueryParam
 
-import scala.collection.concurrent.TrieMap
+import java.sql.Connection
+import javax.sql.DataSource
+import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 import scala.util.Using
 
 /**
@@ -35,7 +35,7 @@ class ClickHouseFileStorage(
 ) extends InDataOffsetBatchStorage[ClickHouseFileRecordBatch]
     with Logging {
 
-  def committedPositions(connection: Connection): TrieMap[TopicPartition, StreamPosition] = {
+  def committedPositions(connection: Connection): Map[TopicPartition, StreamPosition] = {
     val positionQuery =
       s"""SELECT
          |  $topicColumnName,
@@ -51,7 +51,7 @@ class ClickHouseFileStorage(
       {
         log.info(s"Running stream position query: $positionQuery")
         Using.resource(statement.executeQuery()) { result =>
-          val positions: TrieMap[TopicPartition, StreamPosition] = TrieMap.empty
+          val positions: mutable.HashMap[TopicPartition, StreamPosition] = mutable.HashMap.empty
           while (result.next()) {
             val topic = result.getString(1)
             val partition = result.getInt(2)
@@ -63,7 +63,7 @@ class ClickHouseFileStorage(
               positions.put(topicPartition, position)
             }
           }
-          positions
+          positions.toMap
         }
       }
     }
@@ -81,10 +81,10 @@ class ClickHouseFileStorage(
       Using.resource(connection.unwrap(classOf[ClickHouseConnection]).createStatement) { statement =>
         statement
           .write()
+          .data(ClickHouseFile.of(batch.file, batch.compression, 1, batch.format))
           .table(table)
-          .data(batch.file, batch.format)
-          .addDbParam(ClickHouseQueryParam.MAX_INSERT_BLOCK_SIZE, batch.rowCount.toString) // atomic insert
-          .send()
+          .params(Map("max_insert_block_size" -> batch.rowCount.toString).asJava) // atomic insert
+          .executeAndWait()
       }
     }
   }
