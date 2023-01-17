@@ -8,11 +8,15 @@
 
 package com.adform.streamloader.model
 
+import org.apache.kafka.common.TopicPartition
+
 /**
   * Specification of a range of records consumed from a single topic partition,
   * the start and end positions are both inclusive.
   */
-case class StreamRange(topic: String, partition: Int, start: StreamPosition, end: StreamPosition)
+case class StreamRange(topic: String, partition: Int, start: StreamPosition, end: StreamPosition) {
+  def topicPartition: TopicPartition = new TopicPartition(topic, partition)
+}
 
 /**
   * A mutable builder of [[StreamRange]].

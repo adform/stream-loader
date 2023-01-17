@@ -8,7 +8,6 @@
 
 package com.adform.streamloader.sink.batch.storage
 
-import com.adform.streamloader.sink.batch.storage.TwoPhaseCommitBatchStorage
 import com.adform.streamloader.sink.file.SingleFileRecordBatch
 
 import scala.collection.mutable

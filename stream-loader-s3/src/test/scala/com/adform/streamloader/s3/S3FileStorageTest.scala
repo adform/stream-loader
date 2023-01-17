@@ -10,7 +10,8 @@ package com.adform.streamloader.s3
 
 import java.io.File
 import java.util.UUID
-import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamPosition, StreamRange, Timestamp}
+import com.adform.streamloader.sink.batch.storage.TwoPhaseCommitMetadata
 import com.adform.streamloader.sink.file.{FilePathFormatter, PartitionedFileRecordBatch, SingleFileRecordBatch}
 import com.adform.streamloader.source.MockKafkaContext
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
@@ -61,7 +62,11 @@ class S3FileStorageTest extends AnyFunSpec with Matchers with MockS3 {
         .toArray
 
       stored should contain theSameElementsAs Array("filename")
-      context.committed(Set(tp)) shouldEqual Map(tp -> Some(new OffsetAndMetadata(11, "{\"watermark\":100}")))
+      context.committed(Set(tp)) shouldEqual Map(
+        tp -> Some(
+          new OffsetAndMetadata(11, TwoPhaseCommitMetadata[S3MultiFileStaging](Timestamp(100), None).serialize)
+        )
+      )
 
     } finally {
       sourceFile.delete()

@@ -8,7 +8,8 @@
 
 package com.adform.streamloader.hadoop
 
-import com.adform.streamloader.model.{StreamRange, StreamPosition, Timestamp}
+import com.adform.streamloader.model.{StreamPosition, StreamRange, Timestamp}
+import com.adform.streamloader.sink.batch.storage.TwoPhaseCommitMetadata
 import com.adform.streamloader.sink.file.{FilePathFormatter, PartitionedFileRecordBatch, SingleFileRecordBatch}
 import com.adform.streamloader.source.MockKafkaContext
 import org.apache.hadoop.conf.Configuration
@@ -63,7 +64,9 @@ class HadoopFileStorageTest extends AnyFunSpec with Matchers {
       storage.commitBatch(batch)
 
       destFile.exists() shouldBe true
-      context.committed(Set(tp)) shouldEqual Map(tp -> Some(new OffsetAndMetadata(11, "{\"watermark\":100}")))
+      context.committed(Set(tp)) shouldEqual Map(
+        tp -> Some(new OffsetAndMetadata(11, TwoPhaseCommitMetadata[MultiFileStaging](Timestamp(100), None).serialize))
+      )
     } finally {
       fs.close()
       sourceFile.delete()
