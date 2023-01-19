@@ -12,12 +12,18 @@ ThisBuild / developers := List(
   Developer("sauliusvl", "Saulius Valatka", "saulius.vl@gmail.com", url("https://github.com/sauliusvl"))
 )
 
-val gitRepo = "git@github.com:adform/stream-loader.git"
-val gitRepoUrl = "https://github.com/adform/stream-loader"
-
 enablePlugins(GitVersioning)
+
+val gitRepo = "adform/stream-loader"
+val gitRepoUrl = s"https://github.com/$gitRepo"
+
 ThisBuild / git.useGitDescribe := true
-ThisBuild / git.remoteRepo := gitRepo
+ThisBuild / git.remoteRepo := {
+  sys.env.get("GITHUB_TOKEN") match {
+    case Some(token) => s"https://x-access-token:$token@github.com/$gitRepo"
+    case None => s"git@github.com:$gitRepo.git"
+  }
+}
 
 val scalaTestVersion = "3.2.15"
 val scalaCheckVersion = "1.17.0"
@@ -246,7 +252,7 @@ lazy val commonSettings = Seq(
   Test / publishArtifact := false,
   publishTo := sonatypePublishToBundle.value,
   homepage := Some(url(gitRepoUrl)),
-  scmInfo := Some(ScmInfo(url(gitRepoUrl), s"scm:git:$gitRepo"))
+  scmInfo := Some(ScmInfo(url(gitRepoUrl), s"scm:git:git@github.com:$gitRepo.git"))
 )
 
 lazy val copyDocAssets = taskKey[File]("Copy unidoc resources")

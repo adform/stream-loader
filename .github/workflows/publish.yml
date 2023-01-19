@@ -42,9 +42,6 @@ jobs:
         gpg_private_key: ${{ secrets.PGP_SECRET }}
         passphrase: ${{ secrets.PGP_PASSPHRASE }}
 
-    - name: Setup Git Token
-      uses: fregante/setup-git-user@v1
-
     - name: Publish to Sonatype
       env:
         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
