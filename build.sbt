@@ -251,8 +251,6 @@ lazy val commonSettings = Seq(
 
 lazy val copyDocAssets = taskKey[File]("Copy unidoc resources")
 
-import com.github.sbt.git.SbtGit.GitKeys._
-
 lazy val `stream-loader` = project
   .in(file("."))
   .enablePlugins(ScalaUnidocPlugin)
