@@ -26,7 +26,7 @@ import scala.jdk.DurationConverters._
   * in the background for each partition group. The commit queue size is configurable and commits block if the queues get full.
   *
   * @tparam B Type of record batches.
-  * @define RecordBatchStorage [[RecordBatchStorage RecordBatchStorage]]
+  * @define RecordBatchStorage [[storage.RecordBatchStorage RecordBatchStorage]]
   */
 class RecordBatchingSink[+B <: RecordBatch](
     recordBatcher: RecordBatcher[B],

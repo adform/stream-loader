@@ -17,15 +17,17 @@ import org.apache.kafka.common.TopicPartition
   * Implementers need to define committed position lookup for a list of assigned partitions which are then
   * used to rewind the streams. They are also responsible for implementing offset committing.
   *
-  * Implementers can chose to use Kafka itself for offset storage by using the provided [[KafkaContext]],
+  * Implementers can chose to use Kafka itself for offset storage by using the provided $KafkaContext,
   * they can also store/retrieve offsets to/from the storage itself. The delivery guarantees of a sink depend
   * on the offset management, e.g. storing offsets atomically with data guarantees exactly-once storage, whereas
   * using only Kafka for offset storage will usually result in either at-least-once of at-most-once semantics.
+  *
+  * @define KafkaContext [[com.adform.streamloader.source.KafkaContext KafkaContext]]
   */
 trait Sink {
 
   /**
-    * Initializes the sink with a [[KafkaContext]].
+    * Initializes the sink with a $KafkaContext.
     *
     * @param kafkaContext The context provided by the source, can be used for offset management in Kafka.
     */

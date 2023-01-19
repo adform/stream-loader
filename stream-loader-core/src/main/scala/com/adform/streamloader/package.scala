@@ -8,14 +8,8 @@
 
 package com.adform
 
-import com.adform.streamloader.sink.Sink
-import com.adform.streamloader.sink.batch.{RecordBatcher, RecordBatchingSink}
-import com.adform.streamloader.sink.batch.storage.RecordBatchStorage
-import com.adform.streamloader.sink.encoding.csv.CsvFileBuilder
-import com.adform.streamloader.source.KafkaSource
-
 /**
-  * The entry point of the stream loader library is the [[StreamLoader]] class, which requires a [[KafkaSource]] and a [[Sink]]. Once started
+  * The entry point of the stream loader library is the [[StreamLoader]] class, which requires a $KafkaSource and a $Sink. Once started
   * it will subscribe to the provided topics and will start polling and sinking records.
   * The sink has to be able to persist records and to look up committed offsets (technically this is optional, but without it there would
   * be no way to provide any delivery guarantees). A large class of sinks are batch based, implemented as $RecordBatchingSink.
@@ -32,9 +26,11 @@ import com.adform.streamloader.source.KafkaSource
   * For concrete storage implementations see the [[clickhouse]], [[hadoop]], [[s3]] and [[vertica]] packages.
   * They also contain more file builder implementations than just the $CsvFileBuilder included in the core library.
   *
-  * @define RecordBatchingSink [[RecordBatchingSink RecordBatchingSink]]
-  * @define RecordBatcher [[RecordBatcher RecordBatcher]]
-  * @define RecordBatchStorage [[RecordBatchStorage RecordBatchStorage]]
-  * @define CsvFileBuilder [[CsvFileBuilder CsvFileBuilder]]
+  * @define KafkaSource [[source.KafkaSource KafkaSource]]
+  * @define Sink [[sink.Sink Sink]]
+  * @define RecordBatchingSink [[sink.batch.RecordBatchingSink RecordBatchingSink]]
+  * @define RecordBatcher [[sink.batch.RecordBatcher RecordBatcher]]
+  * @define RecordBatchStorage [[sink.batch.storage.RecordBatchStorage RecordBatchStorage]]
+  * @define CsvFileBuilder [[sink.encoding.csv.CsvFileBuilder CsvFileBuilder]]
   */
 package object streamloader

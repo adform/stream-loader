@@ -12,11 +12,12 @@ ThisBuild / developers := List(
   Developer("sauliusvl", "Saulius Valatka", "saulius.vl@gmail.com", url("https://github.com/sauliusvl"))
 )
 
-enablePlugins(GitVersioning)
-ThisBuild / git.useGitDescribe := true
-
 val gitRepo = "git@github.com:adform/stream-loader.git"
 val gitRepoUrl = "https://github.com/adform/stream-loader"
+
+enablePlugins(GitVersioning)
+ThisBuild / git.useGitDescribe := true
+ThisBuild / git.remoteRepo := gitRepo
 
 val scalaTestVersion = "3.2.15"
 val scalaCheckVersion = "1.17.0"
@@ -240,6 +241,7 @@ lazy val commonSettings = Seq(
         outFile
       })
   },
+  versionScheme := Some("early-semver"),
   publishMavenStyle := true,
   Test / publishArtifact := false,
   publishTo := sonatypePublishToBundle.value,
@@ -248,8 +250,6 @@ lazy val commonSettings = Seq(
 )
 
 lazy val copyDocAssets = taskKey[File]("Copy unidoc resources")
-
-import com.github.sbt.git.SbtGit.GitKeys._
 
 lazy val `stream-loader` = project
   .in(file("."))
@@ -284,7 +284,6 @@ lazy val `stream-loader` = project
         .toSeq
         .map(diagram => diagram -> ("diagrams/" + diagramDir.toURI.relativize(diagram.toURI).getPath))
     },
-    gitRemoteRepo := s"$gitRepoUrl.git",
     ghpagesRepository := file(s"/tmp/ghpages/${organization.value}/${name.value}/${version.value}")
   )
   .aggregate(
