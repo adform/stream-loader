@@ -240,6 +240,7 @@ lazy val commonSettings = Seq(
         outFile
       })
   },
+  versionScheme := Some("early-semver"),
   publishMavenStyle := true,
   Test / publishArtifact := false,
   publishTo := sonatypePublishToBundle.value,
