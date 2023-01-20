@@ -44,14 +44,14 @@ interface RecordBatchStorage [[../com/adform/streamloader/sink/batch/storage/Rec
 RecordBatchingSink *-- RecordBatcher
 RecordBatchingSink *-- RecordBatchStorage
 
-RecordBatchStorage <|-- InDataOffsetRecordBatchStorage
-RecordBatchStorage <|-- TwoPhaseCommitRecordBatchStorage
+RecordBatchStorage <|-- InDataOffsetBatchStorage
+RecordBatchStorage <|-- TwoPhaseCommitBatchStorage
 
-abstract class InDataOffsetRecordBatchStorage [[../com/adform/streamloader/sink/batch/storage/InDataOffsetRecordBatchStorage.html{InDataOffsetRecordBatchStorage}]] {
+abstract class InDataOffsetBatchStorage [[../com/adform/streamloader/sink/batch/storage/InDataOffsetBatchStorage.html{InDataOffsetBatchStorage}]] {
   storeBatch(batch)
 }
 
-abstract class TwoPhaseCommitRecordBatchStorage [[../com/adform/streamloader/sink/batch/storage/TwoPhaseCommitRecordBatchStorage.html{TwoPhaseCommitRecordBatchStorage}]] {
+abstract class TwoPhaseCommitBatchStorage [[../com/adform/streamloader/sink/batch/storage/TwoPhaseCommitBatchStorage.html{TwoPhaseCommitBatchStorage}]] {
   stageBatch(batch): staging
   storeBatch(staging)
 }
