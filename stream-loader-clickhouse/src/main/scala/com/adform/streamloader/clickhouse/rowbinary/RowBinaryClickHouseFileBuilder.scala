@@ -10,7 +10,7 @@ package com.adform.streamloader.clickhouse.rowbinary
 
 import com.adform.streamloader.clickhouse.ClickHouseFileBuilder
 import com.adform.streamloader.sink.file.{Compression, StreamFileBuilder}
-import com.clickhouse.client.{ClickHouseCompression, ClickHouseFormat}
+import com.clickhouse.data.{ClickHouseCompression, ClickHouseFormat}
 
 /**
   * File builder for the ClickHouse native RowBinary file format, requires

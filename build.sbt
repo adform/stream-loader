@@ -38,7 +38,7 @@ lazy val `stream-loader-core` = project
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, git.gitHeadCommit),
     libraryDependencies ++= Seq(
       "org.scala-lang"     % "scala-reflect"     % scalaVersion.value,
-      "org.apache.kafka"   % "kafka-clients"     % "3.3.1",
+      "org.apache.kafka"   % "kafka-clients"     % "3.3.2",
       "org.log4s"         %% "log4s"             % "1.10.0",
       "org.anarres.lzo"    % "lzo-commons"       % "1.0.6",
       "org.xerial.snappy"  % "snappy-java"       % "1.1.8.4",
@@ -66,7 +66,7 @@ lazy val `stream-loader-clickhouse` = project
   .settings(
     resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
-      "com.clickhouse"     % "clickhouse-jdbc" % "0.3.2-patch11",
+      "com.clickhouse"     % "clickhouse-jdbc" % "0.4.0",
       "org.scalatest"     %% "scalatest"       % scalaTestVersion      % "test",
       "org.scalatestplus" %% "scalacheck-1-17" % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"      % scalaCheckVersion     % "test"
@@ -95,9 +95,9 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.19.15",
+      "software.amazon.awssdk" % "s3"              % "2.19.23",
       "org.scalatest"         %% "scalatest"       % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.383"       % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.392"       % "test",
       "org.gaul"               % "s3proxy"         % "2.0.0"          % "test"
     )
   )
