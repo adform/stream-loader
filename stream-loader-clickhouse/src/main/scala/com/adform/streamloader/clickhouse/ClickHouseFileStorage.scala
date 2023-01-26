@@ -11,7 +11,7 @@ package com.adform.streamloader.clickhouse
 import com.adform.streamloader.model._
 import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import com.adform.streamloader.util.Logging
-import com.clickhouse.client.ClickHouseFile
+import com.clickhouse.data.ClickHouseFile
 import com.clickhouse.jdbc.ClickHouseConnection
 import org.apache.kafka.common.TopicPartition
 

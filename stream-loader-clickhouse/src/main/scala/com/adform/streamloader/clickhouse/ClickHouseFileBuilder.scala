@@ -9,7 +9,7 @@
 package com.adform.streamloader.clickhouse
 
 import com.adform.streamloader.sink.file.{FileBuilder, FileBuilderFactory}
-import com.clickhouse.client.{ClickHouseCompression, ClickHouseFormat}
+import com.clickhouse.data.{ClickHouseCompression, ClickHouseFormat}
 
 /**
   * A FileBuilder able to build files that can be loaded to ClickHouse.

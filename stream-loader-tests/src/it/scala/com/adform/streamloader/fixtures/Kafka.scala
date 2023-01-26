@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-case class KafkaConfig(image: String = "bitnami/kafka:3.3.1")
+case class KafkaConfig(image: String = "bitnami/kafka:3.3.2")
 
 trait KafkaTestFixture extends Kafka with BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite with DockerTestFixture =>

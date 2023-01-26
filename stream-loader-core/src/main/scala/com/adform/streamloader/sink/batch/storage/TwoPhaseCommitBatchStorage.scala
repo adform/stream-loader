@@ -149,14 +149,13 @@ abstract class TwoPhaseCommitBatchStorage[-B <: RecordBatch, S: JsonSerializer]
   private object Metrics {
     private val metadataSizes = TrieMap.empty[TopicPartition, DistributionSummary]
 
-    private def partitionTags(tp: TopicPartition) =
-      Seq(MetricTag("topic", tp.topic()), MetricTag("partition", tp.partition().toString))
+    private def topicTags(tp: TopicPartition) = Seq(MetricTag("topic", tp.topic()))
 
     def metadataSize(tp: TopicPartition): DistributionSummary = metadataSizes.getOrElseUpdate(
       tp,
       createDistribution(
         "kafka.commit.staged.metadata.size.bytes",
-        Seq(MetricTag("loader-thread", Thread.currentThread().getName)) ++ partitionTags(tp)
+        Seq(MetricTag("loader-thread", Thread.currentThread().getName)) ++ topicTags(tp)
       )
     )
   }
