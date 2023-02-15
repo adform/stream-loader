@@ -71,15 +71,14 @@ class HadoopFileStorage[P](
 
     log.debug(s"Moving staged file $stagingFilePath to the destination path $targetFilePath")
     if (!hadoopFS.rename(stagingFilePath, targetFilePath)) {
-      if (!isSingleBatchStored(staging)) {
-        throw new IOException(
-          s"Failed renaming file from $stagingFilePath to $targetFilePath, because $stagingFilePath does not exist"
-        )
+      if (isSingleBatchStored(staging)) {
+        log.debug(s"Target file $targetFilePath already exists, ignoring rename failure")
       } else {
         throw new IOException(s"Failed renaming file from $stagingFilePath to $targetFilePath")
       }
+    } else {
+      log.debug(s"Successfully stored staged file $stagingFilePath to the destination path $targetFilePath")
     }
-    log.debug(s"Successfully stored staged file $stagingFilePath to the destination path $targetFilePath")
   }
 
   private def isSingleBatchStored(staging: FileStaging): Boolean = {
