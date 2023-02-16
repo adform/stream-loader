@@ -39,9 +39,12 @@ class PartitioningFileRecordBatcher[P, R](
       extends RecordBatchBuilder[SingleFileRecordBatch] {
 
     def write(record: StreamRecord, formattedRecord: R): Unit = {
-      add(record)
+      super.add(record)
       fileBuilder.write(formattedRecord)
     }
+
+    override def addToBatch(record: StreamRecord): Int = 1
+
     override def isBatchReady: Boolean = false
 
     override def build(): Option[SingleFileRecordBatch] =
@@ -55,18 +58,17 @@ class PartitioningFileRecordBatcher[P, R](
 
       private val partitionBuilders: mutable.HashMap[P, FileRecordBatchBuilder] = mutable.HashMap.empty
 
-      override def add(record: StreamRecord): Unit = {
-        super.add(record)
-        recordFormatter
-          .format(record)
-          .foreach(formatted => {
-            val partition = recordPartitioner.partition(record, formatted)
-            val partitionBuilder = partitionBuilders.getOrElseUpdate(
-              partition,
-              FileRecordBatchBuilder(timeProvider.currentMillis, fileBuilderFactory(partition))
-            )
-            partitionBuilder.write(record, formatted)
-          })
+      override def addToBatch(record: StreamRecord): Int = {
+        val formattedRecords = recordFormatter.format(record)
+        formattedRecords.foreach(formatted => {
+          val partition = recordPartitioner.partition(record, formatted)
+          val partitionBuilder = partitionBuilders.getOrElseUpdate(
+            partition,
+            FileRecordBatchBuilder(timeProvider.currentMillis, fileBuilderFactory(partition))
+          )
+          partitionBuilder.write(record, formatted)
+        })
+        formattedRecords.size
       }
 
       override def isBatchReady: Boolean = fileCommitStrategy.shouldCommit(

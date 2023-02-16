@@ -71,10 +71,10 @@ class ExternalOffsetVerticaFileBatcher[R](
 
     new RecordBatchBuilder[ExternalOffsetVerticaFileRecordBatch] {
 
-      override def add(record: StreamRecord): Unit = {
-        super.add(record)
-        recordFormatter(fileId, record)
-          .foreach(formatted => fileBuilder.write(formatted))
+      override def addToBatch(record: StreamRecord): Int = {
+        val formattedRecords = recordFormatter(fileId, record)
+        formattedRecords.foreach(formatted => fileBuilder.write(formatted))
+        formattedRecords.size
       }
 
       override def isBatchReady: Boolean = fileCommitStrategy.shouldCommit(

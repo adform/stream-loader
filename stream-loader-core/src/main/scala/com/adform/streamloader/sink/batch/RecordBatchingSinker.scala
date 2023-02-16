@@ -114,8 +114,10 @@ class RecordBatchingSinker[B <: RecordBatch](
     if (!isInitialized)
       throw new IllegalStateException("Loader has to be initialized before starting writes")
 
-    builder.add(record)
+    val batched = builder.add(record)
+
     Metrics.recordsWritten(record.topicPartition).increment()
+    Metrics.recordsBatched(record.topicPartition).increment(batched)
 
     checkAndCommitBatchIfNeeded()
   }
@@ -172,6 +174,9 @@ class RecordBatchingSinker[B <: RecordBatch](
 
     val recordsWritten: Map[TopicPartition, Counter] =
       groupPartitions.map(tp => tp -> createCounter("records.written", commonTags ++ partitionTags(tp))).toMap
+
+    val recordsBatched: Map[TopicPartition, Counter] =
+      groupPartitions.map(tp => tp -> createCounter("records.batched", commonTags ++ partitionTags(tp))).toMap
 
     val commitDuration: Timer = createTimer("commit.duration", commonTags, maxDuration = Duration.ofMinutes(5))
     val commitQueueSize: Gauge =

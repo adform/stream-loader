@@ -42,8 +42,7 @@ class InRowOffsetVerticaFileRecordBatcher[R](
 
   override def constructBatch(
       fileBuilder: VerticaFileBuilder[R],
-      recordRanges: Seq[StreamRange],
-      recordCount: Long
+      recordRanges: Seq[StreamRange]
   ): Option[InRowOffsetVerticaFileRecordBatch] = {
     fileBuilder
       .build()

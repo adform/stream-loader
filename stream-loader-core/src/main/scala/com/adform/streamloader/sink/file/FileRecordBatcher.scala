@@ -35,7 +35,7 @@ abstract class FileRecordBatcher[R, +B <: FileRecordBatch, FB <: FileBuilder[R]]
   /**
     * Constructs the final batch of a concrete type given the formed file and the accumulated record statistics.
     */
-  def constructBatch(fileBuilder: FB, recordRanges: Seq[StreamRange], recordCount: Long): Option[B]
+  def constructBatch(fileBuilder: FB, recordRanges: Seq[StreamRange]): Option[B]
 
   override def newBatchBuilder(): RecordBatchBuilder[B] = {
     val fileStartTimeMillis = timeProvider.currentMillis
@@ -43,11 +43,10 @@ abstract class FileRecordBatcher[R, +B <: FileRecordBatch, FB <: FileBuilder[R]]
 
     new RecordBatchBuilder[B] {
 
-      override def add(record: StreamRecord): Unit = {
-        super.add(record)
-        recordFormatter
-          .format(record)
-          .foreach(formatted => fileBuilder.write(formatted))
+      override def addToBatch(record: StreamRecord): Int = {
+        val formattedRecords = recordFormatter.format(record)
+        formattedRecords.foreach(formatted => fileBuilder.write(formatted))
+        formattedRecords.size
       }
 
       override def isBatchReady: Boolean = fileCommitStrategy.shouldCommit(
@@ -56,7 +55,7 @@ abstract class FileRecordBatcher[R, +B <: FileRecordBatch, FB <: FileBuilder[R]]
         fileBuilder.getRecordCount
       )
 
-      override def build(): Option[B] = constructBatch(fileBuilder, currentRecordRanges, currentRecordCount)
+      override def build(): Option[B] = constructBatch(fileBuilder, currentRecordRanges)
 
       override def discard(): Unit = fileBuilder.discard()
     }
