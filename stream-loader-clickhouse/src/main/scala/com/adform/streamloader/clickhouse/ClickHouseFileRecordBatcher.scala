@@ -24,8 +24,7 @@ class ClickHouseFileRecordBatcher[R](
 
   override def constructBatch(
       fileBuilder: ClickHouseFileBuilder[R],
-      recordRanges: Seq[StreamRange],
-      recordCount: Long
+      recordRanges: Seq[StreamRange]
   ): Option[ClickHouseFileRecordBatch] = {
     fileBuilder
       .build()

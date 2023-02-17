@@ -38,15 +38,15 @@ lazy val `stream-loader-core` = project
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, git.gitHeadCommit),
     libraryDependencies ++= Seq(
       "org.scala-lang"     % "scala-reflect"     % scalaVersion.value,
-      "org.apache.kafka"   % "kafka-clients"     % "3.3.2",
+      "org.apache.kafka"   % "kafka-clients"     % "3.4.0",
       "org.log4s"         %% "log4s"             % "1.10.0",
       "org.anarres.lzo"    % "lzo-commons"       % "1.0.6",
-      "org.xerial.snappy"  % "snappy-java"       % "1.1.8.4",
+      "org.xerial.snappy"  % "snappy-java"       % "1.1.9.1",
       "org.lz4"            % "lz4-java"          % "1.8.0",
-      "com.github.luben"   % "zstd-jni"          % "1.5.2-5",
+      "com.github.luben"   % "zstd-jni"          % "1.5.4-1",
       "com.univocity"      % "univocity-parsers" % "2.9.1",
       "org.json4s"        %% "json4s-native"     % "4.0.6",
-      "io.micrometer"      % "micrometer-core"   % "1.10.3",
+      "io.micrometer"      % "micrometer-core"   % "1.10.4",
       "org.scalatest"     %% "scalatest"         % scalaTestVersion      % "test",
       "org.scalatestplus" %% "scalacheck-1-17"   % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"        % scalaCheckVersion     % "test",
@@ -95,9 +95,9 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.19.23",
+      "software.amazon.awssdk" % "s3"              % "2.20.5",
       "org.scalatest"         %% "scalatest"       % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.392"       % "test",
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.408"       % "test",
       "org.gaul"               % "s3proxy"         % "2.0.0"          % "test"
     )
   )

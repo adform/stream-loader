@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.s3.S3Client
 
 import scala.jdk.CollectionConverters._
 
-case class S3Config(image: String = "minio/minio:RELEASE.2023-01-06T18-11-18Z")
+case class S3Config(image: String = "minio/minio:RELEASE.2023-02-10T18-48-39Z")
 
 trait S3TestFixture extends S3 with BeforeAndAfterAll { this: Suite with DockerTestFixture =>
   override def beforeAll(): Unit = {

@@ -85,7 +85,9 @@ class RecordBatchingSinkerTest extends AnyFunSpec with Matchers {
         groupPartitions = Set(tp),
         () =>
           new RecordBatchBuilder[TestBatch] {
-            override def isBatchReady: Boolean = currentRecordCount >= recordsPerBatch
+            private var records: Int = 0
+            override def addToBatch(record: StreamRecord): Int = { records += 1; 1 }
+            override def isBatchReady: Boolean = records >= recordsPerBatch
             override def build(): Option[TestBatch] = Some(batchProvider.newBatch(currentRecordRanges))
             override def discard(): Unit = {}
           },
