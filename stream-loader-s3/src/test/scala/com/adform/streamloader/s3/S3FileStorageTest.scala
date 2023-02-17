@@ -50,7 +50,7 @@ class S3FileStorageTest extends AnyFunSpec with Matchers with MockS3 {
 
     val sourceFile = File.createTempFile("test", "txt")
     val fileBatch = SingleFileRecordBatch(sourceFile, Seq(StreamRange(tp.topic(), tp.partition(), start, end)))
-    val batch = PartitionedFileRecordBatch[Unit, SingleFileRecordBatch](Map(() -> fileBatch))
+    val batch = PartitionedFileRecordBatch[Unit, SingleFileRecordBatch](Map(() -> fileBatch), fileBatch.recordRanges)
 
     try {
       storage.commitBatch(batch)

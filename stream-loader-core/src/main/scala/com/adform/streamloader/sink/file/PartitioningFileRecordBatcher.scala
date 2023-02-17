@@ -88,7 +88,7 @@ class PartitioningFileRecordBatcher[P, R](
         } yield (partition, batch)
 
         if (batches.nonEmpty)
-          Some(PartitionedFileRecordBatch(batches.toMap))
+          Some(PartitionedFileRecordBatch(batches.toMap, currentRecordRanges))
         else
           None
       }

@@ -24,7 +24,10 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
   describe("mod 10 partitioning batcher with a 100 records") {
 
     val batcher = new PartitioningFileRecordBatcher[Int, String](
-      (record: StreamRecord) => Seq(new String(record.consumerRecord.value(), "UTF-8")),
+      (record: StreamRecord) => {
+        val value = new String(record.consumerRecord.value(), "UTF-8")
+        if (value == "IGNORE") Seq.empty else Seq(value)
+      },
       (record, value) => value.toInt % 10,
       _ => new CsvFileBuilder[String](Compression.NONE),
       stats => stats.exists(f => f.recordsWritten >= 20)
@@ -93,6 +96,21 @@ class PartitioningFileRecordBatcherTest extends AnyFunSpec with Matchers {
 
       it("should contain a single partition batch") {
         partitionedBatch.get.partitionBatches.size shouldEqual 1
+      }
+    }
+
+    describe("with records being ignored in some partitions") {
+
+      val builder = batcher.newBatchBuilder()
+      for (i <- 0 until 20) {
+        val value = if (i == 5) i.toString else "IGNORE"
+        builder.add(newStreamRecord("topic", 0, i, Timestamp(i), "key", value))
+      }
+      val batch = builder.build().get
+
+      it("should have full overall record ranges") {
+        batch.recordRanges should contain theSameElementsAs
+          Seq(StreamRange("topic", 0, StreamPosition(0, Timestamp(0)), StreamPosition(19, Timestamp(19))))
       }
     }
 
