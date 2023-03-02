@@ -130,7 +130,6 @@ abstract class TwoPhaseCommitBatchStorage[-B <: RecordBatch, S: JsonSerializer]
         Some(StagedOffsetCommit(staging, recordRange.start, recordRange.end))
       )
       val serializedMetadata = metadata.serialize
-      Metrics.metadataSize(tp).record(serializedMetadata.length)
 
       tp -> new OffsetAndMetadata(recordRange.start.offset, serializedMetadata)
     })
@@ -144,19 +143,5 @@ abstract class TwoPhaseCommitBatchStorage[-B <: RecordBatch, S: JsonSerializer]
       tp -> new OffsetAndMetadata(recordRange.end.offset + 1, metadata)
     })
     kafkaContext.commitSync(offsets.toMap)
-  }
-
-  private object Metrics {
-    private val metadataSizes = TrieMap.empty[TopicPartition, DistributionSummary]
-
-    private def topicTags(tp: TopicPartition) = Seq(MetricTag("topic", tp.topic()))
-
-    def metadataSize(tp: TopicPartition): DistributionSummary = metadataSizes.getOrElseUpdate(
-      tp,
-      createDistribution(
-        "kafka.commit.staged.metadata.size.bytes",
-        Seq(MetricTag("loader-thread", Thread.currentThread().getName)) ++ topicTags(tp)
-      )
-    )
   }
 }
