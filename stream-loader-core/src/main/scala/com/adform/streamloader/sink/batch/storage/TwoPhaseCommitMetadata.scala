@@ -75,7 +75,7 @@ object TwoPhaseCommitMetadata extends Logging {
         case Success(decompressed) => TwoPhaseCommitMetadata.tryParseJson[S](decompressed)
         case Failure(ex) =>
           log.error(ex)(s"Failed decompressing base64 encoded metadata '$metadata'")
-          null
+          None
       }
     } else {
       TwoPhaseCommitMetadata.tryParseJson[S](new String(bytes, "UTF-8"))
