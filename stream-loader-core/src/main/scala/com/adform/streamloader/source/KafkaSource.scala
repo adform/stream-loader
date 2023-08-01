@@ -89,7 +89,7 @@ class KafkaSource(
         partitions.forEach(tp => {
           watermarkProviders.remove(tp)
           removeMeters(watermarkMetricGauges(tp))
-          watermarkMetricGauges.remove(tp).foreach(_.close())
+          watermarkMetricGauges.remove(tp)
         })
         listener.onPartitionsRevoked(partitions)
       }
