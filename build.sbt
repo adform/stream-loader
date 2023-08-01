@@ -5,6 +5,7 @@ ThisBuild / organizationName := "Adform"
 ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-release", "11")
 
+
 ThisBuild / startYear := Some(2020)
 ThisBuild / licenses += ("MPL-2.0", new URL("http://mozilla.org/MPL/2.0/"))
 
