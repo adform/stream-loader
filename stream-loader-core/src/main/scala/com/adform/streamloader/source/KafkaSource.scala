@@ -88,7 +88,8 @@ class KafkaSource(
       override def onPartitionsRevoked(partitions: util.Collection[TopicPartition]): Unit = {
         partitions.forEach(tp => {
           watermarkProviders.remove(tp)
-          watermarkMetricGauges.remove(tp).foreach(_.close())
+          removeMeters(watermarkMetricGauges(tp))
+          watermarkMetricGauges.remove(tp)
         })
         listener.onPartitionsRevoked(partitions)
       }
