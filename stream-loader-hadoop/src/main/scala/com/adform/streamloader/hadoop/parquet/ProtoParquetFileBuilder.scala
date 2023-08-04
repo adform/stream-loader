@@ -29,7 +29,7 @@ class ProtoParquetFileBuilder[R <: Message: ClassTag](config: ParquetConfig) ext
   }
 
   private val parquetWriter = {
-    val builder = ProtoParquetWriter.builder[R](new Path(file.getAbsolutePath))
+    val builder = ProtoParquetWriter.builder[R](new Path(s"file://${file.getAbsolutePath}"))
     builder.withMessage(implicitly[ClassTag[R]].runtimeClass.asInstanceOf[Class[_ <: Message]])
     config.applyTo(builder)
     builder.build()
