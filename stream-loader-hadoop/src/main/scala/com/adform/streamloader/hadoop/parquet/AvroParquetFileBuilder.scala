@@ -39,7 +39,7 @@ abstract class AvroParquetFileBuilder[R](schema: Schema, config: ParquetConfig =
   protected val parquetWriter: ParquetWriter[GenericRecord] = {
     val conf = new Configuration()
     val builder = AvroParquetWriter
-      .builder[GenericRecord](HadoopOutputFile.fromPath(new Path(file.getAbsolutePath), conf))
+      .builder[GenericRecord](HadoopOutputFile.fromPath(new Path(s"file://${file.getAbsolutePath}"), conf))
       .withSchema(schema)
       .withConf(conf)
     config.applyTo(builder)
