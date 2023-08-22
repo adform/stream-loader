@@ -40,7 +40,7 @@ lazy val `stream-loader-core` = project
       "org.scala-lang"     % "scala-reflect"     % scalaVersion.value,
       "org.apache.kafka"   % "kafka-clients"     % "3.5.1",
       "org.log4s"         %% "log4s"             % "1.10.0",
-      "org.anarres.lzo"    % "lzo-commons"       % "1.0.6",
+      "org.apache.commons" % "commons-compress"  % "1.21",
       "org.xerial.snappy"  % "snappy-java"       % "1.1.10.3",
       "org.lz4"            % "lz4-java"          % "1.8.0",
       "com.github.luben"   % "zstd-jni"          % "1.5.5-5",
