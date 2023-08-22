@@ -29,7 +29,6 @@ case class ParquetConfig(
     case Compression.NONE => CompressionCodecName.UNCOMPRESSED
     case Compression.ZSTD => CompressionCodecName.ZSTD
     case Compression.GZIP => CompressionCodecName.GZIP
-    case Compression.LZOP => CompressionCodecName.LZO
     case Compression.SNAPPY => CompressionCodecName.SNAPPY
     case Compression.LZ4 => CompressionCodecName.LZ4
     case _ => throw new UnsupportedOperationException(s"Compression '$compression' is unsupported in parquet")

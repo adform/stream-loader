@@ -50,7 +50,7 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
 
   it("should format filenames for files with a single record range") {
     val formatter =
-      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
+      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZ4.fileExtension)
     val ranges =
       StreamRange(
         "test-topic",
@@ -62,14 +62,14 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
     val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), Seq(ranges))
 
     formatted should startWith("dt=20190410")
-    formatted should endWith(".lzo")
+    formatted should endWith(".lz4")
 
     noException should be thrownBy UUID.fromString(formatted.substring(12, formatted.length - 4))
   }
 
   it("should format filenames for files with multiple record ranges") {
     val formatter =
-      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
+      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZ4.fileExtension)
     val ranges = Seq(
       StreamRange(
         "test-topic",
@@ -88,19 +88,19 @@ class TimePartitioningFilePathFormatterTest extends AnyFunSpec with Matchers wit
     val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), ranges)
 
     formatted should startWith("dt=20190410")
-    formatted should endWith(".lzo")
+    formatted should endWith(".lz4")
 
     noException should be thrownBy UUID.fromString(formatted.substring(12, formatted.length - 4))
   }
 
   it("should format filenames correctly for arbitrary ranges") {
     val formatter =
-      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZOP.fileExtension)
+      new TimePartitioningFilePathFormatter[LocalDate](Some("'dt='yyyyMMdd"), Compression.LZ4.fileExtension)
     forAll { batches: Seq[StreamRange] =>
       val formatted = formatter.formatPath(LocalDate.parse("2019-04-10"), batches)
 
       formatted should startWith("dt=")
-      formatted should endWith(".lzo")
+      formatted should endWith(".lz4")
 
       noException should be thrownBy formatted.substring(3, 11).toLong
       noException should be thrownBy UUID.fromString(formatted.substring(12, formatted.length - 4))

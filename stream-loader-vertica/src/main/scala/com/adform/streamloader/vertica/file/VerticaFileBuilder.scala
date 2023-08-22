@@ -35,7 +35,6 @@ trait VerticaFileBuilder[-R] extends FileBuilder[R] {
     case Compression.ZSTD => "ZSTD"
     case Compression.GZIP => "GZIP"
     case Compression.BZIP => "BZIP"
-    case Compression.LZOP => "LZO"
     case _ => throw new UnsupportedOperationException(s"Compression $compression is not supported in Vertica")
   }
 
