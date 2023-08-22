@@ -37,10 +37,6 @@ object Compression {
     override def fileExtension: Option[String] = Some("bz2")
   }
 
-  case object LZOP extends Compression {
-    override def fileExtension: Option[String] = Some("lzo")
-  }
-
   case object SNAPPY extends Compression {
     override def fileExtension: Option[String] = Some("snappy")
   }
@@ -55,7 +51,6 @@ object Compression {
       case "zstd" => Some(Compression.ZSTD)
       case "gzip" => Some(Compression.GZIP)
       case "bzip" => Some(Compression.BZIP)
-      case "lzop" => Some(Compression.LZOP)
       case "snappy" => Some(Compression.SNAPPY)
       case "lz4" => Some(Compression.LZ4)
       case _ => None

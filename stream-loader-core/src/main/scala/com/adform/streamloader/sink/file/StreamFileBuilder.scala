@@ -14,7 +14,6 @@ import com.adform.streamloader.sink.batch.RecordStreamWriter
 import com.adform.streamloader.util.Logging
 import com.github.luben.zstd.ZstdOutputStream
 import net.jpountz.lz4.LZ4BlockOutputStream
-import org.anarres.lzo.{LzoCompressor1x_999, LzopOutputStream}
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 import org.xerial.snappy.SnappyHadoopCompatibleOutputStream
 
@@ -43,7 +42,6 @@ class StreamFileBuilder[-R](
     case Compression.ZSTD => new BufferedOutputStream(new ZstdOutputStream(fileStream), bufferSizeBytes)
     case Compression.GZIP => new GZIPOutputStream(fileStream, bufferSizeBytes)
     case Compression.BZIP => new BZip2CompressorOutputStream(fileStream)
-    case Compression.LZOP => new LzopOutputStream(fileStream, new LzoCompressor1x_999(9), bufferSizeBytes)
     case Compression.SNAPPY => new SnappyHadoopCompatibleOutputStream(fileStream, bufferSizeBytes)
     case Compression.LZ4 => new LZ4BlockOutputStream(fileStream, bufferSizeBytes)
   }
