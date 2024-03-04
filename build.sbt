@@ -60,11 +60,6 @@ lazy val `stream-loader-core` = project
       "org.scalatestplus" %% "scalacheck-1-17"   % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"        % scalaCheckVersion     % "test",
       "ch.qos.logback"     % "logback-classic"   % "1.5.3"               % "test"
-    ),
-    testOptions += sbt.Tests.Setup(cl =>
-      cl.loadClass("org.slf4j.LoggerFactory")
-        .getMethod("getLogger", cl.loadClass("java.lang.String"))
-        .invoke(null, "ROOT") // Prevents slf4j replay warnings during tests
     )
   )
 
@@ -131,18 +126,18 @@ lazy val packAndSplitJars =
   taskKey[(File, File)]("Runs pack and splits out the application jars from the external dependency jars")
 lazy val dockerImage = settingKey[String]("Full docker image name")
 
+val IntegrationTest = config("it").extend(Test)
+
 lazy val `stream-loader-tests` = project
   .in(file("stream-loader-tests"))
   .dependsOn(`stream-loader-clickhouse`)
   .dependsOn(`stream-loader-hadoop`)
   .dependsOn(`stream-loader-s3`)
   .dependsOn(`stream-loader-vertica`)
-  .configs(IntegrationTest)
   .enablePlugins(PackPlugin)
   .enablePlugins(DockerPlugin)
   .enablePlugins(BuildInfoPlugin)
-  .settings(Defaults.itSettings: _*)
-  .settings(headerSettings(IntegrationTest))
+  .configs(IntegrationTest)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -151,12 +146,12 @@ lazy val `stream-loader-tests` = project
       "com.zaxxer"         % "HikariCP"         % "5.1.0",
       "com.vertica.jdbc"   % "vertica-jdbc"     % verticaVersion,
       "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion,
-      "org.scalatest"     %% "scalatest"        % scalaTestVersion              % "test,it",
-      "org.scalatestplus" %% "scalacheck-1-17"  % scalaCheckTestVersion         % "test,it",
-      ("com.spotify"       % "docker-client"    % "8.16.0" classifier "shaded") % "it",
-      "org.slf4j"          % "log4j-over-slf4j" % "2.0.12"                      % "it"
+      "org.scalatest"     %% "scalatest"        % scalaTestVersion              % "test",
+      "org.scalatestplus" %% "scalacheck-1-17"  % scalaCheckTestVersion         % "test",
+      ("com.spotify"       % "docker-client"    % "8.16.0" classifier "shaded") % "test",
+      "org.slf4j"          % "log4j-over-slf4j" % "2.0.12"                      % "test"
     ),
-    test := {}, // only integration tests present
+    inConfig(IntegrationTest)(Defaults.testTasks),
     publish := {},
     publishLocal := {},
     publish / skip := true,
@@ -219,18 +214,20 @@ lazy val `stream-loader-tests` = project
         )
       )
     },
+    Test / testOptions ++= Seq(
+      Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow")
+    ),
     IntegrationTest / test := (IntegrationTest / test).dependsOn(docker).value,
     IntegrationTest / testOnly := (IntegrationTest / testOnly).dependsOn(docker).evaluated,
-    // Prevents slf4j replay warnings during tests
-    IntegrationTest / testOptions ++= Seq(
+    IntegrationTest / testOptions := Seq(
       sbt.Tests.Setup(cl =>
         cl.loadClass("org.slf4j.LoggerFactory")
           .getMethod("getLogger", cl.loadClass("java.lang.String"))
-          .invoke(null, "ROOT")
+          .invoke(null, "ROOT") // Prevents slf4j replay warnings during tests
       ),
+      Tests.Argument(TestFrameworks.ScalaTest, "-n", "org.scalatest.tags.Slow"),
       Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "3", "-minSuccessfulTests", "10")
-    ),
-    inConfig(IntegrationTest)(org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings)
+    )
   )
 
 lazy val generateDiagrams = taskKey[Seq[File]]("Renders UML diagrams to SVG images")
@@ -260,6 +257,13 @@ lazy val commonSettings = Seq(
   versionScheme := Some("early-semver"),
   publishMavenStyle := true,
   Test / publishArtifact := false,
+  Test / testOptions ++= Seq(
+    sbt.Tests.Setup(cl =>
+      cl.loadClass("org.slf4j.LoggerFactory")
+        .getMethod("getLogger", cl.loadClass("java.lang.String"))
+        .invoke(null, "ROOT") // Prevents slf4j replay warnings during tests
+    )
+  ),
   publishTo := sonatypePublishToBundle.value,
   homepage := Some(url(gitRepoUrl)),
   scmInfo := Some(ScmInfo(url(gitRepoUrl), s"scm:git:git@github.com:$gitRepo.git"))
