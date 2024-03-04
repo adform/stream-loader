@@ -16,25 +16,25 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Cache Coursier
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/coursier
         key: ${{ runner.os }}-coursier-${{ hashFiles('**/*.sbt') }}
 
     - name: Cache SBT
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.sbt
         key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.sbt') }}
 
     - name: Setup JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '11'
+        java-version: '21'
 
     - name: Run Tests
       run: sbt -Dsbt.color=always -Dsbt.supershell=false scalafmtCheck scalafmtSbtCheck headerCheckAll test IntegrationTest/test

@@ -71,7 +71,9 @@ object TwoPhaseCommitMetadata extends Logging {
         (metadata.getBytes("UTF-8"), false)
     }
     if (isCompressed) {
-      Try(new String(Zstd.decompress(bytes, Zstd.decompressedSize(bytes).toInt), "UTF-8")) match {
+      Try(
+        new String(Zstd.decompress(bytes, Zstd.getFrameContentSize(bytes, 0, bytes.length, false).toInt), "UTF-8")
+      ) match {
         case Success(decompressed) => TwoPhaseCommitMetadata.tryParseJson[S](decompressed)
         case Failure(ex) =>
           log.error(ex)(s"Failed decompressing base64 encoded metadata '$metadata'")
