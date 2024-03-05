@@ -15,11 +15,13 @@ import com.adform.streamloader.storage.HdfsStorageBackend
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.ExecutionContext
 
-class HdfsTests
+@Slow
+class HdfsIntegrationTests
     extends AnyFunSpec
     with Checkers
     with Matchers

@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-case class KafkaConfig(image: String = "bitnami/kafka:3.4.0-debian-11-r21")
+case class KafkaConfig(image: String = "bitnami/kafka:3.7.0-debian-12-r0")
 
 trait KafkaTestFixture extends Kafka with BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite with DockerTestFixture =>
@@ -154,8 +154,7 @@ trait Kafka { this: Docker =>
       )
       .exposedPorts(kafkaPort.toString)
       .env(
-        "KAFKA_BROKER_ID=1",
-        "KAFKA_ENABLE_KRAFT=yes",
+        "KAFKA_CFG_NODE_ID=1",
         "KAFKA_CFG_PROCESS_ROLES=broker,controller",
         "KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER",
         s"KAFKA_CFG_LISTENERS=PLAINTEXT://:$kafkaPort,CONTROLLER://:$kafkaControllerPort",

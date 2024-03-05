@@ -8,47 +8,47 @@
 
 package com.adform.streamloader
 
-import com.adform.streamloader.behaviors.{BasicLoaderBehaviors, RebalanceBehaviors}
+import com.adform.streamloader.behaviors.BasicLoaderBehaviors
 import com.adform.streamloader.fixtures._
-import com.adform.streamloader.loaders.TestClickHouseLoader
-import com.adform.streamloader.storage.ClickHouseStorageBackend
+import com.adform.streamloader.storage._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.ExecutionContext
 
-class ClickHouseTests
+@Slow
+class VerticaIntegrationTests
     extends AnyFunSpec
     with Matchers
     with Eventually
     with Checkers
     with DockerTestFixture
     with KafkaTestFixture
+    with VerticaTestFixture
     with Loaders
-    with ClickHouseTestFixture
-    with BasicLoaderBehaviors
-    with RebalanceBehaviors {
+    with BasicLoaderBehaviors {
 
   implicit val context: ExecutionContext = ExecutionContext.global
 
   val kafkaConfig: KafkaConfig = KafkaConfig()
-  val clickHouseConfig: ClickHouseConfig = ClickHouseConfig()
+  val verticaConfig: VerticaConfig = VerticaConfig()
 
   var hikariConf: HikariConfig = _
   var dataSource: HikariDataSource = _
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+
     hikariConf = new HikariConfig()
-    hikariConf.setDriverClassName(classOf[com.clickhouse.jdbc.ClickHouseDriver].getName)
-    hikariConf.setJdbcUrl(s"jdbc:clickhouse://${clickHouseContainer.endpoint}/${clickHouseConfig.dbName}")
-    hikariConf.addDataSourceProperty("host", clickHouseContainer.ip)
-    hikariConf.addDataSourceProperty("port", jdbcPort)
-    hikariConf.addDataSourceProperty("database", clickHouseConfig.dbName)
-    hikariConf.addDataSourceProperty("userID", "")
+    hikariConf.setDataSourceClassName(classOf[com.vertica.jdbc.DataSource].getName)
+    hikariConf.addDataSourceProperty("host", verticaContainer.ip)
+    hikariConf.addDataSourceProperty("port", verticaContainer.port.asInstanceOf[Short])
+    hikariConf.addDataSourceProperty("database", verticaConfig.dbName)
+    hikariConf.addDataSourceProperty("userID", "dbadmin")
     hikariConf.addDataSourceProperty("password", "")
     hikariConf.setConnectionTimeout(1000)
     hikariConf.setValidationTimeout(1000)
@@ -65,22 +65,39 @@ class ClickHouseTests
     dataSource.close()
   }
 
-  def clickHouseStorageBackend(testId: String): ClickHouseStorageBackend = {
+  def verticaExternalStorageBackend(testId: String): VerticaStorageBackend = {
     val table = testId.replace("-", "_")
     val backend =
-      storage.ClickHouseStorageBackend(
+      ExternalOffsetVerticaStorageBackend(
         docker,
         dockerNetwork,
         kafkaContainer,
-        clickHouseContainer,
+        verticaContainer,
         hikariConf,
         dataSource,
-        table,
-        TestClickHouseLoader
+        table
       )
     backend.initialize()
     backend
   }
 
-  it should behave like basicLoader("ClickHouse RowBinary loader", clickHouseStorageBackend)
+  def verticaInRowStorageBackend(testId: String): VerticaStorageBackend = {
+    val table = testId.replace("-", "_")
+    val backend =
+      InRowOffsetVerticaStorageBackend(
+        docker,
+        dockerNetwork,
+        kafkaContainer,
+        verticaContainer,
+        hikariConf,
+        dataSource,
+        table
+      )
+    backend.initialize()
+    backend
+  }
+
+  it should behave like basicLoader("Vertica external offset loader", verticaExternalStorageBackend)
+
+  it should behave like basicLoader("Vertica in row offset loader", verticaInRowStorageBackend)
 }
