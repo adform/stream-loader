@@ -10,8 +10,8 @@ package com.adform.streamloader.fixtures
 
 import java.time.Duration
 
-import com.spotify.docker.client.messages.ContainerConfig.Healthcheck
-import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
+import org.mandas.docker.client.messages.ContainerConfig.Healthcheck
+import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.log4s.getLogger
 import org.scalatest.{BeforeAndAfterAll, Suite}
 

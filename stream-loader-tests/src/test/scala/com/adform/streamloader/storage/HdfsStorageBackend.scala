@@ -15,8 +15,8 @@ import com.adform.streamloader.model.{ExampleMessage, StreamPosition}
 import com.adform.streamloader.sink.file.{FilePathFormatter, TimePartitioningFilePathFormatter}
 import com.adform.streamloader.{BuildInfo, Loader}
 import com.sksamuel.avro4s.{RecordFormat, ScalePrecision}
-import com.spotify.docker.client.DockerClient
-import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
+import org.mandas.docker.client.DockerClient
+import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.hadoop.fs.{FileSystem, LocatedFileStatus, Path, RemoteIterator}
 import org.apache.kafka.common.TopicPartition

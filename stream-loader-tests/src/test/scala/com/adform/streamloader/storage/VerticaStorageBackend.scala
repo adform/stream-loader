@@ -17,8 +17,8 @@ import com.adform.streamloader.sink.batch.storage.RecordBatchStorage
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.vertica.{ExternalOffsetVerticaFileStorage, InRowOffsetVerticaFileStorage}
 import com.adform.streamloader.{BuildInfo, Loader}
-import com.spotify.docker.client.DockerClient
-import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
+import org.mandas.docker.client.DockerClient
+import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import com.zaxxer.hikari.HikariConfig
 
 import javax.sql.DataSource

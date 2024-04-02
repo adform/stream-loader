@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{TimeUnit, TimeoutException}
 import java.util.{Properties, UUID}
 
-import com.spotify.docker.client.messages.ContainerConfig.Healthcheck
-import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
+import org.mandas.docker.client.messages.ContainerConfig.Healthcheck
+import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig, NewTopic}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}

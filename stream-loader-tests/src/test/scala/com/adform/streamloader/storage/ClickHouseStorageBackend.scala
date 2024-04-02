@@ -15,8 +15,8 @@ import com.adform.streamloader.source.KafkaContext
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.{BuildInfo, Loader}
 import com.clickhouse.jdbc.ClickHouseArray
-import com.spotify.docker.client.DockerClient
-import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
+import org.mandas.docker.client.DockerClient
+import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import com.zaxxer.hikari.HikariConfig
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Arbitrary

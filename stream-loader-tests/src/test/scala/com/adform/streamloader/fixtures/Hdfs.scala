@@ -10,7 +10,7 @@ package com.adform.streamloader.fixtures
 
 import java.net.URI
 
-import com.spotify.docker.client.messages.{ContainerConfig, HostConfig}
+import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.log4s._

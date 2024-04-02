@@ -12,7 +12,7 @@ import java.util.Properties
 import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork}
 import com.adform.streamloader.model.{StorageMessage, StreamPosition}
 import com.adform.streamloader.source.{KafkaContext, LockingKafkaContext}
-import com.spotify.docker.client.DockerClient
+import org.mandas.docker.client.DockerClient
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer, OffsetAndMetadata, OffsetAndTimestamp}
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.rng.Seed
