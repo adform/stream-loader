@@ -23,7 +23,7 @@ case class VerticaConfig(
     dbName: String = "",
     user: String = "dbadmin",
     password: String = "",
-    image: String = "vertica/vertica-ce:12.0.3-0"
+    image: String = "vertica/vertica-ce:24.1.0-0"
 )
 
 trait VerticaTestFixture extends Vertica with BeforeAndAfterAll { this: Suite with DockerTestFixture =>

@@ -15,11 +15,13 @@ import com.adform.streamloader.storage.{LoaderS3Config, S3StorageBackend}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.ExecutionContext
 
-class S3Tests
+@Slow
+class S3IntegrationTests
     extends AnyFunSpec
     with Matchers
     with Eventually

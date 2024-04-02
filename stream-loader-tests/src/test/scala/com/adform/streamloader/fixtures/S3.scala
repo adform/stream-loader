@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.s3.S3Client
 
 import scala.jdk.CollectionConverters._
 
-case class S3Config(image: String = "minio/minio:RELEASE.2023-02-10T18-48-39Z")
+case class S3Config(image: String = "minio/minio:RELEASE.2024-03-05T04-48-44Z")
 
 trait S3TestFixture extends S3 with BeforeAndAfterAll { this: Suite with DockerTestFixture =>
   override def beforeAll(): Unit = {
@@ -81,7 +81,7 @@ trait S3 { this: Docker =>
       .healthcheck(
         Healthcheck
           .builder()
-          .test(List("CMD-SHELL", s"curl localhost:$s3Port/minio/health/live").asJava)
+          .test(List("CMD-SHELL", "mc ready local").asJava)
           .retries(6)
           .interval(10000000000L)
           .timeout(1000000000L)
@@ -89,8 +89,8 @@ trait S3 { this: Docker =>
       )
       .exposedPorts(s3Port.toString)
       .env(
-        s"MINIO_ACCESS_KEY=$accessKey",
-        s"MINIO_SECRET_KEY=$secretKey"
+        s"MINIO_ROOT_USER=$accessKey",
+        s"MINIO_ROOT_PASSWORD=$secretKey"
       )
       .cmd("server", "/data")
       .build()
