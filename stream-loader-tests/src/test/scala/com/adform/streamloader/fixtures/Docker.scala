@@ -11,9 +11,10 @@ package com.adform.streamloader.fixtures
 import java.time.Duration
 import java.util.UUID
 
-import com.spotify.docker.client.DefaultDockerClient
-import com.spotify.docker.client.DockerClient.RemoveContainerParam
-import com.spotify.docker.client.messages.{ContainerConfig, NetworkConfig, PortBinding}
+import org.mandas.docker.client.DefaultDockerClient
+import org.mandas.docker.client.DockerClient.RemoveContainerParam
+import org.mandas.docker.client.builder.resteasy.ResteasyDockerClientBuilder
+import org.mandas.docker.client.messages.{ContainerConfig, NetworkConfig, PortBinding}
 import org.log4s.getLogger
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
@@ -52,7 +53,7 @@ trait Docker {
 
   private var network: DockerNetwork = _
 
-  val docker: DefaultDockerClient = DefaultDockerClient.fromEnv().build()
+  val docker: DefaultDockerClient = new ResteasyDockerClientBuilder().fromEnv().build()
   val dockerSandboxId: String = UUID.randomUUID().toString
 
   val healthCheckTimeout: Duration = Duration.ofSeconds(60)

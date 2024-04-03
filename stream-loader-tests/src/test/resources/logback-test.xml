@@ -7,7 +7,7 @@
     </appender>
 
     <logger name="org.apache" level="ERROR" />
-    <logger name="com.spotify.docker" level="ERROR" />
+    <logger name="org.mandas.docker" level="ERROR" />
     <logger name="com.zaxxer.hikari" level="ERROR" />
 
     <logger name="com.adform.streamloader.clickhouse" level="WARN" />

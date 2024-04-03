@@ -49,13 +49,13 @@ lazy val `stream-loader-core` = project
       "org.scala-lang"     % "scala-reflect"     % scalaVersion.value,
       "org.apache.kafka"   % "kafka-clients"     % "3.7.0",
       "org.log4s"         %% "log4s"             % "1.10.0",
-      "org.apache.commons" % "commons-compress"  % "1.26.0",
+      "org.apache.commons" % "commons-compress"  % "1.26.1",
       "org.xerial.snappy"  % "snappy-java"       % "1.1.10.5",
       "org.lz4"            % "lz4-java"          % "1.8.0",
       "com.github.luben"   % "zstd-jni"          % "1.5.5-6",
       "com.univocity"      % "univocity-parsers" % "2.9.1",
       "org.json4s"        %% "json4s-native"     % "4.0.7",
-      "io.micrometer"      % "micrometer-core"   % "1.12.3",
+      "io.micrometer"      % "micrometer-core"   % "1.12.4",
       "org.scalatest"     %% "scalatest"         % scalaTestVersion      % "test",
       "org.scalatestplus" %% "scalacheck-1-17"   % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"        % scalaCheckVersion     % "test",
@@ -100,10 +100,10 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.25.1",
+      "software.amazon.awssdk" % "s3"              % "2.25.22",
       "org.scalatest"         %% "scalatest"       % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.671"       % "test",
-      "org.gaul"               % "s3proxy"         % "2.1.0"          % "test"
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.692"       % "test",
+      "org.gaul"               % "s3proxy"         % "2.2.0"          % "test"
     )
   )
 
@@ -141,15 +141,17 @@ lazy val `stream-loader-tests` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe"       % "config"           % "1.4.3",
-      "ch.qos.logback"     % "logback-classic"  % "1.5.3",
-      "com.zaxxer"         % "HikariCP"         % "5.1.0",
-      "com.vertica.jdbc"   % "vertica-jdbc"     % verticaVersion,
-      "org.scalacheck"    %% "scalacheck"       % scalaCheckVersion,
-      "org.scalatest"     %% "scalatest"        % scalaTestVersion              % "test",
-      "org.scalatestplus" %% "scalacheck-1-17"  % scalaCheckTestVersion         % "test",
-      ("com.spotify"       % "docker-client"    % "8.16.0" classifier "shaded") % "test",
-      "org.slf4j"          % "log4j-over-slf4j" % "2.0.12"                      % "test"
+      "com.typesafe"                     % "config"                           % "1.4.3",
+      "ch.qos.logback"                   % "logback-classic"                  % "1.5.3",
+      "com.zaxxer"                       % "HikariCP"                         % "5.1.0",
+      "com.vertica.jdbc"                 % "vertica-jdbc"                     % verticaVersion,
+      "org.scalacheck"                  %% "scalacheck"                       % scalaCheckVersion,
+      "org.scalatest"                   %% "scalatest"                        % scalaTestVersion      % "test",
+      "org.scalatestplus"               %% "scalacheck-1-17"                  % scalaCheckTestVersion % "test",
+      "org.mandas"                       % "docker-client"                    % "7.0.8"               % "test",
+      "org.jboss.resteasy"               % "resteasy-client"                  % "6.2.8.Final"         % "test",
+      "com.fasterxml.jackson.jakarta.rs" % "jackson-jakarta-rs-json-provider" % "2.17.0"              % "test",
+      "org.slf4j"                        % "log4j-over-slf4j"                 % "2.0.12"              % "test"
     ),
     inConfig(IntegrationTest)(Defaults.testTasks),
     publish := {},
