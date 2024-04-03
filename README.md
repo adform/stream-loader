@@ -1,4 +1,4 @@
-# Stream Loader ![](https://github.com/adform/stream-loader/workflows/build/badge.svg)
+# Stream Loader ![](https://github.com/adform/stream-loader/workflows/publish/badge.svg)
 
 Stream loader is a collection of libraries providing means to load data from [Kafka](https://kafka.apache.org/) into arbitrary storages such as [HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html), [S3](https://aws.amazon.com/s3/), [ClickHouse](https://clickhouse.tech/) or [Vertica](https://www.vertica.com/) using exactly-once semantics. Users can easily implement various highly customized loaders by combining out of the box components for record formatting and encoding, data storage, stream grouping and so on, implementing their own or extending the existing ones, if needed.
 
