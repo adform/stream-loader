@@ -24,7 +24,36 @@ trait MultiFileCommitStrategy {
 }
 
 object MultiFileCommitStrategy {
+
+  /**
+    * Builds a commit strategy that commits when any file satisfies the given single file commit strategy.
+    */
   def anyFile(single: FileCommitStrategy): MultiFileCommitStrategy =
     (files: Seq[FileStats]) =>
       files.exists(fs => single.shouldCommit(fs.fileOpenDuration, fs.fileSize, fs.recordsWritten))
+
+  /**
+    * Builds a commit strategy that commits when all files satisfy the given single file commit strategy.
+    */
+  def allFiles(single: FileCommitStrategy): MultiFileCommitStrategy =
+    (files: Seq[FileStats]) =>
+      files.forall(fs => single.shouldCommit(fs.fileOpenDuration, fs.fileSize, fs.recordsWritten))
+
+  /**
+    * Builds a commit strategy that commits when the total file stats (i.e. total file size, total record count
+    * and max open time) satisfy the given single file commit strategy.
+    */
+  def total(single: FileCommitStrategy): MultiFileCommitStrategy = { (files: Seq[FileStats]) =>
+    {
+      if (files.isEmpty) {
+        false
+      } else {
+        single.shouldCommit(
+          files.maxBy(_.fileOpenDuration).fileOpenDuration,
+          files.map(_.fileSize).sum,
+          files.map(_.recordsWritten).sum
+        )
+      }
+    }
+  }
 }
