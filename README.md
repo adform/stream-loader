@@ -1,6 +1,6 @@
 # Stream Loader ![](https://github.com/adform/stream-loader/workflows/publish/badge.svg)
 
-Stream loader is a collection of libraries providing means to load data from [Kafka](https://kafka.apache.org/) into arbitrary storages such as [HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html), [S3](https://aws.amazon.com/s3/), [ClickHouse](https://clickhouse.tech/) or [Vertica](https://www.vertica.com/) using exactly-once semantics. Users can easily implement various highly customized loaders by combining out of the box components for record formatting and encoding, data storage, stream grouping and so on, implementing their own or extending the existing ones, if needed.
+Stream loader is a collection of libraries providing means to load data from [Kafka](https://kafka.apache.org/) into arbitrary storages such as [Iceberg](https://iceberg.apache.org/), [HDFS](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html), [S3](https://aws.amazon.com/s3/), [ClickHouse](https://clickhouse.tech/) or [Vertica](https://www.vertica.com/) using exactly-once semantics. Users can easily implement various highly customized loaders by combining out of the box components for record formatting and encoding, data storage, stream grouping and so on, implementing their own or extending the existing ones, if needed.
 
 ## Getting Started
 
@@ -15,6 +15,7 @@ Various storage specific parts are split into separate artifacts to reduce depen
 - `stream-loader-core`: core functionality _(required)_.
 - `stream-loader-clickhouse`: ClickHouse storage and binary file format encoders.
 - `stream-loader-hadoop`: HDFS storage, components for working with parquet files.
+- `stream-loader-iceberg`: Iceberg table sink.
 - `stream-loader-s3`: S3 compatible storage.
 - `stream-loader-vertica`: Vertica storage and native file format encoders.
 
@@ -80,7 +81,7 @@ For further complete examples you can explore the [loaders](../../tree/master/st
 
 Message processing semantics of any system reading Kafka depends on the way the consumer handles offsets. For applications storing messages to another system, i.e. stream loaders, the question boils down to whether offsets are stored before, after or atomically together with data, which determines whether the loader is at-most, at-least or exactly once.
 
-All the currently bundled storage implementations strive for exactly-once semantics by loading data and offsets together in a single atomic transaction. There are various strategies for achieving this, the most obvious solution being storing the offsets in the data itself, e.g. as extra columns in a database table or in the names of files being transfered to a distributed file system. This is the approach taken by the Vertica and ClickHouse storages.
+All the currently bundled storage implementations strive for exactly-once semantics by loading data and offsets together in a single atomic transaction. There are various strategies for achieving this, the most obvious solution being storing the offsets in the data itself, e.g. as extra columns in a database table or in the names of files being transferred to a distributed file system. This is the approach taken by the Iceberg, Vertica and ClickHouse storages.
 
 An alternative approach is to store data in a [two-phase commit](https://en.wikipedia.org/wiki/Two-phase_commit_protocol), which is done in the HDFS and S3 storage implementations. The _prepare_ step consists of staging a file (uploading to a temporary location in HDFS or starting a multi-part upload in S3) and committing new offsets with the staging information to the Kafka offset commit [metadata](https://kafka.apache.org/24/javadoc/org/apache/kafka/clients/consumer/OffsetAndMetadata.html) while retaining the original offsets. The _commit_ step stores the staged file (moves it to the final destination in HDFS or completes the multi-part upload in S3) and commits the new offsets to Kafka, at the same time clearing the staging metadata. In this approach the transaction would be rolled back if the loader crashes before completing the staging phase, or replayed if it crashed after staging.
 
