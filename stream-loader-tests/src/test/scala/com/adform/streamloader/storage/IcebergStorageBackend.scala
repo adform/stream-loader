@@ -104,9 +104,12 @@ case class IcebergStorageBackend(
     // see: https://github.com/duckdb/duckdb_iceberg/issues/47
     val stmt = conn.createStatement()
     val rs = stmt.executeQuery(
-      s"""INSTALL iceberg FROM 'http://nightly-extensions.duckdb.org';
+      s"""INSTALL iceberg;
          |LOAD iceberg;
-         |SELECT * FROM iceberg_scan('$warehouseDir/${table.replace('.', '/')}', skip_schema_inference=True);""".stripMargin
+         |SELECT * FROM iceberg_scan('$warehouseDir/${table.replace(
+          '.',
+          '/'
+        )}', skip_schema_inference=True);""".stripMargin
     )
 
     val buff = scala.collection.mutable.ListBuffer.empty[ExampleMessage]
