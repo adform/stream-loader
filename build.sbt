@@ -138,6 +138,8 @@ lazy val `stream-loader-vertica` = project
     )
   )
 
+val duckdbVersion = "1.0.0"
+
 lazy val packAndSplitJars =
   taskKey[(File, File)]("Runs pack and splits out the application jars from the external dependency jars")
 lazy val dockerImage = settingKey[String]("Full docker image name")
@@ -170,7 +172,7 @@ lazy val `stream-loader-tests` = project
       "org.mandas"                       % "docker-client"                    % "7.0.8"               % "test",
       "org.jboss.resteasy"               % "resteasy-client"                  % "6.2.9.Final"         % "test",
       "com.fasterxml.jackson.jakarta.rs" % "jackson-jakarta-rs-json-provider" % "2.17.1"              % "test",
-      "org.duckdb"                       % "duckdb_jdbc"                      % "1.0.0"               % "test"
+      "org.duckdb"                       % "duckdb_jdbc"                      % duckdbVersion         % "test"
     ),
     inConfig(IntegrationTest)(Defaults.testTasks),
     publish := {},
@@ -183,7 +185,8 @@ lazy val `stream-loader-tests` = project
       scalaVersion,
       sbtVersion,
       git.gitHeadCommit,
-      dockerImage
+      dockerImage,
+      "duckdbVersion" -> duckdbVersion
     ),
     packAndSplitJars := {
       val scalaMajorVersion = scalaVersion.value.split('.').take(2).mkString(".")
