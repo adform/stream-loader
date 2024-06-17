@@ -91,7 +91,7 @@ case class IcebergStorageBackend(
       partitions: Set[TopicPartition]
   ): Map[TopicPartition, Option[StreamPosition]] = {
     val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)
-    val storage = new IcebergRecordBatchStorage(catalog.loadTable(TableIdentifier.parse(table)))
+    val storage = new IcebergRecordBatchStorage(catalog.loadTable(TableIdentifier.parse(table)), None)
 
     storage.initialize(kafkaContext)
     storage.committedPositions(partitions)

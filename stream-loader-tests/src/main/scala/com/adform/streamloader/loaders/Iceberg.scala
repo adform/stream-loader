@@ -26,6 +26,7 @@ import org.apache.iceberg.hadoop.HadoopCatalog
 
 import java.time.ZoneOffset
 import java.util
+import java.util.concurrent.locks.ReentrantLock
 
 object TestIcebergLoader extends Loader {
 
@@ -77,7 +78,13 @@ object TestIcebergLoader extends Loader {
           )
           .build()
       )
-      .batchStorage(new IcebergRecordBatchStorage(table))
+      .batchStorage(
+        IcebergRecordBatchStorage
+          .builder()
+          .table(table)
+          .commitLock(new ReentrantLock())
+          .build()
+      )
       .build()
 
     val loader = new StreamLoader(source, sink)
