@@ -4,7 +4,7 @@ addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.11.0")
 
 addSbtPlugin("com.github.sbt" % "sbt-git" % "2.0.1")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.19")
+addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.20")
 
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
@@ -16,7 +16,7 @@ addSbtPlugin("com.github.sbt" % "sbt-unidoc" % "0.5.0")
 
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.10.0")
 
-libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2024.4"
+libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2024.5"
 
 addSbtPlugin("com.github.sbt" % "sbt-ghpages" % "0.8.0")
 

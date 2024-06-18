@@ -14,7 +14,7 @@ import com.adform.streamloader.model.{ExampleMessage, StreamPosition}
 import com.adform.streamloader.{BuildInfo, Loader}
 import com.sksamuel.avro4s.{ScalePrecision, SchemaFor}
 import org.apache.hadoop.conf.Configuration
-import org.apache.iceberg.{PartitionSpec, Schema}
+import org.apache.iceberg.PartitionSpec
 import org.apache.iceberg.avro.AvroSchemaUtil
 import org.apache.iceberg.catalog.TableIdentifier
 import org.apache.iceberg.hadoop.HadoopCatalog
@@ -24,11 +24,15 @@ import org.mandas.docker.client.DockerClient
 import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.scalacheck.Arbitrary
 
-import java.nio.file.{Files, Paths}
+import java.io.File
+import java.net.URI
+import java.nio.file.{Files, Paths, StandardCopyOption}
 import java.sql.DriverManager
 import java.time.{Instant, LocalDateTime, ZoneId}
 import java.util.UUID
+import java.util.zip.GZIPInputStream
 import scala.math.BigDecimal.RoundingMode.RoundingMode
+import scala.util.Using
 
 case class IcebergStorageBackend(
     docker: DockerClient,
@@ -40,6 +44,11 @@ case class IcebergStorageBackend(
 
   implicit private val scalePrecision: ScalePrecision = ExampleMessage.SCALE_PRECISION
   implicit private val roundingMode: RoundingMode = ExampleMessage.ROUNDING_MODE
+
+  private val duckdbExtension = new File("/tmp/iceberg.duckdb_extension")
+  private val duckdbExtensionUrl = new URI(
+    s"http://extensions.duckdb.org/v${BuildInfo.duckdbVersion}/linux_amd64_gcc4/iceberg.duckdb_extension.gz"
+  ).toURL
 
   private val warehouseDir = "/tmp/stream-loader-tests"
 
@@ -56,6 +65,18 @@ case class IcebergStorageBackend(
     val partitionSpec = PartitionSpec.builderFor(schema).bucket("id", 10).build()
 
     catalog.createTable(name, schema, partitionSpec)
+
+    // Installing the Iceberg extension from upstream via JDBC seems to fail randomly,
+    // hence we download the extension and install it from a local path.
+    synchronized {
+      if (!duckdbExtension.exists()) {
+        Using.Manager { use =>
+          val stream = use(duckdbExtensionUrl.openStream())
+          val unzipped = use(new GZIPInputStream(stream))
+          Files.copy(unzipped, duckdbExtension.toPath, StandardCopyOption.REPLACE_EXISTING)
+        }
+      }
+    }
   }
 
   override def createLoaderContainer(loaderKafkaConfig: LoaderKafkaConfig, batchSize: Long): Container = {
@@ -91,22 +112,27 @@ case class IcebergStorageBackend(
       partitions: Set[TopicPartition]
   ): Map[TopicPartition, Option[StreamPosition]] = {
     val kafkaContext = getKafkaContext(kafkaContainer, loaderKafkaConfig.consumerGroup)
-    val storage = new IcebergRecordBatchStorage(catalog.loadTable(TableIdentifier.parse(table)))
+    val storage = new IcebergRecordBatchStorage(catalog.loadTable(TableIdentifier.parse(table)), None)
 
     storage.initialize(kafkaContext)
     storage.committedPositions(partitions)
   }
 
-  override def getContent: StorageContent[ExampleMessage] = {
-    val conn = DriverManager.getConnection("jdbc:duckdb:").asInstanceOf[DuckDBConnection]
+  override def getContent: StorageContent[ExampleMessage] = Using.Manager { use =>
+    val conn = use(DriverManager.getConnection("jdbc:duckdb:").asInstanceOf[DuckDBConnection])
 
     // Querying complex types from Iceberg tables is semi-broken,
     // see: https://github.com/duckdb/duckdb_iceberg/issues/47
-    val stmt = conn.createStatement()
-    val rs = stmt.executeQuery(
-      s"""INSTALL iceberg FROM 'http://nightly-extensions.duckdb.org';
-         |LOAD iceberg;
-         |SELECT * FROM iceberg_scan('$warehouseDir/${table.replace('.', '/')}', skip_schema_inference=True);""".stripMargin
+    val stmt = use(conn.createStatement())
+    val rs = use(
+      stmt.executeQuery(
+        s"""INSTALL '${duckdbExtension.getPath}';
+           |LOAD iceberg;
+           |SELECT * FROM iceberg_scan('$warehouseDir/${table.replace(
+            '.',
+            '/'
+          )}', skip_schema_inference=True);""".stripMargin
+      )
     )
 
     val buff = scala.collection.mutable.ListBuffer.empty[ExampleMessage]
@@ -127,11 +153,6 @@ case class IcebergStorageBackend(
       buff.addOne(msg)
     }
 
-    rs.close()
-
-    stmt.close()
-    conn.close()
-
     StorageContent(buff.toSeq, Map.empty)
-  }
+  }.get
 }

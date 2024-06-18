@@ -13,11 +13,15 @@ import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
 import org.apache.iceberg.Table
 import org.apache.kafka.common.TopicPartition
 
+import java.util.concurrent.locks.Lock
+
 /**
   * Iceberg record batch storage that appends multiple files and stores Kafka offsets in table properties
-  * in a single atomic table transaction.
+  * in a single atomic table transaction. An optional lock can be specified to use when committing batches in order
+  * to reduce possible commit storms.
   */
-class IcebergRecordBatchStorage(table: Table) extends InDataOffsetBatchStorage[IcebergRecordBatch] {
+class IcebergRecordBatchStorage(table: Table, commitLock: Option[Lock])
+    extends InDataOffsetBatchStorage[IcebergRecordBatch] {
 
   private def offsetKey(topic: String, partition: Int): String = {
     s"__consumer_offset:${kafkaContext.consumerGroup}:$topic:$partition"
@@ -25,7 +29,23 @@ class IcebergRecordBatchStorage(table: Table) extends InDataOffsetBatchStorage[I
 
   override def recover(topicPartitions: Set[TopicPartition]): Unit = {}
 
-  override def commitBatchWithOffsets(batch: IcebergRecordBatch): Unit = {
+  override def commitBatchWithOffsets(batch: IcebergRecordBatch): Unit = commitLock match {
+    case Some(lock) =>
+      try {
+        log.debug("Acquiring Iceberg commit lock")
+        lock.lock()
+        commitLocked(batch)
+      } finally {
+        lock.unlock()
+        log.debug("Released Iceberg commit lock")
+      }
+
+    case None =>
+      commitLocked(batch)
+  }
+
+  private def commitLocked(batch: IcebergRecordBatch): Unit = {
+    log.debug(s"Starting new Iceberg transaction for ranges ${batch.recordRanges.mkString(",")}")
     val transaction = table.newTransaction()
 
     batch.dataWriteResult.dataFiles().forEach(file => transaction.newAppend().appendFile(file).commit())
@@ -51,4 +71,28 @@ class IcebergRecordBatchStorage(table: Table) extends InDataOffsetBatchStorage[I
       })
       .toMap
   }
+}
+
+object IcebergRecordBatchStorage {
+
+  case class Builder(private val _table: Table, private val _commitLock: Option[Lock]) {
+
+    /**
+      * Sets the Iceberg table to sync to.
+      */
+    def table(table: Table): Builder = copy(_table = table)
+
+    /**
+      * Sets a lock to use when commiting to Iceberg.
+      */
+    def commitLock(lock: Lock): Builder = copy(_commitLock = Some(lock))
+
+    def build(): IcebergRecordBatchStorage = {
+      if (_table == null) throw new IllegalArgumentException("Must provide a Table")
+
+      new IcebergRecordBatchStorage(_table, _commitLock)
+    }
+  }
+
+  def builder(): Builder = Builder(null, None)
 }
