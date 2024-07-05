@@ -38,3 +38,10 @@ jobs:
 
     - name: Run Tests
       run: sbt -Dsbt.color=always -Dsbt.supershell=false scalafmtCheck scalafmtSbtCheck headerCheckAll test IntegrationTest/test
+
+    - name: Debug Sonatype credentials
+      run: |
+        echo "SONATYPE_USERNAME=${{ secrets.SONATYPE_USERNAME }}"
+        echo "SONATYPE_PASSWORD is set: ${ { secrets.SONATYPE_PASSWORD != '' }}"
+        echo "GPG_SECRET is set: ${ { secrets.PGP_SECRET != '' }}"
+        echo "GPG_PASSPHRASE is set: ${ { secrets.PGP_PASSPHRASE != '' }}"
