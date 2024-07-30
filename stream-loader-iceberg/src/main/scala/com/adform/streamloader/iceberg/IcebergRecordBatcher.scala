@@ -12,12 +12,12 @@ import com.adform.streamloader.model.{StreamRange, StreamRecord}
 import com.adform.streamloader.sink.batch.{RecordBatch, RecordBatchBuilder, RecordBatcher, RecordFormatter}
 import com.adform.streamloader.sink.file.{FileStats, MultiFileCommitStrategy}
 import com.adform.streamloader.util.TimeProvider
+import com.adform.streamloader.util.UuidExtensions.randomUUIDv7
 import org.apache.iceberg.data.{GenericAppenderFactory, Record => IcebergRecord}
 import org.apache.iceberg.io.DataWriteResult
 import org.apache.iceberg.{FileFormat, PartitionKey, Table}
 
 import java.time.Duration
-import java.util.UUID
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
@@ -41,7 +41,7 @@ class IcebergRecordBatchBuilder(
     private val startTimeMillis = timeProvider.currentMillis
     private var recordCount = 0L
     private val dataWriter = {
-      val filename = fileFormat.addExtension(UUID.randomUUID().toString)
+      val filename = fileFormat.addExtension(randomUUIDv7().toString)
       val path = table.locationProvider().newDataLocation(table.spec(), pk, filename)
       val output = table.io().newOutputFile(path)
 
