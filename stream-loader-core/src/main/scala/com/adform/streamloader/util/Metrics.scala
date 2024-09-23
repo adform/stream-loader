@@ -8,12 +8,11 @@
 
 package com.adform.streamloader.util
 
-import java.time.Duration
-import java.util.function.ToDoubleFunction
-
 import io.micrometer.core.instrument._
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
+import java.time.Duration
+import java.util.function.ToDoubleFunction
 import scala.collection.concurrent
 import scala.collection.concurrent.TrieMap
 
@@ -63,6 +62,27 @@ trait Metrics {
       )
       .tags(tags.flatMap(_.toSeq): _*)
       .register(Metrics.registry)
+  }
+
+  class AssignableGauge[T <: AnyRef](name: String, tdf: ToDoubleFunction[T], tags: Seq[MetricTag]) {
+    private var currentValue: T = _
+    lazy val underlying: Gauge =
+      createGauge(name, this, (_: AssignableGauge[T]) => tdf.applyAsDouble(currentValue), tags)
+
+    def set(value: T): Double = {
+      currentValue = value
+      underlying.value()
+    }
+
+    def close(): Unit = underlying.close()
+  }
+
+  protected def createAssignableGauge[T <: AnyRef](
+      name: String,
+      tdf: ToDoubleFunction[T],
+      tags: Seq[MetricTag] = Seq()
+  ): AssignableGauge[T] = {
+    new AssignableGauge(name, tdf, tags)
   }
 
   protected def createDistribution(name: String, tags: Seq[MetricTag] = Seq()): DistributionSummary =

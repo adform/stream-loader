@@ -9,11 +9,11 @@
 package com.adform.streamloader.sink.batch
 
 import com.adform.streamloader.model._
-import com.adform.streamloader.util.Retry._
-import com.adform.streamloader.util._
 import com.adform.streamloader.sink.PartitionGroupSinker
 import com.adform.streamloader.sink.batch.storage.RecordBatchStorage
 import com.adform.streamloader.source.KafkaContext
+import com.adform.streamloader.util.Retry._
+import com.adform.streamloader.util._
 import io.micrometer.core.instrument.{Counter, Gauge, Meter, Timer}
 import org.apache.kafka.common.TopicPartition
 
@@ -71,10 +71,14 @@ class RecordBatchingSinker[B <: RecordBatch](
             batchStorage.commitBatch(batch)
           }
         )
+
+        batch.recordRanges.foreach(range => {
+          Metrics.committedWatermarks(range.topicPartition).set(range.end.watermark.millis)
+        })
+
         if (!batch.discard()) {
           log.warn("Failed discarding batch")
         }
-
       } catch {
         case e if isInterruptionException(e) =>
           log.debug("Batch commit thread interrupted")
@@ -175,6 +179,17 @@ class RecordBatchingSinker[B <: RecordBatch](
     val recordsWritten: Map[TopicPartition, Counter] =
       groupPartitions.map(tp => tp -> createCounter("records.written", commonTags ++ partitionTags(tp))).toMap
 
+    val committedWatermarks: Map[TopicPartition, AssignableGauge[java.lang.Long]] =
+      groupPartitions
+        .map(tp =>
+          tp -> createAssignableGauge(
+            "committed.watermark.delay.ms",
+            (latestWatermark: java.lang.Long) => (System.currentTimeMillis() - latestWatermark).toDouble,
+            commonTags ++ partitionTags(tp)
+          )
+        )
+        .toMap
+
     val recordsBatched: Map[TopicPartition, Counter] =
       groupPartitions.map(tp => tp -> createCounter("records.batched", commonTags ++ partitionTags(tp))).toMap
 
@@ -182,7 +197,7 @@ class RecordBatchingSinker[B <: RecordBatch](
     val commitQueueSize: Gauge =
       createGauge("commit.queue.size", self, (_: RecordBatchingSinker[B]) => self.commitQueue.size(), commonTags)
 
-    val allMeters: Seq[Meter] =
-      Seq(commitDuration, commitQueueSize) ++ recordsWritten.values
+    val allMeters: Seq[Meter] = Seq(commitDuration, commitQueueSize) ++
+      recordsWritten.values ++ committedWatermarks.values.map(_.underlying) ++ recordsBatched.values
   }
 }
