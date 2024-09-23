@@ -24,11 +24,11 @@ trait FileCommitStrategy {
     * Checks whether a file should be closed and committed to storage.
     *
     * @param fileOpenDuration Time the file has been open for.
-    * @param fileSize Current size of the file in bytes.
+    * @param fileSize Current size of the file in bytes, evaluated on-demand only, as it can be an expensive operation.
     * @param recordsWritten Number of records written to the file.
     * @return Whether the file should be closed and committed.
     */
-  def shouldCommit(fileOpenDuration: Duration, fileSize: Long, recordsWritten: Long): Boolean
+  def shouldCommit(fileOpenDuration: Duration, fileSize: => Long, recordsWritten: Long): Boolean
 }
 
 object FileCommitStrategy {
@@ -47,21 +47,24 @@ object FileCommitStrategy {
       "At least one upper limit for the file commit strategy has to be defined"
     )
 
-    override def shouldCommit(currFileOpenDuration: Duration, currFileSize: Long, currRecordsWritten: Long): Boolean = {
+    override def shouldCommit(currFileOpenDuration: Duration, currFileSize: => Long, currRecords: Long): Boolean = {
       fileOpenDuration.exists(d => currFileOpenDuration.toMillis >= d.toMillis) ||
       fileSize.exists(s => currFileSize >= s) ||
-      recordsWritten.exists(r => currRecordsWritten >= r)
+      recordsWritten.exists(r => currRecords >= r)
     }
   }
 
   /**
     * Commit strategy that commits files once ANY of the parameters reaches a threshold
-    * value sampled from a given Gaussian distribution.
+    * value sampled from a given Gaussian distribution. Optionally users can specify a batch size (in records)
+    * that triggers file size estimation, as doing it on every record can be too expensive.
+    * Note that the class maintains state, so it should not be re-used for multiple sinks.
     */
   case class FuzzyReachedAnyOf(
       fileOpenDurationDistribution: Option[GaussianDistribution[Duration]] = None,
       fileSizeDistribution: Option[GaussianDistribution[Long]] = None,
-      recordsWrittenDistribution: Option[GaussianDistribution[Long]] = None
+      recordsWrittenDistribution: Option[GaussianDistribution[Long]] = None,
+      fileSizeSamplingBatchSize: Option[Long] = None
   )(randomSeed: Option[Int] = None)
       extends FileCommitStrategy {
 
@@ -85,13 +88,22 @@ object FileCommitStrategy {
     )
 
     private var currentSample = sampleParameters
+    private var recordsUntilFileSizeCheck = fileSizeSamplingBatchSize.getOrElse(1L)
 
-    override def shouldCommit(currFileOpenDuration: Duration, currFileSize: Long, currRecordsWritten: Long): Boolean = {
-      val shouldCommit = currentSample.fileOpenDuration.exists(d => currFileOpenDuration.toMillis >= d.toMillis) ||
-        currentSample.fileSize.exists(s => currFileSize >= s) ||
-        currentSample.recordsWritten.exists(r => currRecordsWritten >= r)
+    override def shouldCommit(currFileOpenDuration: Duration, currFileSize: => Long, currRecords: Long): Boolean = {
+      val durationReached = currentSample.fileOpenDuration.exists(d => currFileOpenDuration.toMillis >= d.toMillis)
+      val recordsReached = currentSample.recordsWritten.exists(r => currRecords >= r)
+      val fileSizeReached = if (recordsUntilFileSizeCheck == 1) {
+        recordsUntilFileSizeCheck = fileSizeSamplingBatchSize.getOrElse(1)
+        currentSample.fileSize.exists(s => currFileSize >= s)
+      } else {
+        recordsUntilFileSizeCheck -= 1
+        false
+      }
 
+      val shouldCommit = durationReached || recordsReached || fileSizeReached
       if (shouldCommit) {
+        recordsUntilFileSizeCheck = fileSizeSamplingBatchSize.getOrElse(1)
         // We only re-sample if we satisfy the conditions in the current sample, otherwise sampling is broken!
         currentSample = sampleParameters
       }
