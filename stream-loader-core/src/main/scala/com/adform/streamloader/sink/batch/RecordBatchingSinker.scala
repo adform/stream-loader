@@ -63,7 +63,13 @@ class RecordBatchingSinker[B <: RecordBatch](
           batchStorage.isBatchCommitted(batch)
         }
 
-        val batch = commitQueue.take()
+        var batch = commitQueue.take()
+
+        while (commitQueue.peek() != null && batch.isInstanceOf[AppendableRecordBatch[_]]) {
+          val next = commitQueue.take()
+          log.debug(s"Merging current batch $batch with next batch $next")
+          batch = batch.asInstanceOf[AppendableRecordBatch[B]].appended(next)
+        }
 
         log.info(s"Committing batch $batch to storage")
         Metrics.commitDuration.recordCallable(() =>

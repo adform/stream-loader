@@ -9,7 +9,7 @@
 package com.adform.streamloader.iceberg
 
 import com.adform.streamloader.model.{StreamRange, StreamRecord}
-import com.adform.streamloader.sink.batch.{RecordBatch, RecordBatchBuilder, RecordBatcher, RecordFormatter}
+import com.adform.streamloader.sink.batch._
 import com.adform.streamloader.sink.file.{FileStats, MultiFileCommitStrategy}
 import com.adform.streamloader.util.TimeProvider
 import com.adform.streamloader.util.UuidExtensions.randomUUIDv7
@@ -21,8 +21,15 @@ import java.time.Duration
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-case class IcebergRecordBatch(dataWriteResult: DataWriteResult, recordRanges: Seq[StreamRange]) extends RecordBatch {
+case class IcebergRecordBatch(dataWriteResult: DataWriteResult, recordRanges: Seq[StreamRange])
+    extends RecordBatch
+    with AppendableRecordBatch[IcebergRecordBatch] {
   override def discard(): Boolean = true
+
+  override def appended(next: IcebergRecordBatch): IcebergRecordBatch = {
+    val allFiles = dataWriteResult.dataFiles().asScala ++ next.dataWriteResult.dataFiles().asScala
+    IcebergRecordBatch(new DataWriteResult(allFiles.asJava), StreamRange.merge(recordRanges, next.recordRanges))
+  }
 }
 
 /**

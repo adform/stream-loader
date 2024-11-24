@@ -28,7 +28,7 @@ import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Paths, StandardCopyOption}
 import java.sql.DriverManager
-import java.time.{Instant, LocalDateTime, ZoneId}
+import java.time.{Duration, Instant, LocalDateTime, ZoneId}
 import java.util.UUID
 import java.util.zip.GZIPInputStream
 import scala.math.BigDecimal.RoundingMode.RoundingMode
@@ -39,7 +39,8 @@ case class IcebergStorageBackend(
     dockerNetwork: DockerNetwork,
     kafkaContainer: ContainerWithEndpoint,
     loader: Loader,
-    table: String
+    table: String,
+    commitDelay: Duration
 ) extends StorageBackend[ExampleMessage] {
 
   implicit private val scalePrecision: ScalePrecision = ExampleMessage.SCALE_PRECISION
@@ -92,7 +93,8 @@ case class IcebergStorageBackend(
         s"KAFKA_CONSUMER_GROUP=${loaderKafkaConfig.consumerGroup}",
         s"BATCH_SIZE=$batchSize",
         s"ICEBERG_WAREHOUSE_DIR=$warehouseDir",
-        s"ICEBERG_TABLE=$table"
+        s"ICEBERG_TABLE=$table",
+        s"ICEBERG_COMMIT_DELAY_MS=${commitDelay.toMillis}"
       )
       .hostConfig(
         HostConfig

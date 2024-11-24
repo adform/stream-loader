@@ -32,6 +32,17 @@ trait RecordBatch {
 }
 
 /**
+  * Appendable sequential record batches can be chained together to form new merged batches.
+  */
+trait AppendableRecordBatch[B <: RecordBatch] extends RecordBatch {
+
+  /**
+    * Returns a new batch that is the result of appending the `next` batch to the current batch.
+    */
+  def appended(next: B): B
+}
+
+/**
   * A record batch builder, the base implementation takes care of keeping track of contained record ranges.
   * Concrete implementations should additionally implement actual batch construction.
   *

@@ -25,7 +25,11 @@ trait BasicLoaderBehaviors {
 
   private def genTestId: String = UUID.randomUUID().toString.take(6)
 
-  def basicLoader[M <: StorageMessage](testPrefix: String, storageBackendFactory: String => StorageBackend[M])(implicit
+  def basicLoader[M <: StorageMessage](
+      testPrefix: String,
+      storageBackendFactory: String => StorageBackend[M],
+      batchCount: Int = 1
+  )(implicit
       ec: ExecutionContext
   ): Unit = {
 
@@ -45,12 +49,12 @@ trait BasicLoaderBehaviors {
             loaderKafkaConfig,
             partition,
             messages,
-            messageBatchCount = 1
+            messageBatchCount = batchCount
           )
 
           // Confirm content
           eventually {
-            backend.getContent.messages should contain theSameElementsAs messages
+            backend.getContent.messages should contain theSameElementsAs Seq.fill(batchCount)(messages).flatten
           }
         }
       }
@@ -72,7 +76,7 @@ trait BasicLoaderBehaviors {
             loaderKafkaConfig,
             partition,
             initialMessages,
-            messageBatchCount = 1
+            messageBatchCount = batchCount
           )
 
           // Write more messages
@@ -82,12 +86,13 @@ trait BasicLoaderBehaviors {
             loaderKafkaConfig,
             partition,
             laterMessages,
-            messageBatchCount = 1
+            messageBatchCount = batchCount
           )
 
           // Check if everything got written
           eventually {
-            backend.getContent.messages should contain theSameElementsAs (initialMessages ++ laterMessages)
+            val expected = Seq.fill(batchCount)(initialMessages ++ laterMessages).flatten
+            backend.getContent.messages should contain theSameElementsAs expected
           }
         }
       }

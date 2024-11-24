@@ -19,12 +19,13 @@ import com.adform.streamloader.util.UuidExtensions._
 import com.adform.streamloader.{Loader, StreamLoader}
 import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
-import org.apache.iceberg.FileFormat
+import org.apache.iceberg.{FileFormat, TableMetadata, TableOperations}
 import org.apache.iceberg.catalog.TableIdentifier
 import org.apache.iceberg.data.{GenericRecord, Record => IcebergRecord}
 import org.apache.iceberg.hadoop.HadoopCatalog
+import org.apache.iceberg.io.{FileIO, LocationProvider}
 
-import java.time.ZoneOffset
+import java.time.{Duration, ZoneOffset}
 import java.util
 import java.util.concurrent.locks.ReentrantLock
 
@@ -34,7 +35,11 @@ object TestIcebergLoader extends Loader {
 
     val cfg = ConfigFactory.load().getConfig("stream-loader")
 
-    val catalog = new HadoopCatalog(new Configuration(), cfg.getString("iceberg.warehouse-dir"))
+    val catalog = new SlowHadoopCatalog(
+      new Configuration(),
+      cfg.getString("iceberg.warehouse-dir"),
+      cfg.getDurationOpt("iceberg.commit-delay").getOrElse(Duration.ZERO)
+    )
     val table = catalog.loadTable(TableIdentifier.parse(cfg.getString("iceberg.table")))
 
     val recordFormatter: RecordFormatter[IcebergRecord] = record => {
@@ -85,6 +90,7 @@ object TestIcebergLoader extends Loader {
           .commitLock(new ReentrantLock())
           .build()
       )
+      .batchCommitQueueSize(5)
       .build()
 
     val loader = new StreamLoader(source, sink)
@@ -95,5 +101,27 @@ object TestIcebergLoader extends Loader {
     }
 
     loader.start()
+  }
+}
+
+class SlowHadoopCatalog(cfg: Configuration, warehouseLocation: String, commitDelay: Duration)
+    extends HadoopCatalog(cfg, warehouseLocation) {
+
+  private class WrapperTableOps(wrapped: TableOperations) extends TableOperations {
+    override def current(): TableMetadata = wrapped.current()
+    override def refresh(): TableMetadata = wrapped.refresh()
+    override def commit(base: TableMetadata, metadata: TableMetadata): Unit = wrapped.commit(base, metadata)
+    override def io(): FileIO = wrapped.io()
+    override def metadataFileLocation(fileName: String): String = wrapped.metadataFileLocation(fileName)
+    override def locationProvider(): LocationProvider = wrapped.locationProvider()
+  }
+
+  override def newTableOps(identifier: TableIdentifier): TableOperations = {
+    new WrapperTableOps(super.newTableOps(identifier)) {
+      override def commit(base: TableMetadata, metadata: TableMetadata): Unit = {
+        Thread.sleep(commitDelay.toMillis)
+        super.commit(base, metadata)
+      }
+    }
   }
 }
