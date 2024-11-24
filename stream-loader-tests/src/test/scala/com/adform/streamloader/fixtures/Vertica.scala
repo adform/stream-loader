@@ -8,14 +8,12 @@
 
 package com.adform.streamloader.fixtures
 
-import java.sql.DriverManager
-import java.time.Duration
-
-import org.mandas.docker.client.messages.ContainerConfig.Healthcheck
-import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.log4s.getLogger
+import org.mandas.docker.client.messages.{ContainerConfig, Healthcheck, HostConfig}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
+import java.sql.DriverManager
+import java.time.Duration
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -23,7 +21,7 @@ case class VerticaConfig(
     dbName: String = "",
     user: String = "dbadmin",
     password: String = "",
-    image: String = "vertica/vertica-ce:24.1.0-0"
+    image: String = "opentext/vertica-ce:24.4.0-1"
 )
 
 trait VerticaTestFixture extends Vertica with BeforeAndAfterAll { this: Suite with DockerTestFixture =>
@@ -81,6 +79,11 @@ trait Vertica { this: Docker =>
       .hostConfig(
         HostConfig
           .builder()
+          .ulimits(
+            Seq(
+              HostConfig.Ulimit.builder().name("nofile").hard(65536).soft(65536).build()
+            ).asJava
+          )
           .networkMode(dockerNetwork.id)
           .portBindings(makePortBindings(verticaPort))
           .build()

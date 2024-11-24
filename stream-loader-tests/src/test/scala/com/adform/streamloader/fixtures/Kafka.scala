@@ -8,25 +8,23 @@
 
 package com.adform.streamloader.fixtures
 
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{TimeUnit, TimeoutException}
-import java.util.{Properties, UUID}
-
-import org.mandas.docker.client.messages.ContainerConfig.Healthcheck
-import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig, NewTopic}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}
 import org.apache.kafka.common.TopicPartition
 import org.log4s.getLogger
+import org.mandas.docker.client.messages.{ContainerConfig, Healthcheck, HostConfig}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{TimeUnit, TimeoutException}
+import java.util.{Properties, UUID}
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-case class KafkaConfig(image: String = "bitnami/kafka:3.7.0-debian-12-r0")
+case class KafkaConfig(image: String = "bitnami/kafka:3.9.0-debian-12-r3")
 
 trait KafkaTestFixture extends Kafka with BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite with DockerTestFixture =>

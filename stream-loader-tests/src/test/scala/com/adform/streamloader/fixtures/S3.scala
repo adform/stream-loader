@@ -8,19 +8,17 @@
 
 package com.adform.streamloader.fixtures
 
-import java.net.URI
-
-import org.mandas.docker.client.messages.ContainerConfig.Healthcheck
-import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.log4s.getLogger
+import org.mandas.docker.client.messages.{ContainerConfig, Healthcheck, HostConfig}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 
+import java.net.URI
 import scala.jdk.CollectionConverters._
 
-case class S3Config(image: String = "minio/minio:RELEASE.2024-04-18T19-09-19Z")
+case class S3Config(image: String = "minio/minio:RELEASE.2024-11-07T00-52-20Z")
 
 trait S3TestFixture extends S3 with BeforeAndAfterAll { this: Suite with DockerTestFixture =>
   override def beforeAll(): Unit = {
