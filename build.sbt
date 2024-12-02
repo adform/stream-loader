@@ -2,7 +2,7 @@ name := "stream-loader"
 
 ThisBuild / organization := "com.adform"
 ThisBuild / organizationName := "Adform"
-ThisBuild / scalaVersion := "2.13.14"
+ThisBuild / scalaVersion := "2.13.15"
 ThisBuild / scalacOptions := Seq(
   "-unchecked",
   "-deprecation",
@@ -38,9 +38,9 @@ val scalaTestVersion = "3.2.19"
 val scalaCheckVersion = "1.18.1"
 val scalaCheckTestVersion = "3.2.19.0"
 
-val hadoopVersion = "3.4.0"
-val parquetVersion = "1.14.2"
-val icebergVersion = "1.6.1"
+val hadoopVersion = "3.4.1"
+val parquetVersion = "1.14.4"
+val icebergVersion = "1.7.0"
 
 lazy val `stream-loader-core` = project
   .in(file("stream-loader-core"))
@@ -51,19 +51,19 @@ lazy val `stream-loader-core` = project
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, git.gitHeadCommit),
     libraryDependencies ++= Seq(
       "org.scala-lang"     % "scala-reflect"     % scalaVersion.value,
-      "org.apache.kafka"   % "kafka-clients"     % "3.8.0",
+      "org.apache.kafka"   % "kafka-clients"     % "3.9.0",
       "org.log4s"         %% "log4s"             % "1.10.0",
       "org.apache.commons" % "commons-compress"  % "1.27.1",
       "org.xerial.snappy"  % "snappy-java"       % "1.1.10.7",
       "org.lz4"            % "lz4-java"          % "1.8.0",
-      "com.github.luben"   % "zstd-jni"          % "1.5.6-5",
+      "com.github.luben"   % "zstd-jni"          % "1.5.6-8",
       "com.univocity"      % "univocity-parsers" % "2.9.1",
       "org.json4s"        %% "json4s-native"     % "4.0.7",
-      "io.micrometer"      % "micrometer-core"   % "1.13.4",
+      "io.micrometer"      % "micrometer-core"   % "1.14.1",
       "org.scalatest"     %% "scalatest"         % scalaTestVersion      % "test",
       "org.scalatestplus" %% "scalacheck-1-18"   % scalaCheckTestVersion % "test",
       "org.scalacheck"    %% "scalacheck"        % scalaCheckVersion     % "test",
-      "ch.qos.logback"     % "logback-classic"   % "1.5.8"               % "test"
+      "ch.qos.logback"     % "logback-classic"   % "1.5.12"              % "test"
     )
   )
 
@@ -74,8 +74,8 @@ lazy val `stream-loader-clickhouse` = project
   .settings(
     resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
-      "org.apache.httpcomponents.client5" % "httpclient5"     % "5.3.1",
-      "com.clickhouse"                    % "clickhouse-jdbc" % "0.6.5",
+      "org.apache.httpcomponents.client5" % "httpclient5"     % "5.4.1",
+      "com.clickhouse"                    % "clickhouse-jdbc" % "0.7.1",
       "org.scalatest"                    %% "scalatest"       % scalaTestVersion      % "test",
       "org.scalatestplus"                %% "scalacheck-1-18" % scalaCheckTestVersion % "test",
       "org.scalacheck"                   %% "scalacheck"      % scalaCheckVersion     % "test"
@@ -116,14 +116,14 @@ lazy val `stream-loader-s3` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "software.amazon.awssdk" % "s3"              % "2.28.3",
+      "software.amazon.awssdk" % "s3"              % "2.29.20",
       "org.scalatest"         %% "scalatest"       % scalaTestVersion % "test",
-      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.772"       % "test",
-      "org.gaul"               % "s3proxy"         % "2.2.0"          % "test"
+      "com.amazonaws"          % "aws-java-sdk-s3" % "1.12.778"       % "test",
+      "org.gaul"               % "s3proxy"         % "2.4.1"          % "test"
     )
   )
 
-val verticaVersion = "24.3.0-0"
+val verticaVersion = "24.4.0-0"
 
 lazy val `stream-loader-vertica` = project
   .in(file("stream-loader-vertica"))
@@ -138,7 +138,7 @@ lazy val `stream-loader-vertica` = project
     )
   )
 
-val duckdbVersion = "1.1.0"
+val duckdbVersion = "1.1.3"
 
 lazy val packAndSplitJars =
   taskKey[(File, File)]("Runs pack and splits out the application jars from the external dependency jars")
@@ -161,17 +161,17 @@ lazy val `stream-loader-tests` = project
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe"                     % "config"                           % "1.4.3",
-      "ch.qos.logback"                   % "logback-classic"                  % "1.5.8",
-      "com.zaxxer"                       % "HikariCP"                         % "5.1.0",
+      "ch.qos.logback"                   % "logback-classic"                  % "1.5.12",
+      "com.zaxxer"                       % "HikariCP"                         % "6.2.1",
       "org.apache.iceberg"               % "iceberg-parquet"                  % icebergVersion,
       "com.vertica.jdbc"                 % "vertica-jdbc"                     % verticaVersion,
       "org.scalacheck"                  %% "scalacheck"                       % scalaCheckVersion,
       "org.scalatest"                   %% "scalatest"                        % scalaTestVersion      % "test",
       "org.scalatestplus"               %% "scalacheck-1-18"                  % scalaCheckTestVersion % "test",
       "org.slf4j"                        % "log4j-over-slf4j"                 % "2.0.16"              % "test",
-      "org.mandas"                       % "docker-client"                    % "7.0.8"               % "test",
-      "org.jboss.resteasy"               % "resteasy-client"                  % "6.2.10.Final"        % "test",
-      "com.fasterxml.jackson.jakarta.rs" % "jackson-jakarta-rs-json-provider" % "2.17.2"              % "test",
+      "org.mandas"                       % "docker-client"                    % "8.0.3"               % "test",
+      "org.jboss.resteasy"               % "resteasy-client"                  % "6.2.11.Final"        % "test",
+      "com.fasterxml.jackson.jakarta.rs" % "jackson-jakarta-rs-json-provider" % "2.18.1"              % "test",
       "org.duckdb"                       % "duckdb_jdbc"                      % duckdbVersion         % "test"
     ),
     inConfig(IntegrationTest)(Defaults.testTasks),

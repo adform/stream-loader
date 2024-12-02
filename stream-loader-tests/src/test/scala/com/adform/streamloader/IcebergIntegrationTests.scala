@@ -18,6 +18,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
 import org.scalatestplus.scalacheck.Checkers
 
+import java.time.Duration
 import scala.concurrent.ExecutionContext
 
 @Slow
@@ -35,7 +36,7 @@ class IcebergIntegrationTests
 
   val kafkaConfig: KafkaConfig = KafkaConfig()
 
-  def icebergBackend(testId: String): IcebergStorageBackend = {
+  def icebergBackend(testId: String, commitDelay: Duration): IcebergStorageBackend = {
     val table = s"test.${testId.replace("-", "_")}"
     val backend =
       IcebergStorageBackend(
@@ -43,11 +44,18 @@ class IcebergIntegrationTests
         dockerNetwork,
         kafkaContainer,
         TestIcebergLoader,
-        table
+        table,
+        commitDelay
       )
     backend.initialize()
     backend
   }
 
-  it should behave like basicLoader("Iceberg loader", icebergBackend)
+  it should behave like basicLoader("Iceberg loader", icebergBackend(_, commitDelay = Duration.ZERO))
+
+  it should behave like basicLoader(
+    "Iceberg slow loader",
+    icebergBackend(_, commitDelay = Duration.ofSeconds(1)),
+    batchCount = 10
+  )
 }
