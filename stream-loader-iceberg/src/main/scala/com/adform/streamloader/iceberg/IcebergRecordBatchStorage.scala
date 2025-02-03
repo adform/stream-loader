@@ -48,14 +48,16 @@ class IcebergRecordBatchStorage(table: Table, commitLock: Option[Lock])
     log.debug(s"Starting new Iceberg transaction for ranges ${batch.recordRanges.mkString(",")}")
     val transaction = table.newTransaction()
 
-    batch.dataWriteResult.dataFiles().forEach(file => transaction.newAppend().appendFile(file).commit())
+    val append = transaction.newAppend()
+    batch.dataWriteResult.dataFiles().forEach(file => append.appendFile(file))
+    append.commit()
 
+    val propertyUpdate = transaction.updateProperties()
     batch.recordRanges.foreach(range => {
-      transaction
-        .updateProperties()
+      propertyUpdate
         .set(offsetKey(range.topic, range.partition), s"${range.end.offset}:${range.end.watermark.millis}")
-        .commit()
     })
+    propertyUpdate.commit()
 
     transaction.commitTransaction()
     log.info(s"Successfully commited Iceberg transaction for ranges ${batch.recordRanges.mkString(",")}")
