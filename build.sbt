@@ -39,7 +39,7 @@ val scalaCheckVersion = "1.18.1"
 val scalaCheckTestVersion = "3.2.19.0"
 
 val hadoopVersion = "3.4.1"
-val parquetVersion = "1.14.4"
+val parquetVersion = "1.15.2"
 val icebergVersion = "1.7.0"
 
 lazy val `stream-loader-core` = project
