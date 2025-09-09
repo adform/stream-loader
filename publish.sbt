@@ -32,8 +32,6 @@ ThisBuild / publishMavenStyle := true
 // Use Central Portal instead of OSSRH
 ThisBuild / publishTo := {
   val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
-  if (isSnapshot.value)
-    Some("central-snapshots" at centralSnapshots)
-  else
-    Some("central-releases" at "https://central.sonatype.com/service/local/staging/deploy/maven2/")
+  if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+  else localStaging.value
 }

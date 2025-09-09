@@ -47,7 +47,7 @@ jobs:
         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
       run: |
-          sbt -Dsbt.color=always -Dsbt.supershell=false publishSigned
+          sbt -Dsbt.color=always -Dsbt.supershell=false sonaRelease
 
     - name: Publish API docs to GitHub Pages
       run: |
