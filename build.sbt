@@ -1,7 +1,5 @@
 name := "stream-loader"
 
-ThisBuild / organization := "com.adform"
-ThisBuild / organizationName := "Adform"
 ThisBuild / scalaVersion := "2.13.15"
 ThisBuild / scalacOptions := Seq(
   "-unchecked",
@@ -14,17 +12,9 @@ ThisBuild / scalacOptions := Seq(
   "-Wconf:msg=While parsing annotations in:silent"
 )
 
-ThisBuild / startYear := Some(2020)
-ThisBuild / licenses += ("MPL-2.0", url("http://mozilla.org/MPL/2.0/"))
-
-ThisBuild / developers := List(
-  Developer("sauliusvl", "Saulius Valatka", "saulius.vl@gmail.com", url("https://github.com/sauliusvl"))
-)
-
 enablePlugins(GitVersioning)
 
-val gitRepo = "adform/stream-loader"
-val gitRepoUrl = s"https://github.com/$gitRepo"
+import BuildSettings._
 
 ThisBuild / git.useGitDescribe := true
 ThisBuild / git.remoteRepo := {
@@ -290,10 +280,7 @@ lazy val commonSettings = Seq(
         .getMethod("getLogger", cl.loadClass("java.lang.String"))
         .invoke(null, "ROOT") // Prevents slf4j replay warnings during tests
     )
-  ),
-  publishTo := sonatypePublishToBundle.value,
-  homepage := Some(url(gitRepoUrl)),
-  scmInfo := Some(ScmInfo(url(gitRepoUrl), s"scm:git:git@github.com:$gitRepo.git"))
+  )
 )
 
 lazy val copyDocAssets = taskKey[File]("Copy unidoc resources")
