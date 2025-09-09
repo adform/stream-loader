@@ -42,12 +42,12 @@ jobs:
         gpg_private_key: ${{ secrets.PGP_SECRET }}
         passphrase: ${{ secrets.PGP_PASSPHRASE }}
 
-    - name: Publish to Sonatype
+    - name: Publish to Central Portal
       env:
         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
         SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
       run: |
-          sbt -Dsbt.color=always -Dsbt.supershell=false publishSigned sonatypeBundleRelease
+          sbt -Dsbt.color=always -Dsbt.supershell=false publishSigned
 
     - name: Publish API docs to GitHub Pages
       run: |
