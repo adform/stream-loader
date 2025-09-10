@@ -12,6 +12,7 @@ import com.adform.streamloader.behaviors.BasicLoaderBehaviors
 import com.adform.streamloader.fixtures._
 import com.adform.streamloader.storage._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import org.scalatest.Ignore
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -21,6 +22,9 @@ import org.scalatestplus.scalacheck.Checkers
 import scala.concurrent.ExecutionContext
 
 @Slow
+// Temporarily ignore Vertica tests, vertica-ce image is not available on DockerHub
+// https://github.com/vertica/vertica-containers/issues/64
+@Ignore
 class VerticaIntegrationTests
     extends AnyFunSpec
     with Matchers
