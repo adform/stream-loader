@@ -46,7 +46,6 @@ object Retry extends Logging {
   def isInterruptionException(e: Throwable): Boolean = e match {
     case _: InterruptedException | _: InterruptedIOException | _: ClosedByInterruptException | _: InterruptException =>
       true
-    case e: Throwable if e.getCause != null && isInterruptionException(e.getCause) => true
     case _ => false
   }
 

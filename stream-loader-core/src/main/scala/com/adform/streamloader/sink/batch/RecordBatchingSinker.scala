@@ -73,7 +73,7 @@ class RecordBatchingSinker[B <: RecordBatch](
 
         log.info(s"Committing batch $batch to storage")
         Metrics.commitDuration.recordCallable(() =>
-          retryOnFailureIf(retryPolicy)(!batchCommittedAfterFailure(batch)) {
+          retryOnFailureIf(retryPolicy)(isRunning.get() && !batchCommittedAfterFailure(batch)) {
             batchStorage.commitBatch(batch)
           }
         )
@@ -86,7 +86,7 @@ class RecordBatchingSinker[B <: RecordBatch](
           log.warn("Failed discarding batch")
         }
       } catch {
-        case e if isInterruptionException(e) =>
+        case e if isInterruptionException(e) && !isRunning.get() =>
           log.debug("Batch commit thread interrupted")
       }
     },
