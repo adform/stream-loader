@@ -48,7 +48,7 @@ case class IcebergStorageBackend(
 
   private val duckdbExtension = new File("/tmp/iceberg.duckdb_extension")
   private val duckdbExtensionUrl = new URI(
-    s"http://extensions.duckdb.org/v${BuildInfo.duckdbVersion}/linux_amd64_gcc4/iceberg.duckdb_extension.gz"
+    s"http://extensions.duckdb.org/v${BuildInfo.duckdbVersion.split('.').take(3).mkString(".")}/linux_amd64/iceberg.duckdb_extension.gz"
   ).toURL
 
   private val warehouseDir = "/tmp/stream-loader-tests"
@@ -123,17 +123,12 @@ case class IcebergStorageBackend(
   override def getContent: StorageContent[ExampleMessage] = Using.Manager { use =>
     val conn = use(DriverManager.getConnection("jdbc:duckdb:").asInstanceOf[DuckDBConnection])
 
-    // Querying complex types from Iceberg tables is semi-broken,
-    // see: https://github.com/duckdb/duckdb_iceberg/issues/47
     val stmt = use(conn.createStatement())
     val rs = use(
       stmt.executeQuery(
         s"""INSTALL '${duckdbExtension.getPath}';
            |LOAD iceberg;
-           |SELECT * FROM iceberg_scan('$warehouseDir/${table.replace(
-            '.',
-            '/'
-          )}', skip_schema_inference=True);""".stripMargin
+           |SELECT * FROM iceberg_scan('$warehouseDir/${table.replace('.', '/')}');""".stripMargin
       )
     )
 

@@ -15,6 +15,7 @@ import org.jclouds.blobstore.BlobStoreContext
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.core.checksums.{RequestChecksumCalculation, ResponseChecksumValidation}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.endpoints.{S3EndpointParams, S3EndpointProvider}
@@ -65,6 +66,8 @@ trait MockS3 extends BeforeAndAfterAll { this: AnyFunSpec =>
     .credentialsProvider(() => AwsBasicCredentials.create(accessKey, secretKey))
     .forcePathStyle(true)
     .endpointOverride(endpoint.url())
+    .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
+    .responseChecksumValidation(ResponseChecksumValidation.WHEN_REQUIRED)
     .build()
 
   override def beforeAll(): Unit = {

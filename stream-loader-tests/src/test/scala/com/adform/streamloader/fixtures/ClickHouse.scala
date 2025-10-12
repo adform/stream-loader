@@ -15,7 +15,12 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import java.time.Duration
 import scala.jdk.CollectionConverters._
 
-case class ClickHouseConfig(dbName: String = "default", image: String = "clickhouse/clickhouse-server:24.10.2.80")
+case class ClickHouseConfig(
+    image: String = "clickhouse/clickhouse-server:25.9.3.48",
+    dbName: String = "default",
+    userName: String = "default",
+    password: String = "password"
+)
 
 trait ClickHouseTestFixture extends ClickHouse with BeforeAndAfterAll { this: Suite with DockerTestFixture =>
   override def beforeAll(): Unit = {
@@ -63,6 +68,12 @@ trait ClickHouse { this: Docker =>
           .networkMode(dockerNetwork.id)
           .portBindings(makePortBindings(jdbcPort, nativeClientPort))
           .build()
+      )
+      .env(
+        s"CLICKHOUSE_DB=${clickHouseConfig.dbName}",
+        s"CLICKHOUSE_USER=${clickHouseConfig.userName}",
+        s"CLICKHOUSE_PASSWORD=${clickHouseConfig.password}",
+        "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1"
       )
       .healthcheck(
         Healthcheck

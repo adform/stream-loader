@@ -9,37 +9,35 @@
 package com.adform.streamloader.storage
 
 import com.adform.streamloader.clickhouse.ClickHouseFileStorage
-import com.adform.streamloader.fixtures.{Container, ContainerWithEndpoint, DockerNetwork, SimpleContainer}
+import com.adform.streamloader.fixtures._
 import com.adform.streamloader.model.{ExampleMessage, StreamPosition, Timestamp}
 import com.adform.streamloader.source.KafkaContext
 import com.adform.streamloader.util.Retry
 import com.adform.streamloader.{BuildInfo, Loader}
-import com.clickhouse.jdbc.ClickHouseArray
+import com.clickhouse.client.api.Client
+import com.clickhouse.client.api.query.QuerySettings
+import org.apache.kafka.common.TopicPartition
 import org.mandas.docker.client.DockerClient
 import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
-import com.zaxxer.hikari.HikariConfig
-import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Arbitrary
 
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import javax.sql.DataSource
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
-import scala.util.Using
 
 case class ClickHouseStorageBackend(
     docker: DockerClient,
     dockerNetwork: DockerNetwork,
     kafkaContainer: ContainerWithEndpoint,
     clickHouseContainer: ContainerWithEndpoint,
-    clickHouseConf: HikariConfig,
-    dataSource: DataSource,
+    clickHouseConfig: ClickHouseConfig,
+    clickHouseClient: Client,
     table: String,
     loader: Loader
-) extends StorageBackend[ExampleMessage]
-    with JdbcStorageBackend {
+) extends StorageBackend[ExampleMessage] {
 
   override def arbMessage: Arbitrary[ExampleMessage] = ExampleMessage.arbMessage
 
@@ -58,32 +56,34 @@ case class ClickHouseStorageBackend(
 
   val batchStorage: ClickHouseFileStorage = ClickHouseFileStorage
     .builder()
-    .dbDataSource(dataSource)
+    .client(clickHouseClient)
     .table(table)
     .rowOffsetColumnNames(TOPIC_COLUMN, PARTITION_COLUMN, OFFSET_COLUMN, WATERMARK_COLUMN)
     .build()
 
   override def initialize(): Unit = {
     batchStorage.initialize(kafkaContext)
-    executeStatement(
-      s"""CREATE TABLE IF NOT EXISTS $table (
-         |  $TOPIC_COLUMN String,
-         |  $PARTITION_COLUMN UInt16,
-         |  $OFFSET_COLUMN UInt64,
-         |  $WATERMARK_COLUMN Timestamp,
-         |  id Int32,
-         |  name String,
-         |  timestamp Timestamp,
-         |  height Float64,
-         |  width Float32,
-         |  is_enabled UInt8,
-         |  child_ids Array(Int32),
-         |  parent_id Nullable(Int64),
-         |  transaction_id UUID,
-         |  money_spent Decimal(${ExampleMessage.SCALE_PRECISION.precision}, ${ExampleMessage.SCALE_PRECISION.scale})
-         |) ENGINE = MergeTree()
-         |ORDER BY $OFFSET_COLUMN;""".stripMargin
-    )
+    clickHouseClient
+      .execute(
+        s"""CREATE TABLE IF NOT EXISTS $table (
+           |  $TOPIC_COLUMN String,
+           |  $PARTITION_COLUMN UInt16,
+           |  $OFFSET_COLUMN UInt64,
+           |  $WATERMARK_COLUMN Timestamp,
+           |  id Int32,
+           |  name String,
+           |  timestamp Timestamp,
+           |  height Float64,
+           |  width Float32,
+           |  is_enabled UInt8,
+           |  child_ids Array(Int32),
+           |  parent_id Nullable(Int64),
+           |  transaction_id UUID,
+           |  money_spent Decimal(${ExampleMessage.SCALE_PRECISION.precision}, ${ExampleMessage.SCALE_PRECISION.scale})
+           |) ENGINE = MergeTree()
+           |ORDER BY $OFFSET_COLUMN;""".stripMargin
+      )
+      .get()
   }
 
   def createLoaderContainer(loaderKafkaConfig: LoaderKafkaConfig, batchSize: Long): Container = {
@@ -106,11 +106,11 @@ case class ClickHouseStorageBackend(
         s"KAFKA_BROKERS=${kafkaContainer.endpoint}",
         s"KAFKA_TOPIC=$topic",
         s"KAFKA_CONSUMER_GROUP=$consumerGroup",
-        s"CLICKHOUSE_PASSWORD=${clickHouseConf.getDataSourceProperties.getProperty("password")}",
-        s"CLICKHOUSE_PORT=${clickHouseConf.getDataSourceProperties.get("port")}",
-        s"CLICKHOUSE_USER=${clickHouseConf.getDataSourceProperties.getProperty("userID")}",
-        s"CLICKHOUSE_HOST=${clickHouseConf.getDataSourceProperties.getProperty("host")}",
-        s"CLICKHOUSE_DB=${clickHouseConf.getDataSourceProperties.getProperty("database")}",
+        s"CLICKHOUSE_HOST=${clickHouseContainer.ip}",
+        s"CLICKHOUSE_PORT=${clickHouseContainer.port}",
+        s"CLICKHOUSE_DB=${clickHouseConfig.dbName}",
+        s"CLICKHOUSE_USER=${clickHouseConfig.userName}",
+        s"CLICKHOUSE_PASSWORD=${clickHouseConfig.password}",
         s"CLICKHOUSE_TABLE=$table",
         s"BATCH_SIZE=$batchSize"
       )
@@ -122,41 +122,40 @@ case class ClickHouseStorageBackend(
 
   override def getContent: StorageContent[ExampleMessage] =
     Retry.retryOnFailure(Retry.Policy(retriesLeft = 3, initialDelay = 1.seconds, backoffFactor = 1)) {
-      Using.resource(dataSource.getConnection()) { connection =>
-        val content = Using.resource(connection.prepareStatement(s"SELECT * FROM $table")) { ps =>
-          ps.setQueryTimeout(5)
-          Using.resource(ps.executeQuery()) { rs =>
-            val content: ListBuffer[ExampleMessage] = collection.mutable.ListBuffer[ExampleMessage]()
-            val positions: mutable.HashMap[TopicPartition, ListBuffer[StreamPosition]] = mutable.HashMap.empty
-            while (rs.next()) {
+      val content: ListBuffer[ExampleMessage] = collection.mutable.ListBuffer[ExampleMessage]()
+      val positions: mutable.HashMap[TopicPartition, ListBuffer[StreamPosition]] = mutable.HashMap.empty
 
-              val topicPartition = new TopicPartition(rs.getString(TOPIC_COLUMN), rs.getInt(PARTITION_COLUMN))
-              val position =
-                StreamPosition(rs.getLong(OFFSET_COLUMN), Timestamp(rs.getTimestamp(WATERMARK_COLUMN).getTime))
-              positions
-                .getOrElseUpdate(topicPartition, collection.mutable.ListBuffer[StreamPosition]())
-                .append(position)
+      clickHouseClient
+        .queryAll(s"SELECT * FROM $table", new QuerySettings().setMaxExecutionTime(5))
+        .forEach(row => {
+          val topicPartition = new TopicPartition(row.getString(TOPIC_COLUMN), row.getInteger(PARTITION_COLUMN))
+          val position =
+            StreamPosition(
+              row.getLong(OFFSET_COLUMN),
+              Timestamp(row.getLocalDateTime(WATERMARK_COLUMN).toInstant(ZoneOffset.UTC).toEpochMilli)
+            )
 
-              content.addOne(
-                ExampleMessage(
-                  rs.getInt("id"),
-                  rs.getString("name"),
-                  rs.getTimestamp("timestamp").toLocalDateTime,
-                  rs.getDouble("height"),
-                  rs.getFloat("width"),
-                  rs.getBoolean("is_enabled"),
-                  rs.getArray("child_ids").asInstanceOf[ClickHouseArray].getArray().asInstanceOf[Array[Int]],
-                  Option(rs.getObject("parent_id").asInstanceOf[java.lang.Long]).map(_.toLong),
-                  rs.getObject("transaction_id", classOf[UUID]),
-                  rs.getBigDecimal("money_spent")
-                )
-              )
-            }
-            StorageContent(content.toList, positions.view.mapValues(sps => sps.maxBy(_.offset)).toMap)
-          }
-        }
-        content
-      }
+          positions
+            .getOrElseUpdate(topicPartition, collection.mutable.ListBuffer[StreamPosition]())
+            .append(position)
+
+          content.addOne(
+            ExampleMessage(
+              row.getInteger("id"),
+              row.getString("name"),
+              row.getLocalDateTime("timestamp"),
+              row.getDouble("height"),
+              row.getFloat("width"),
+              row.getBoolean("is_enabled"),
+              row.getIntArray("child_ids"),
+              Option(row.getObject("parent_id").asInstanceOf[java.lang.Long]).map(_.toLong),
+              row.getObject("transaction_id").asInstanceOf[UUID],
+              row.getBigDecimal("money_spent")
+            )
+          )
+        })
+
+      StorageContent(content.toList, positions.view.mapValues(sps => sps.maxBy(_.offset)).toMap)
     }
 
   override def committedPositions(

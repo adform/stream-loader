@@ -12,11 +12,11 @@ import com.adform.streamloader.behaviors.{BasicLoaderBehaviors, RebalanceBehavio
 import com.adform.streamloader.fixtures._
 import com.adform.streamloader.loaders.TestClickHouseLoader
 import com.adform.streamloader.storage.ClickHouseStorageBackend
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.clickhouse.client.api.Client
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.tags.Slow
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.ExecutionContext
@@ -38,33 +38,21 @@ class ClickHouseIntegrationTests
 
   val kafkaConfig: KafkaConfig = KafkaConfig()
   val clickHouseConfig: ClickHouseConfig = ClickHouseConfig()
-
-  var hikariConf: HikariConfig = _
-  var dataSource: HikariDataSource = _
+  var clickHouseClient: Client = _
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    hikariConf = new HikariConfig()
-    hikariConf.setDriverClassName(classOf[com.clickhouse.jdbc.ClickHouseDriver].getName)
-    hikariConf.setJdbcUrl(s"jdbc:clickhouse://${clickHouseContainer.endpoint}/${clickHouseConfig.dbName}")
-    hikariConf.addDataSourceProperty("host", clickHouseContainer.ip)
-    hikariConf.addDataSourceProperty("port", jdbcPort)
-    hikariConf.addDataSourceProperty("database", clickHouseConfig.dbName)
-    hikariConf.addDataSourceProperty("userID", "")
-    hikariConf.addDataSourceProperty("password", "")
-    hikariConf.setConnectionTimeout(1000)
-    hikariConf.setValidationTimeout(1000)
-    hikariConf.setConnectionTestQuery("SELECT 1")
-
-    hikariConf.setMinimumIdle(4)
-    hikariConf.setMaximumPoolSize(8)
-
-    dataSource = new HikariDataSource(hikariConf)
+    clickHouseClient = new Client.Builder()
+      .addEndpoint(s"http://${clickHouseContainer.ip}:${clickHouseContainer.port}")
+      .setUsername(clickHouseConfig.userName)
+      .setPassword(clickHouseConfig.password)
+      .setDefaultDatabase(clickHouseConfig.dbName)
+      .build()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
-    dataSource.close()
+    clickHouseClient.close()
   }
 
   def clickHouseStorageBackend(testId: String): ClickHouseStorageBackend = {
@@ -75,8 +63,8 @@ class ClickHouseIntegrationTests
         dockerNetwork,
         kafkaContainer,
         clickHouseContainer,
-        hikariConf,
-        dataSource,
+        clickHouseConfig,
+        clickHouseClient,
         table,
         TestClickHouseLoader
       )

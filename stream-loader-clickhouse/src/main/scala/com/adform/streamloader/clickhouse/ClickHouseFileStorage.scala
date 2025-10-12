@@ -10,23 +10,22 @@ package com.adform.streamloader.clickhouse
 
 import com.adform.streamloader.model._
 import com.adform.streamloader.sink.batch.storage.InDataOffsetBatchStorage
+import com.adform.streamloader.sink.file.Compression
 import com.adform.streamloader.util.Logging
-import com.clickhouse.data.ClickHouseFile
-import com.clickhouse.jdbc.ClickHouseConnection
+import com.clickhouse.client.api.Client
+import com.clickhouse.client.api.insert.InsertSettings
 import org.apache.kafka.common.TopicPartition
 
-import java.sql.Connection
-import javax.sql.DataSource
+import java.nio.file.Files
+import java.time.ZoneOffset
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
-import scala.util.Using
 
 /**
   * A ClickHouse storage implementation, stores offsets in rows of data.
   * Queries ClickHouse upon initialization in order to retrieve committed stream positions.
   */
 class ClickHouseFileStorage(
-    dbDataSource: DataSource,
+    client: Client,
     table: String,
     topicColumnName: String,
     partitionColumnName: String,
@@ -35,7 +34,7 @@ class ClickHouseFileStorage(
 ) extends InDataOffsetBatchStorage[ClickHouseFileRecordBatch]
     with Logging {
 
-  def committedPositions(connection: Connection): Map[TopicPartition, StreamPosition] = {
+  override def committedPositions(topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = {
     val positionQuery =
       s"""SELECT
          |  $topicColumnName,
@@ -47,53 +46,52 @@ class ClickHouseFileStorage(
          |GROUP BY $topicColumnName, $partitionColumnName
          |""".stripMargin
 
-    Using.resource(connection.prepareStatement(positionQuery)) { statement =>
-      {
-        log.info(s"Running stream position query: $positionQuery")
-        Using.resource(statement.executeQuery()) { result =>
-          val positions: mutable.HashMap[TopicPartition, StreamPosition] = mutable.HashMap.empty
-          while (result.next()) {
-            val topic = result.getString(1)
-            val partition = result.getInt(2)
-            val offset = result.getLong(3)
-            val watermark = Timestamp(result.getTimestamp(4).getTime)
-            if (!result.wasNull()) {
-              val topicPartition = new TopicPartition(topic, partition)
-              val position = StreamPosition(offset, watermark)
-              positions.put(topicPartition, position)
-            }
-          }
-          positions.toMap
-        }
-      }
-    }
-  }
+    log.info(s"Running stream position query: $positionQuery")
+    val positions: mutable.HashMap[TopicPartition, StreamPosition] = mutable.HashMap.empty
+    client
+      .queryAll(positionQuery)
+      .forEach(row => {
+        val topic = row.getString(1)
+        val partition = row.getInteger(2)
+        val offset = row.getLong(3)
+        val watermark = Timestamp(row.getLocalDateTime(4).toInstant(ZoneOffset.UTC).toEpochMilli)
 
-  override def committedPositions(topicPartitions: Set[TopicPartition]): Map[TopicPartition, Option[StreamPosition]] = {
-    Using.resource(dbDataSource.getConnection()) { connection =>
-      val positions = committedPositions(connection)
-      topicPartitions.map(tp => (tp, positions.get(tp))).toMap
-    }
+        val topicPartition = new TopicPartition(topic, partition)
+        val position = StreamPosition(offset, watermark)
+        positions.put(topicPartition, position)
+      })
+
+    topicPartitions.map(tp => (tp, positions.get(tp))).toMap
   }
 
   override def commitBatchWithOffsets(batch: ClickHouseFileRecordBatch): Unit = {
-    Using.resource(dbDataSource.getConnection) { connection =>
-      Using.resource(connection.unwrap(classOf[ClickHouseConnection]).createStatement) { statement =>
-        statement
-          .write()
-          .data(ClickHouseFile.of(batch.file, batch.compression, 1, batch.format))
-          .table(table)
-          .params(Map("max_insert_block_size" -> batch.rowCount.toString).asJava) // atomic insert
-          .executeAndWait()
-      }
-    }
+    val settings = new InsertSettings()
+      .setOption("max_insert_block_size", batch.rowCount) // ensure single block to prevent partial writes
+      .setDeduplicationToken(deduplicationToken(batch.recordRanges)) // deduplicate based on ranges
+
+    contentEncoding(batch.fileCompression).foreach(encoding => settings.appCompressedData(true, encoding))
+
+    client.insert(table, Files.newInputStream(batch.file.toPath), batch.format, settings).get()
+  }
+
+  private def contentEncoding(fileCompression: Compression): Option[String] = fileCompression match {
+    case Compression.NONE => None
+    case Compression.ZSTD => Some("zstd")
+    case Compression.GZIP => Some("gzip")
+    case Compression.BZIP => Some("bz2")
+    case Compression.LZ4 => Some("lz4")
+    case _ => throw new UnsupportedOperationException(s"Compression $fileCompression is not supported by ClickHouse")
+  }
+
+  private def deduplicationToken(ranges: Seq[StreamRange]): String = {
+    ranges.map(range => s"${range.topic}:${range.partition}:${range.start.offset}:${range.end.offset}").mkString(";")
   }
 }
 
 object ClickHouseFileStorage {
 
   case class Builder(
-      private val _dbDataSource: DataSource,
+      private val _client: Client,
       private val _table: String,
       private val _topicColumnName: String,
       private val _partitionColumnName: String,
@@ -102,9 +100,9 @@ object ClickHouseFileStorage {
   ) {
 
     /**
-      * Sets a data source for ClickHouse JDBC connections.
+      * Sets the ClickHouse client.
       */
-    def dbDataSource(source: DataSource): Builder = copy(_dbDataSource = source)
+    def client(client: Client): Builder = copy(_client = client)
 
     /**
       * Sets the table to load data to.
@@ -129,11 +127,11 @@ object ClickHouseFileStorage {
       )
 
     def build(): ClickHouseFileStorage = {
-      if (_dbDataSource == null) throw new IllegalStateException("Must provide a ClickHouse data source")
+      if (_client == null) throw new IllegalStateException("Must provide a ClickHouse client")
       if (_table == null) throw new IllegalStateException("Must provide a valid table name")
 
       new ClickHouseFileStorage(
-        _dbDataSource,
+        _client,
         _table,
         _topicColumnName,
         _partitionColumnName,
