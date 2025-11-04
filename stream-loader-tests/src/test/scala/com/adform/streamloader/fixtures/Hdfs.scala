@@ -8,18 +8,16 @@
 
 package com.adform.streamloader.fixtures
 
-import java.net.URI
-
-import org.mandas.docker.client.messages.{ContainerConfig, HostConfig}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.log4s._
+import org.mandas.docker.client.messages.{ContainerConfig, Healthcheck, HostConfig}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-case class HdfsConfig(
-    namenodeImage: String = "bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8",
-    datanodeImage: String = "bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8"
-)
+import java.net.URI
+import scala.jdk.CollectionConverters._
+
+case class HdfsConfig(image: String = "apache/hadoop:3.4.1")
 
 trait HdfsTestFixture extends Hdfs with BeforeAndAfterAll { this: Suite with DockerTestFixture =>
 
@@ -54,16 +52,18 @@ trait Hdfs { this: Docker =>
     namenode = startNameNode(dockerNetwork)(
       nameNodeName,
       List(
-        s"CLUSTER_NAME=$dockerSandboxId-integration-test",
-        s"CORE_CONF_fs_defaultFS=hdfs://$nameNodeName:$hdfsPort"
+        "HADOOP_USER_NAME=root",
+        "ENSURE_NAMENODE_DIR=/tmp/hadoop-root/dfs/name",
+        s"CORE-SITE.XML_fs.defaultFS=hdfs://$nameNodeName:$hdfsPort",
+        "HDFS-SITE.XML_dfs.namenode.rpc-bind-host=0.0.0.0"
       )
     )
 
     datanode = startDataNode(dockerNetwork)(
       s"$dockerSandboxId-hadoop-datanode",
       List(
-        s"CORE_CONF_fs_defaultFS=hdfs://${namenode.name}:$hdfsPort",
-        s"CORE_CONF_dfs_datanode_address=${dockerNetwork.ip}:$datanodePort"
+        s"CORE-SITE.XML_fs.defaultFS=hdfs://${namenode.name}:$hdfsPort",
+        s"HDFS-SITE.XML_dfs.datanode.address=0.0.0.0:$datanodePort"
       ),
       List(namenode.name)
     )
@@ -98,7 +98,7 @@ trait Hdfs { this: Docker =>
   )(containerName: String, envVars: List[String] = List(), links: List[String] = List()): Container = {
     val config = ContainerConfig
       .builder()
-      .image(hdfsConfig.datanodeImage)
+      .image(hdfsConfig.image)
       .hostConfig(
         HostConfig
           .builder()
@@ -106,8 +106,18 @@ trait Hdfs { this: Docker =>
           .portBindings(makePortBindings(datanodePort))
           .build()
       )
+      .healthcheck(
+        Healthcheck
+          .builder()
+          .test(List("CMD-SHELL", s"nc -z localhost $datanodePort").asJava)
+          .retries(6)
+          .interval(1_000_000_000L)
+          .timeout(5_000_000_000L)
+          .build()
+      )
       .exposedPorts(datanodePort.toString)
       .env(envVars: _*)
+      .cmd(Seq("hdfs", "datanode").asJava)
       .build()
 
     val containerId = startContainer(config, containerName)
@@ -124,7 +134,7 @@ trait Hdfs { this: Docker =>
   )(containerName: String, envVars: List[String] = List()): ContainerWithEndpoint = {
     val config = ContainerConfig
       .builder()
-      .image(hdfsConfig.namenodeImage)
+      .image(hdfsConfig.image)
       .hostConfig(
         HostConfig
           .builder()
@@ -132,8 +142,18 @@ trait Hdfs { this: Docker =>
           .portBindings(makePortBindings(hdfsPort))
           .build()
       )
+      .healthcheck(
+        Healthcheck
+          .builder()
+          .test(List("CMD-SHELL", s"nc -z localhost $hdfsPort").asJava)
+          .retries(6)
+          .interval(1_000_000_000L)
+          .timeout(5_000_000_000L)
+          .build()
+      )
       .exposedPorts(hdfsPort.toString)
       .env(envVars: _*)
+      .cmd(Seq("hdfs", "namenode").asJava)
       .build()
 
     val containerId = startContainer(config, containerName)

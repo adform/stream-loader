@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-case class KafkaConfig(image: String = "bitnami/kafka:3.9.0-debian-12-r3")
+case class KafkaConfig(image: String = "apache/kafka-native:4.1.0")
 
 trait KafkaTestFixture extends Kafka with BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite with DockerTestFixture =>
@@ -139,12 +139,7 @@ trait Kafka { this: Docker =>
       .healthcheck(
         Healthcheck
           .builder()
-          .test(
-            List(
-              "CMD-SHELL",
-              s"/opt/bitnami/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:$kafkaPort"
-            ).asJava
-          )
+          .test(List("CMD-SHELL", s"nc -z localhost $kafkaPort").asJava)
           .retries(6)
           .interval(1_000_000_000L)
           .timeout(5_000_000_000L)
@@ -152,15 +147,15 @@ trait Kafka { this: Docker =>
       )
       .exposedPorts(kafkaPort.toString)
       .env(
-        "KAFKA_CFG_NODE_ID=1",
-        "KAFKA_CFG_PROCESS_ROLES=broker,controller",
-        "KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER",
-        s"KAFKA_CFG_LISTENERS=PLAINTEXT://:$kafkaPort,CONTROLLER://:$kafkaControllerPort",
-        "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
-        s"KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${dockerNetwork.ip}:$kafkaPort",
-        s"KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:$kafkaControllerPort",
-        "ALLOW_PLAINTEXT_LISTENER=yes",
-        s"KAFKA_CFG_LOG_RETENTION_HOURS=${Int.MaxValue}"
+        "KAFKA_NODE_ID=1",
+        "KAFKA_PROCESS_ROLES=broker,controller",
+        "KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER",
+        s"KAFKA_LISTENERS=PLAINTEXT://:$kafkaPort,CONTROLLER://:$kafkaControllerPort",
+        "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
+        s"KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${dockerNetwork.ip}:$kafkaPort",
+        s"KAFKA_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:$kafkaControllerPort",
+        s"KAFKA_LOG_RETENTION_HOURS=${Int.MaxValue}",
+        "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1"
       )
       .build()
 

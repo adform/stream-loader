@@ -32,7 +32,7 @@ class ClickHouseFileRecordBatcher[R](
         ClickHouseFileRecordBatch(
           f,
           fileBuilder.format,
-          fileBuilder.compression,
+          fileBuilder.fileCompression,
           recordRanges,
           fileBuilder.getRecordCount
         )

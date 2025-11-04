@@ -8,20 +8,21 @@
 
 package com.adform.streamloader.loaders
 
-import java.time.LocalDateTime
-import java.util.UUID
 import com.adform.streamloader.clickhouse._
 import com.adform.streamloader.clickhouse.rowbinary.RowBinaryClickHouseFileBuilder
-import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation.DecimalEncoding
-import com.adform.streamloader.sink.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.model.{ExampleMessage, Timestamp}
 import com.adform.streamloader.sink.batch.{RecordBatchingSink, RecordFormatter}
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation.DecimalEncoding
 import com.adform.streamloader.sink.file.Compression
+import com.adform.streamloader.sink.file.FileCommitStrategy.ReachedAnyOf
 import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.ConfigExtensions._
 import com.adform.streamloader.{Loader, StreamLoader}
+import com.clickhouse.client.api.Client
 import com.typesafe.config.ConfigFactory
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+
+import java.time.LocalDateTime
+import java.util.UUID
 
 /*
 CREATE TABLE IF NOT EXISTS test_table (
@@ -66,22 +67,12 @@ object TestClickHouseLoader extends Loader {
   def main(args: Array[String]): Unit = {
 
     val cfg = ConfigFactory.load().getConfig("stream-loader")
-    val hikariConf = new HikariConfig()
-
-    val host = cfg.getString("clickhouse.host")
-    val port = cfg.getInt("clickhouse.port")
-    val db = cfg.getString("clickhouse.db")
-
-    hikariConf.setDriverClassName(classOf[com.clickhouse.jdbc.ClickHouseDriver].getName)
-    hikariConf.setJdbcUrl(s"jdbc:clickhouse://$host:$port/$db")
-
-    hikariConf.addDataSourceProperty("host", host)
-    hikariConf.addDataSourceProperty("port", port)
-    hikariConf.addDataSourceProperty("database", db)
-    hikariConf.addDataSourceProperty("userID", cfg.getString("clickhouse.user"))
-    hikariConf.addDataSourceProperty("password", cfg.getString("clickhouse.password"))
-
-    val clickHouseDataSource = new HikariDataSource(hikariConf)
+    val client = new Client.Builder()
+      .addEndpoint(s"http://${cfg.getString("clickhouse.host")}:${cfg.getInt("clickhouse.port")}")
+      .setDefaultDatabase(cfg.getString("clickhouse.db"))
+      .setUsername(cfg.getString("clickhouse.user"))
+      .setPassword(cfg.getString("clickhouse.password"))
+      .build()
 
     val recordFormatter: RecordFormatter[TestClickHouseRecord] = record => {
       val msg = ExampleMessage.parseFrom(record.consumerRecord.value())
@@ -125,7 +116,7 @@ object TestClickHouseLoader extends Loader {
       .batchStorage(
         ClickHouseFileStorage
           .builder()
-          .dbDataSource(clickHouseDataSource)
+          .client(client)
           .table(cfg.getString("clickhouse.table"))
           .build()
       )
@@ -135,7 +126,7 @@ object TestClickHouseLoader extends Loader {
 
     sys.addShutdownHook {
       loader.stop()
-      clickHouseDataSource.close()
+      client.close()
     }
 
     loader.start()

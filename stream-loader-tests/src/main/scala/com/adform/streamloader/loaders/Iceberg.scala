@@ -15,15 +15,14 @@ import com.adform.streamloader.sink.file.FileCommitStrategy._
 import com.adform.streamloader.sink.file.MultiFileCommitStrategy
 import com.adform.streamloader.source.KafkaSource
 import com.adform.streamloader.util.ConfigExtensions._
-import com.adform.streamloader.util.UuidExtensions._
 import com.adform.streamloader.{Loader, StreamLoader}
 import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
-import org.apache.iceberg.{FileFormat, TableMetadata, TableOperations}
 import org.apache.iceberg.catalog.TableIdentifier
 import org.apache.iceberg.data.{GenericRecord, Record => IcebergRecord}
 import org.apache.iceberg.hadoop.HadoopCatalog
 import org.apache.iceberg.io.{FileIO, LocationProvider}
+import org.apache.iceberg.{FileFormat, TableMetadata, TableOperations}
 
 import java.time.{Duration, ZoneOffset}
 import java.util
@@ -54,7 +53,7 @@ object TestIcebergLoader extends Loader {
       icebergRecord.setField("isEnabled", avroMessage.isEnabled)
       icebergRecord.setField("childIds", util.Arrays.asList(avroMessage.childIds: _*))
       icebergRecord.setField("parentId", avroMessage.parentId.orNull)
-      icebergRecord.setField("transactionId", avroMessage.transactionId.toBytes)
+      icebergRecord.setField("transactionId", avroMessage.transactionId)
       icebergRecord.setField("moneySpent", avroMessage.moneySpent.bigDecimal)
 
       Seq(icebergRecord)
