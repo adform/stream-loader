@@ -114,6 +114,12 @@ object NativeVerticaRecordEncoder {
             val size = math.ceil((((enc.get.precision / 19) + 1) * 8).toDouble).toInt
             Column(q"false", q"$size", q"pw.writeDecimal(r, ${enc.get.precision}, ${enc.get.scale})")
 
+          case t if t.typeConstructor =:= c.weakTypeOf[Set[_]].typeConstructor =>
+            val ml = typeAnnotations.collectFirst { case m: MaxLength => m }.getOrElse(MAX_COLUMN_LENGTH)
+            if (ml.length > MAX_COLUMN_BYTES)
+              c.abort(c.enclosingPosition, s"Set length can not exceed $MAX_COLUMN_BYTES")
+            Column(q"false", q"-1", q"pw.writeSet(r, ${ml.length}, ${ml.truncate})")
+
           case t =>
             val nte =
               q"implicitly[_root_.com.adform.streamloader.vertica.file.native.NativeVerticaTypeEncoder[${t.finalResultType}]]"

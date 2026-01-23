@@ -67,4 +67,9 @@ trait NativeVerticaPrimitiveTypeWriter extends LittleEndianByteWriter {
     bb.putLong(t.getLeastSignificantBits)
     writeByteArray(bb.array)
   }
+
+  def writeSet[T](s: Set[T], maxBytes: Int, truncate: Boolean, delimiter: String = ","): Unit = {
+    val stringRep = s.mkString(delimiter)
+    writeVarString(stringRep, maxBytes, truncate)
+  }
 }

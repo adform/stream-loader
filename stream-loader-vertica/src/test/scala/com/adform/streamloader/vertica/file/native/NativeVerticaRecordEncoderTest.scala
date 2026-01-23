@@ -57,6 +57,9 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
       e: Option[Array[Byte]] @MaxLength(5)
   )
 
+  case class SetRecord(a: Set[String], b: Set[Int], c: Option[Set[String]])
+  case class SetWithLengthRecord(a: Set[String] @MaxLength(20, truncate = true))
+
   def encoderFor[T: NativeVerticaRecordEncoder]: NativeVerticaRecordEncoder[T] =
     implicitly[NativeVerticaRecordEncoder[T]]
 
@@ -66,6 +69,8 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
     encoderFor[OptionalRecord].staticColumnSizes shouldEqual Array(4, -1)
     encoderFor[CustomRecord].staticColumnSizes shouldEqual Array(4, -1)
     encoderFor[LengthAnnotatedRecord].staticColumnSizes shouldEqual Array(5, -1, 5, 5, -1)
+    encoderFor[SetRecord].staticColumnSizes shouldEqual Array(-1, -1, -1)
+    encoderFor[SetWithLengthRecord].staticColumnSizes shouldEqual Array(-1)
   }
 
   it("should determine nullability") {
@@ -205,5 +210,61 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
         testWriter
       )
     }
+  }
+
+  it("should write Set types") {
+    val (testWriter, expectedWriter) = (new BufferPrimitiveWriter, new BufferPrimitiveWriter)
+
+    encoderFor[SetRecord].write(SetRecord(Set("a", "b", "c"), Set(1, 2, 3), Some(Set("x", "y"))), testWriter)
+
+    expectedWriter.writeSet(Set("a", "b", "c"), maxBytes = 65000, truncate = true)
+    expectedWriter.writeSet(Set(1, 2, 3), maxBytes = 65000, truncate = true)
+    expectedWriter.writeSet(Set("x", "y"), maxBytes = 65000, truncate = true)
+
+    testWriter.buffer.toByteArray shouldEqual expectedWriter.buffer.toByteArray
+  }
+
+  it("should write Set types with length annotations") {
+    val (testWriter, expectedWriter) = (new BufferPrimitiveWriter, new BufferPrimitiveWriter)
+
+    encoderFor[SetWithLengthRecord].write(
+      SetWithLengthRecord(Set("a", "b", "c", "d", "e", "f")),
+      testWriter
+    )
+
+    expectedWriter.writeSet(Set("a", "b", "c", "d", "e", "f"), maxBytes = 20, truncate = true)
+
+    testWriter.buffer.toByteArray shouldEqual expectedWriter.buffer.toByteArray
+  }
+
+  it("should handle nullable Set columns") {
+    var (col1Null, col2Null, col3Null) = (false, false, false)
+    val nullSetter = (idx: Int) =>
+      idx match {
+        case 0 => col1Null = true
+        case 1 => col2Null = true
+        case 2 => col3Null = true
+      }
+
+    encoderFor[SetRecord].setNullBits(SetRecord(Set("a"), Set(1), None), nullSetter)
+
+    col1Null shouldEqual false
+    col2Null shouldEqual false
+    col3Null shouldEqual true
+  }
+
+  it("should write only unique values from Set") {
+    val (testWriter, expectedWriter) = (new BufferPrimitiveWriter, new BufferPrimitiveWriter)
+
+    // Create a Set that would have duplicates if it were a List
+    val uniqueSet = Set("apple", "banana", "apple", "cherry", "banana") // Only apple, banana, cherry are stored
+
+    encoderFor[SetWithLengthRecord].write(SetWithLengthRecord(uniqueSet), testWriter)
+
+    // Expected set should only contain unique values
+    expectedWriter.writeSet(Set("apple", "banana", "cherry"), maxBytes = 20, truncate = true)
+
+    testWriter.buffer.toByteArray shouldEqual expectedWriter.buffer.toByteArray
+    uniqueSet.size shouldEqual 3 // Verify only 3 unique elements
   }
 }
