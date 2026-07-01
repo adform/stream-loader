@@ -206,4 +206,45 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
       )
     }
   }
+
+  case class LargeFieldRecord(
+      largeStringFixed: String @FixedLength(100000),
+      largeStringMax: String @MaxLength(100000),
+      largeStringMaxOpt: Option[String] @MaxLength(100000),
+      largeByteArrayFixed: Array[Byte] @FixedLength(100000),
+      largeByteArrayMax: Array[Byte] @MaxLength(100000),
+      largeByteArrayMaxOpt: Option[Array[Byte]] @MaxLength(100000)
+  )
+
+  it("should handle large string and byte array fields exceeding default 65000 byte limit (if annotated)") {
+    val encoder = encoderFor[LargeFieldRecord]
+
+    encoder.staticColumnSizes shouldEqual Array(100000, -1, -1, 100000, -1, -1)
+  }
+
+  it("should correctly write large string fields with @FixedLength annotation") {
+    val (testWriter, expectedWriter) = (new BufferPrimitiveWriter, new BufferPrimitiveWriter)
+    val largeString = "x" * 80000
+
+    encoderFor[LargeFieldRecord].write(
+      LargeFieldRecord(
+        largeString,
+        largeString,
+        Some(largeString),
+        largeString.getBytes("UTF-8"),
+        largeString.getBytes("UTF-8"),
+        Some(largeString.getBytes("UTF-8"))
+      ),
+      testWriter
+    )
+
+    expectedWriter.writeFixedString(largeString, 100000, truncate = true)
+    expectedWriter.writeVarString(largeString, 100000, truncate = true)
+    expectedWriter.writeVarString(largeString, 100000, truncate = true)
+    expectedWriter.writeFixedByteArray(largeString.getBytes("UTF-8"), 100000, truncate = true, padWith = 0)
+    expectedWriter.writeVarByteArray(largeString.getBytes("UTF-8"), 100000, truncate = true)
+    expectedWriter.writeVarByteArray(largeString.getBytes("UTF-8"), 100000, truncate = true)
+
+    testWriter.buffer.toByteArray shouldEqual expectedWriter.buffer.toByteArray
+  }
 }

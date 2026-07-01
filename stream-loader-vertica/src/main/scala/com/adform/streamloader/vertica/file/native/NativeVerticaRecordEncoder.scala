@@ -48,7 +48,7 @@ trait NativeVerticaRecordEncoder[R] {
 object NativeVerticaRecordEncoder {
 
   private val MAX_COLUMN_BYTES = 65000
-  private val MAX_COLUMN_LENGTH = MaxLength(MAX_COLUMN_BYTES, truncate = true)
+  private val DEFAULT_MAX_COLUMN_LENGTH = MaxLength(MAX_COLUMN_BYTES, truncate = true)
 
   /**
     * A macro derivation of the encoder for arbitrary case classes.
@@ -79,34 +79,22 @@ object NativeVerticaRecordEncoder {
           case t if t =:= c.weakTypeOf[UUID] => Column(q"false", q"16", q"pw.writeUUID(r)")
 
           case t if t =:= c.weakTypeOf[String] =>
-            val fl = typeAnnotations.collectFirst { case f: FixedLength => f }
-            if (fl.isDefined) {
-              if (fl.get.length > MAX_COLUMN_BYTES)
-                c.abort(c.enclosingPosition, s"String length can not exceed $MAX_COLUMN_BYTES")
-              Column(q"false", q"${fl.get.length}", q"pw.writeFixedString(r, ${fl.get.length}, ${fl.get.truncate})")
-            } else {
-              val ml = typeAnnotations.collectFirst { case m: MaxLength => m }.getOrElse(MAX_COLUMN_LENGTH)
-              if (ml.length > MAX_COLUMN_BYTES)
-                c.abort(c.enclosingPosition, s"String length can not exceed $MAX_COLUMN_BYTES")
-              Column(q"false", q"-1", q"pw.writeVarString(r, ${ml.length}, ${ml.truncate})")
-            }
+            val annotations = if (typeAnnotations.isEmpty) Seq(DEFAULT_MAX_COLUMN_LENGTH) else typeAnnotations
+            annotations.collectFirst {
+              case fl: FixedLength =>
+                Column(q"false", q"${fl.length}", q"pw.writeFixedString(r, ${fl.length}, ${fl.truncate})")
+              case ml: MaxLength =>
+                Column(q"false", q"-1", q"pw.writeVarString(r, ${ml.length}, ${ml.truncate})")
+            }.get
 
           case t if t =:= c.weakTypeOf[Array[Byte]] =>
-            val fl = typeAnnotations.collectFirst { case f: FixedLength => f }
-            if (fl.isDefined) {
-              if (fl.get.length > MAX_COLUMN_BYTES)
-                c.abort(c.enclosingPosition, s"Byte array length can not exceed $MAX_COLUMN_BYTES")
-              Column(
-                q"false",
-                q"${fl.get.length}",
-                q"pw.writeFixedByteArray(r, ${fl.get.length}, ${fl.get.truncate}, 0)"
-              )
-            } else {
-              val ml = typeAnnotations.collectFirst { case m: MaxLength => m }.getOrElse(MAX_COLUMN_LENGTH)
-              if (ml.length > MAX_COLUMN_BYTES)
-                c.abort(c.enclosingPosition, s"Byte array length can not exceed $MAX_COLUMN_BYTES")
-              Column(q"false", q"-1", q"pw.writeVarByteArray(r, ${ml.length}, ${ml.truncate})")
-            }
+            val annotations = if (typeAnnotations.isEmpty) Seq(DEFAULT_MAX_COLUMN_LENGTH) else typeAnnotations
+            annotations.collectFirst {
+              case fl: FixedLength =>
+                Column(q"false", q"${fl.length}", q"pw.writeFixedByteArray(r, ${fl.length}, ${fl.truncate}, 0)")
+              case ml: MaxLength =>
+                Column(q"false", q"-1", q"pw.writeVarByteArray(r, ${ml.length}, ${ml.truncate})")
+            }.get
 
           case t if t =:= c.weakTypeOf[BigDecimal] =>
             val enc = typeAnnotations.collectFirst { case e @ DecimalEncoding(_, _) => e }
