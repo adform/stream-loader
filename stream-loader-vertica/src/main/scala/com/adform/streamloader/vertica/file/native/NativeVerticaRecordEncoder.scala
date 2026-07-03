@@ -63,7 +63,17 @@ object NativeVerticaRecordEncoder {
     case class Column(isNull: c.Tree, staticSize: c.Tree, writeExpr: c.Tree)
 
     def columnExpressions(getter: MethodSymbol, typeAnnotations: Seq[DataTypeEncodingAnnotation]): Column = {
-      def primitiveColumnExpressions(tpe: c.Type): Column =
+
+      def maxLengthColumn(maxLength: MaxLength, suffix: String): Column = {
+        val method = TermName(s"writeVar$suffix")
+        val maxLen = maxLength.length
+        if (maxLength eq DEFAULT_MAX_COLUMN_LENGTH) {
+          c.warning(c.enclosingPosition, s"Column ${getter.name} of $recordType uses default max length of $maxLen.")
+        }
+        Column(q"false", q"-1", q"pw.$method(r, ${maxLength.length}, ${maxLength.truncate})")
+      }
+
+      def primitiveColumnExpressions(tpe: c.Type): Column = {
         tpe match {
           case t if t =:= c.weakTypeOf[Boolean] => Column(q"false", q"1", q"pw.writeByte(if (r) 1 else 0)")
           case t if t =:= c.weakTypeOf[Byte] => Column(q"false", q"1", q"pw.writeByte(r)")
@@ -79,22 +89,24 @@ object NativeVerticaRecordEncoder {
           case t if t =:= c.weakTypeOf[UUID] => Column(q"false", q"16", q"pw.writeUUID(r)")
 
           case t if t =:= c.weakTypeOf[String] =>
-            val annotations = if (typeAnnotations.isEmpty) Seq(DEFAULT_MAX_COLUMN_LENGTH) else typeAnnotations
-            annotations.collectFirst {
-              case fl: FixedLength =>
-                Column(q"false", q"${fl.length}", q"pw.writeFixedString(r, ${fl.length}, ${fl.truncate})")
-              case ml: MaxLength =>
-                Column(q"false", q"-1", q"pw.writeVarString(r, ${ml.length}, ${ml.truncate})")
-            }.get
+            typeAnnotations
+              .collectFirst {
+                case fl: FixedLength =>
+                  Column(q"false", q"${fl.length}", q"pw.writeFixedString(r, ${fl.length}, ${fl.truncate})")
+                case ml: MaxLength => maxLengthColumn(ml, "String")
+                case un => c.abort(c.enclosingPosition, s"Unexpected $un on field ${getter.name} for $recordType")
+              }
+              .getOrElse(maxLengthColumn(DEFAULT_MAX_COLUMN_LENGTH, "String"))
 
           case t if t =:= c.weakTypeOf[Array[Byte]] =>
-            val annotations = if (typeAnnotations.isEmpty) Seq(DEFAULT_MAX_COLUMN_LENGTH) else typeAnnotations
-            annotations.collectFirst {
-              case fl: FixedLength =>
-                Column(q"false", q"${fl.length}", q"pw.writeFixedByteArray(r, ${fl.length}, ${fl.truncate}, 0)")
-              case ml: MaxLength =>
-                Column(q"false", q"-1", q"pw.writeVarByteArray(r, ${ml.length}, ${ml.truncate})")
-            }.get
+            typeAnnotations
+              .collectFirst {
+                case fl: FixedLength =>
+                  Column(q"false", q"${fl.length}", q"pw.writeFixedByteArray(r, ${fl.length}, ${fl.truncate}, 0)")
+                case ml: MaxLength => maxLengthColumn(ml, "ByteArray")
+                case un => c.abort(c.enclosingPosition, s"Unexpected $un on field ${getter.name} for $recordType")
+              }
+              .getOrElse(maxLengthColumn(DEFAULT_MAX_COLUMN_LENGTH, "ByteArray"))
 
           case t if t =:= c.weakTypeOf[BigDecimal] =>
             val enc = typeAnnotations.collectFirst { case e @ DecimalEncoding(_, _) => e }
@@ -107,6 +119,7 @@ object NativeVerticaRecordEncoder {
               q"implicitly[_root_.com.adform.streamloader.vertica.file.native.NativeVerticaTypeEncoder[${t.finalResultType}]]"
             Column(q"false", q"$nte.staticSize", q"$nte.write(r, pw)")
         }
+      }
 
       getter.returnType match {
         case t if t.typeConstructor =:= c.weakTypeOf[Option[_]].typeConstructor =>

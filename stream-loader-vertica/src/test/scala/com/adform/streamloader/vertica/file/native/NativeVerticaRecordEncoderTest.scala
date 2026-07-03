@@ -206,7 +206,6 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
       )
     }
   }
-
   case class LargeFieldRecord(
       largeStringFixed: String @FixedLength(100000),
       largeStringMax: String @MaxLength(100000),
@@ -246,5 +245,12 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
     expectedWriter.writeVarByteArray(largeString.getBytes("UTF-8"), 100000, truncate = true)
 
     testWriter.buffer.toByteArray shouldEqual expectedWriter.buffer.toByteArray
+  }
+
+  it("should fail deriving encoder when field has unexpected annotation") {
+    assertTypeError("""
+      case class UnexpectedAnnotationRecord(a: String @DecimalEncoding(18, 6))
+      implicitly[NativeVerticaRecordEncoder[UnexpectedAnnotationRecord]]
+    """)
   }
 }
