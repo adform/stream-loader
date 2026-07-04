@@ -155,6 +155,7 @@ trait Kafka { this: Docker =>
         s"KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${dockerNetwork.ip}:$kafkaPort",
         s"KAFKA_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:$kafkaControllerPort",
         s"KAFKA_LOG_RETENTION_HOURS=${Int.MaxValue}",
+        s"KAFKA_MESSAGE_MAX_BYTES=${32_000_000}",
         "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1"
       )
       .build()
@@ -177,6 +178,8 @@ trait Kafka { this: Docker =>
 
   private def createKafkaProducer(): KafkaProducer[Array[Byte], Array[Byte]] = {
     val producerProps = new Properties()
+
+    producerProps.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, 32_000_000)
     producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.endpoint)
     producerProps.put(
       ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
