@@ -137,8 +137,40 @@ lazy val dockerImage = settingKey[String]("Full docker image name")
 
 val IntegrationTest = config("it").extend(Test)
 
+lazy val `stream-loader-tests-util` = project
+  .in(file("stream-loader-tests-util"))
+  .dependsOn(`stream-loader-clickhouse`)
+  .dependsOn(`stream-loader-hadoop`)
+  .dependsOn(`stream-loader-iceberg`)
+  .dependsOn(`stream-loader-s3`)
+  .dependsOn(`stream-loader-vertica`)
+  .enablePlugins(BuildInfoPlugin)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe"     % "config"        % "1.4.5",
+      "com.vertica.jdbc" % "vertica-jdbc"  % verticaVersion,
+      "org.log4s"       %% "log4s"         % "1.10.0",
+      "org.scalatest"   %% "scalatest"     % scalaTestVersion,
+      "org.scalacheck"  %% "scalacheck"    % scalaCheckVersion,
+      "org.mandas"       % "docker-client" % "9.0.4",
+      "com.zaxxer"       % "HikariCP"      % "7.0.2",
+      "org.duckdb"       % "duckdb_jdbc"   % duckdbVersion
+    ),
+    buildInfoPackage := s"${organization.value}.streamloader",
+    buildInfoKeys := Seq[BuildInfoKey](
+      name,
+      version,
+      scalaVersion,
+      git.gitHeadCommit,
+      "dockerImage" -> s"adform/stream-loader-tests:${version.value}",
+      "duckdbVersion" -> duckdbVersion
+    )
+  )
+
 lazy val `stream-loader-tests` = project
   .in(file("stream-loader-tests"))
+  .dependsOn(`stream-loader-tests-util`)
   .dependsOn(`stream-loader-clickhouse`)
   .dependsOn(`stream-loader-hadoop`)
   .dependsOn(`stream-loader-iceberg`)
@@ -146,7 +178,6 @@ lazy val `stream-loader-tests` = project
   .dependsOn(`stream-loader-vertica`)
   .enablePlugins(PackPlugin)
   .enablePlugins(DockerPlugin)
-  .enablePlugins(BuildInfoPlugin)
   .configs(IntegrationTest)
   .settings(commonSettings)
   .settings(
@@ -171,16 +202,6 @@ lazy val `stream-loader-tests` = project
     publish := {},
     publishLocal := {},
     publish / skip := true,
-    buildInfoPackage := s"${organization.value}.streamloader",
-    buildInfoKeys := Seq[BuildInfoKey](
-      name,
-      version,
-      scalaVersion,
-      sbtVersion,
-      git.gitHeadCommit,
-      dockerImage,
-      "duckdbVersion" -> duckdbVersion
-    ),
     packAndSplitJars := {
       val scalaMajorVersion = scalaVersion.value.split('.').take(2).mkString(".")
       val mainJar = s"${name.value}_$scalaMajorVersion-${version.value}.jar"
@@ -330,5 +351,6 @@ lazy val `stream-loader` = project
     `stream-loader-iceberg`,
     `stream-loader-s3`,
     `stream-loader-vertica`,
+    `stream-loader-tests-util`,
     `stream-loader-tests`
   )
