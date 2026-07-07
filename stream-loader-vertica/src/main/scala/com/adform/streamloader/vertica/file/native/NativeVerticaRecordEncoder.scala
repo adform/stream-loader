@@ -99,11 +99,14 @@ object NativeVerticaRecordEncoder {
               .getOrElse(maxLengthColumn(DEFAULT_MAX_COLUMN_LENGTH, "String"))
 
           case t if t =:= c.weakTypeOf[Array[Byte]] =>
+            def abort() = c.abort(c.enclosingPosition, s"Byte array length can not exceed $MAX_COLUMN_BYTES")
             typeAnnotations
               .collectFirst {
                 case fl: FixedLength =>
-                  Column(q"false", q"${fl.length}", q"pw.writeFixedByteArray(r, ${fl.length}, ${fl.truncate}, 0)")
-                case ml: MaxLength => maxLengthColumn(ml, "ByteArray")
+                  if (fl.length > MAX_COLUMN_BYTES) abort()
+                  else Column(q"false", q"${fl.length}", q"pw.writeFixedByteArray(r, ${fl.length}, ${fl.truncate}, 0)")
+                case ml: MaxLength =>
+                  if (ml.length > MAX_COLUMN_BYTES) abort() else maxLengthColumn(ml, "ByteArray")
                 case un => c.abort(c.enclosingPosition, s"Unexpected $un on field ${getter.name} for $recordType")
               }
               .getOrElse(maxLengthColumn(DEFAULT_MAX_COLUMN_LENGTH, "ByteArray"))

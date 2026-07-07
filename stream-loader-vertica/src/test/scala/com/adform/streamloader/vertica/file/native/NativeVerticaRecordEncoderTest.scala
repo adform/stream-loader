@@ -8,12 +8,12 @@
 
 package com.adform.streamloader.vertica.file.native
 
-import java.io.ByteArrayOutputStream
-
-import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation._
 import com.adform.streamloader.model.Timestamp
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import java.io.ByteArrayOutputStream
 
 class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
 
@@ -207,18 +207,16 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
     }
   }
   case class LargeFieldRecord(
-      largeStringFixed: String @FixedLength(100000),
-      largeStringMax: String @MaxLength(100000),
-      largeStringMaxOpt: Option[String] @MaxLength(100000),
-      largeByteArrayFixed: Array[Byte] @FixedLength(100000),
-      largeByteArrayMax: Array[Byte] @MaxLength(100000),
-      largeByteArrayMaxOpt: Option[Array[Byte]] @MaxLength(100000)
+      largeStringFixed: String @FixedLength(100_000),
+      largeStringFixedOpt: Option[String] @FixedLength(100_000),
+      largeStringMax: String @MaxLength(100_000),
+      largeStringMaxOpt: Option[String] @MaxLength(100_000)
   )
 
   it("should handle large string and byte array fields exceeding default 65000 byte limit (if annotated)") {
     val encoder = encoderFor[LargeFieldRecord]
 
-    encoder.staticColumnSizes shouldEqual Array(100000, -1, -1, 100000, -1, -1)
+    encoder.staticColumnSizes shouldEqual Array(100_000, 100_000, -1, -1)
   }
 
   it("should correctly write large string fields with @FixedLength annotation") {
@@ -228,21 +226,17 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
     encoderFor[LargeFieldRecord].write(
       LargeFieldRecord(
         largeString,
-        largeString,
         Some(largeString),
-        largeString.getBytes("UTF-8"),
-        largeString.getBytes("UTF-8"),
-        Some(largeString.getBytes("UTF-8"))
+        largeString,
+        Some(largeString)
       ),
       testWriter
     )
 
-    expectedWriter.writeFixedString(largeString, 100000, truncate = true)
-    expectedWriter.writeVarString(largeString, 100000, truncate = true)
-    expectedWriter.writeVarString(largeString, 100000, truncate = true)
-    expectedWriter.writeFixedByteArray(largeString.getBytes("UTF-8"), 100000, truncate = true, padWith = 0)
-    expectedWriter.writeVarByteArray(largeString.getBytes("UTF-8"), 100000, truncate = true)
-    expectedWriter.writeVarByteArray(largeString.getBytes("UTF-8"), 100000, truncate = true)
+    expectedWriter.writeFixedString(largeString, 100_000, truncate = true)
+    expectedWriter.writeFixedString(largeString, 100_000, truncate = true)
+    expectedWriter.writeVarString(largeString, 100_000, truncate = true)
+    expectedWriter.writeVarString(largeString, 100_000, truncate = true)
 
     testWriter.buffer.toByteArray shouldEqual expectedWriter.buffer.toByteArray
   }
