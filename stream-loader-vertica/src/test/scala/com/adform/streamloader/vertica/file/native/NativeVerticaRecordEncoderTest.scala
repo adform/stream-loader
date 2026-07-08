@@ -8,12 +8,12 @@
 
 package com.adform.streamloader.vertica.file.native
 
-import java.io.ByteArrayOutputStream
-
-import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation._
 import com.adform.streamloader.model.Timestamp
+import com.adform.streamloader.sink.encoding.macros.DataTypeEncodingAnnotation._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import java.io.ByteArrayOutputStream
 
 class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
 
@@ -205,5 +205,46 @@ class NativeVerticaRecordEncoderTest extends AnyFunSpec with Matchers {
         testWriter
       )
     }
+  }
+  case class LargeFieldRecord(
+      largeStringFixed: String @FixedLength(100_000),
+      largeStringFixedOpt: Option[String] @FixedLength(100_000),
+      largeStringMax: String @MaxLength(100_000),
+      largeStringMaxOpt: Option[String] @MaxLength(100_000)
+  )
+
+  it("should handle large string and byte array fields exceeding default 65000 byte limit (if annotated)") {
+    val encoder = encoderFor[LargeFieldRecord]
+
+    encoder.staticColumnSizes shouldEqual Array(100_000, 100_000, -1, -1)
+  }
+
+  it("should correctly write large string fields with @FixedLength annotation") {
+    val (testWriter, expectedWriter) = (new BufferPrimitiveWriter, new BufferPrimitiveWriter)
+    val largeString = "x" * 80000
+
+    encoderFor[LargeFieldRecord].write(
+      LargeFieldRecord(
+        largeString,
+        Some(largeString),
+        largeString,
+        Some(largeString)
+      ),
+      testWriter
+    )
+
+    expectedWriter.writeFixedString(largeString, 100_000, truncate = true)
+    expectedWriter.writeFixedString(largeString, 100_000, truncate = true)
+    expectedWriter.writeVarString(largeString, 100_000, truncate = true)
+    expectedWriter.writeVarString(largeString, 100_000, truncate = true)
+
+    testWriter.buffer.toByteArray shouldEqual expectedWriter.buffer.toByteArray
+  }
+
+  it("should fail deriving encoder when field has unexpected annotation") {
+    assertTypeError("""
+      case class UnexpectedAnnotationRecord(a: String @DecimalEncoding(18, 6))
+      implicitly[NativeVerticaRecordEncoder[UnexpectedAnnotationRecord]]
+    """)
   }
 }
