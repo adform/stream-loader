@@ -14,7 +14,9 @@ ThisBuild / scalacOptions := Seq(
 
 enablePlugins(GitVersioning)
 
-import BuildSettings._
+import BuildSettings.*
+
+import scala.collection.immutable.Seq
 
 ThisBuild / git.useGitDescribe := true
 ThisBuild / git.remoteRepo := {
@@ -318,7 +320,10 @@ lazy val `stream-loader` = project
     publishLocal := {},
     publish / skip := true,
     Compile / doc / scalacOptions ++= Seq("-doc-title", name.value),
-    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(`stream-loader-tests`),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
+      `stream-loader-tests`,
+      `stream-loader-tests-util`
+    ),
     copyDocAssets := Def.taskDyn {
       val filter = ScopeFilter(inProjects(thisProject.value.aggregate: _*))
       val destination = thisProject.value.base / "target" / "diagrams"
